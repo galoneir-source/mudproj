@@ -1,53 +1,72 @@
-# Welcome to Evennia!
+# mudproj
 
-This is your game directory, set up to let you start with
-your new game right away. An overview of this directory is found here:
-https://github.com/evennia/evennia/wiki/Directory-Overview#the-game-directory
+MUD de rol en español construido sobre [Evennia](https://www.evennia.com/). Combate por turnos, economía de tienda, equipamiento con slots, IA de NPCs y sistema de patrullas.
 
-You can delete this readme file when you've read it and you can
-re-arrange things in this game-directory to suit your own sense of
-organisation (the only exception is the directory structure of the
-`server/` directory, which Evennia expects). If you change the structure
-you must however also edit/add to your settings file to tell Evennia
-where to look for things.
+## Características
 
-Your game's main configuration file is found in
-`server/conf/settings.py` (but you don't need to change it to get
-started). If you just created this directory (which means you'll already
-have a `virtualenv` running if you followed the default instructions),
-`cd` to this directory then initialize a new database using
+| Sistema | Descripción |
+|---|---|
+| **Combate** | Turnos por iniciativa, habilidades, horda/1v1, handler por sala |
+| **Equipamiento** | Slots arma / armadura / accesorio con bonuses a stats |
+| **Tienda** | NPCs vendedores con stock finito o ilimitado, compra/venta |
+| **NPCs** | Temperamentos (neutral, agresivo, cobarde, guardián), diálogo por palabra clave, patrullas |
+| **Puertas** | Puertas con llave, secretas, con estado persistente |
+| **Respawn** | Reaparición de NPCs con loot configurable |
+| **Percepción** | Sistema de detección de objetos y personajes ocultos |
 
-    evennia migrate
+## Estructura
 
-To start the server, stand in this directory and run
+```
+mygame/
+├── features/          # Sistemas jugables (combat, equipment, shop, doors, respawn)
+├── systems/           # Motor de reglas (combat engine, perception)
+├── typeclasses/       # Character, NPC, Object, Equipo, Room, Exit
+├── commands/          # CmdSets globales y comandos generales
+├── world/             # Prototipos, entradas de ayuda, scripts de construcción
+├── tests/             # Suite de integración (150 tests)
+└── server/conf/       # Configuración de Evennia
+```
 
-    evennia start
+## Instalación
 
-This will start the server, logging output to the console. Make
-sure to create a superuser when asked. By default you can now connect
-to your new game using a MUD client on `localhost`, port `4000`.  You can
-also log into the web client by pointing a browser to
-`http://localhost:4001`.
+Requiere Python 3.11+ y Evennia 4.x.
 
-# Getting started
+```bash
+git clone https://github.com/galoneir-source/mudproj
+cd mudproj
 
-From here on you might want to look at one of the beginner tutorials:
-http://github.com/evennia/evennia/wiki/Tutorials.
+python -m venv venv
+source venv/bin/activate
+pip install evennia
 
-Evennia's documentation is here:
-https://github.com/evennia/evennia/wiki.
+evennia migrate
+evennia start          # superuser solicitado en el primer arranque
+```
 
-Enjoy!
+Conéctate con cualquier cliente MUD en `localhost:4000` o con el webclient en `http://localhost:4001`.
 
-## Sharing / creating a clean ZIP
+## Tests
 
-If you need to share this game directory (for review/backup), avoid including
-secrets and generated artifacts.
+```bash
+evennia test --settings settings.py .
+```
 
-Recommended to exclude:
-- `server/conf/secret_settings.py` (contains SECRET_KEY and other secrets)
-- `server/logs/`
-- `server/.static/` and `server/.media/` (generated/collectstatic uploads)
-- `__pycache__/` and `*.pyc`
+## Comandos principales
 
-Note: If `secret_settings.py` has been shared, rotate your `SECRET_KEY`.
+| Comando | Alias | Descripción |
+|---|---|---|
+| `tienda [npc]` | `shop` | Ver catálogo del comerciante |
+| `comprar <item> [de <npc>]` | `buy` | Comprar un artículo |
+| `vender <item> [a <npc>]` | `sell` | Vender un objeto |
+| `equipar <objeto>` | `equip` | Equipar del inventario |
+| `desequipar <slot\|objeto>` | `unequip` | Desequipar |
+| `equipo` | `gear` | Ver equipamiento actual |
+| `atacar <objetivo>` | `attack` | Iniciar combate |
+| `habilidad <nombre>` | `skill` | Usar habilidad de combate |
+
+## Convenciones
+
+- Todo el código y mensajes en **español**.
+- Moneda universal: `db.monedas` (int) en el personaje.
+- Stats de personaje: `fuerza`, `defensa`, `velocidad`, `hp`, `hp_max`.
+- Los NPCs con `db.tienda` son comerciantes; los que tienen `db.patrol_rooms` patrullan.
