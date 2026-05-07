@@ -1,0 +1,285 @@
+"""
+world/build_expansion.py
+
+Construye las zonas de expansión del mundo:
+
+  Pantano del Troll (norte de la Cueva Oscura):
+    Senda Fangosa → Pantano Cenagoso → Guarida del Troll
+
+  Catacumbas (bajo la Celda Abandonada):
+    Túnel de Acceso → Sala de las Tumbas → Cámara del Nigromante
+
+Es idempotente: si las salas ya existen, las omite.
+
+Uso como Builder en el juego:
+  @expandir
+
+Uso manual desde la consola Django:
+  from world.build_expansion import construir_expansion
+  construir_expansion()
+"""
+
+import evennia
+from evennia.utils.logger import log_info
+
+
+# ---------------------------------------------------------------------------
+# Helpers internos
+# ---------------------------------------------------------------------------
+
+def _room(key, desc):
+    room = evennia.create_object("typeclasses.rooms.Room", key=key, nohome=True)
+    room.db.desc = desc
+    return room
+
+
+def _exit(key, aliases, src, dst):
+    evennia.create_object(
+        "typeclasses.exits.Exit",
+        key=key,
+        aliases=aliases,
+        location=src,
+        destination=dst,
+    )
+
+
+def _link(key_a, alias_a, key_b, alias_b, room_a, room_b):
+    _exit(key_a, [alias_a], room_a, room_b)
+    _exit(key_b, [alias_b], room_b, room_a)
+
+
+def _spawn(prototype_key, location):
+    from evennia.prototypes import spawner
+    npc = spawner.spawn(prototype_key)[0]
+    npc.location = location
+    return npc
+
+
+def _find_room(name):
+    """Busca una sala por nombre. Devuelve la primera Room coincidente o None."""
+    results = evennia.search_object(name)
+    rooms = [r for r in results if r.is_typeclass("typeclasses.rooms.Room", exact=False)]
+    return rooms[0] if rooms else None
+
+
+# ---------------------------------------------------------------------------
+# Función principal
+# ---------------------------------------------------------------------------
+
+def construir_expansion(caller=None):
+    """
+    Añade las zonas de expansión al mundo existente.
+
+    caller — objeto Evennia que recibe mensajes de progreso (puede ser None).
+    """
+    def msg(text):
+        if caller:
+            caller.msg(text)
+        log_info(f"build_expansion: {text}")
+
+    # Verificar que el mundo base existe
+    cueva = _find_room("Cueva Oscura")
+    celda = _find_room("Celda Abandonada")
+
+    if not cueva or not celda:
+        msg(
+            "|rError: el mundo base no está construido. "
+            "Ejecuta at_initial_setup o usa @batchcode antes.|n"
+        )
+        return
+
+    salas_creadas = 0
+    npcs_creados = 0
+
+    # -----------------------------------------------------------------------
+    # ZONA 1: PANTANO DEL TROLL
+    # -----------------------------------------------------------------------
+
+    if _find_room("Senda Fangosa"):
+        msg("|yZona 'Pantano del Troll' ya existe. Omitida.|n")
+    else:
+        senda = _room(
+            "Senda Fangosa",
+            (
+                "Un sendero de tierra blanda que se hunde bajo tus pies con cada paso. "
+                "El aire huele a humedad y podredumbre. "
+                "Entre los juncos crecen hongos de colores extraños. "
+                "Al |csur|n está la Cueva Oscura; "
+                "al |cnorte|n, el corazón del pantano."
+            ),
+        )
+        pantano = _room(
+            "Pantano Cenagoso",
+            (
+                "Una extensión de agua estancada y barro espeso rodea un islote de tierra firme. "
+                "Las ranas croan en la oscuridad y luciérnagas verdes iluminan el ambiente. "
+                "El olor es insoportable. "
+                "Al |csur|n, la Senda Fangosa; al |cnorte|n, la oscura guarida."
+            ),
+        )
+        guarida = _room(
+            "Guarida del Troll",
+            (
+                "Una caverna natural cubierta de limo y huesos de animales. "
+                "El techo gotea y el suelo está inundado en varios palmos de agua putrefacta. "
+                "Restos de presas anteriores decoran las paredes. "
+                "Al |csur|n está el pantano."
+            ),
+        )
+
+        senda.db.detalles_ocultos = [
+            {
+                "texto": "Huellas enormes se hunden en el barro. Algo muy pesado pasó por aquí hace poco.",
+                "req_percepcion": 10,
+            },
+            {
+                "texto": "Los hongos del sendero son bioluminiscentes. Los alquimistas los buscan.",
+                "req_percepcion": 13,
+            },
+        ]
+        pantano.db.detalles_ocultos = [
+            {
+                "texto": "Bajo el agua hay una corriente subterránea. Podría haber una salida... si no fuera por las serpientes.",
+                "req_percepcion": 12,
+            },
+            {
+                "texto": "En el islote hay marcas de un ritual antiguo grabadas en las piedras. Los hombres lagarto lo realizan en luna llena.",
+                "req_percepcion": 15,
+            },
+        ]
+        guarida.db.detalles_ocultos = [
+            {
+                "texto": "Entre los huesos hay un brazalete de oro enterrado en el barro.",
+                "req_percepcion": 14,
+            },
+            {
+                "texto": "Las paredes tienen inscripciones en un idioma desconocido. Son muy antiguas, anteriores a los hombres lagarto.",
+                "req_percepcion": 16,
+            },
+        ]
+
+        # Conectar al mundo: Cueva → Senda → Pantano → Guarida
+        _link("norte", "n", "sur", "s", cueva, senda)
+        _link("norte", "n", "sur", "s", senda, pantano)
+        _link("norte", "n", "sur", "s", pantano, guarida)
+
+        # Actualizar descripción de la cueva para reflejar la nueva salida
+        cueva.db.desc = (
+            "Una cueva húmeda de paredes cubiertas de musgo brillante. "
+            "El suelo está encharcado y la oscuridad es casi total. "
+            "Un olor putrefacto impregna el aire. "
+            "Al |coeste|n, la salida hacia el Bosque del Norte. "
+            "Al |cnorte|n, una senda fangosa se adentra en el pantano."
+        )
+
+        # NPCs
+        _spawn("SERPIENTE_PANTANO", senda)
+        _spawn("SERPIENTE_PANTANO", pantano)
+        _spawn("HOMBRE_LAGARTO", pantano)
+        troll = _spawn("TROLL", guarida)
+        # Patrulla del hombre lagarto entre pantano y senda
+        lagarto = _find_room("Pantano Cenagoso")  # ya creado arriba, pero lo buscamos por si acaso
+        # El hombre lagarto lo encontramos en pantano.contents
+        for obj in pantano.contents:
+            if getattr(obj.db, "npc_prototipo", None) == "HOMBRE_LAGARTO":
+                obj.db.patrol_rooms = [pantano.dbref, senda.dbref]
+                obj._iniciar_patrulla()
+                break
+
+        salas_creadas += 3
+        npcs_creados += 4
+        msg("|gZona 'Pantano del Troll' creada (3 salas, 4 NPCs).|n")
+
+    # -----------------------------------------------------------------------
+    # ZONA 2: CATACUMBAS
+    # -----------------------------------------------------------------------
+
+    if _find_room("Túnel de Acceso"):
+        msg("|yZona 'Catacumbas' ya existe. Omitida.|n")
+    else:
+        tunel = _room(
+            "Túnel de Acceso",
+            (
+                "Un pasaje estrecho de piedra tallada que desciende en espiral. "
+                "El aire está cargado de polvo y el silencio es sepulcral. "
+                "Antorchas extintas cuelgan de las paredes. "
+                "Al |csur|n (subir) está la celda; al |cnorte|n (bajar), las tumbas."
+            ),
+        )
+        tumbas = _room(
+            "Sala de las Tumbas",
+            (
+                "Una cámara amplia con nichos funerarios tallados en las paredes. "
+                "Algunos sarcófagos de piedra están abiertos y vacíos. "
+                "Una luz verdosa y espectral ilumina el lugar sin fuente aparente. "
+                "Al |csur|n (subir) está el túnel; al |cnorte|n (bajar), una cámara más profunda."
+            ),
+        )
+        camara = _room(
+            "Cámara del Nigromante",
+            (
+                "Una sala circular con un altar de obsidiana en el centro. "
+                "Símbolos arcanos brillan en el suelo con una luz azulada. "
+                "El aire vibra con una energía oscura que dificulta respirar. "
+                "Al |csur|n (subir) está la sala de las tumbas."
+            ),
+        )
+
+        tunel.db.detalles_ocultos = [
+            {
+                "texto": "Las paredes tienen inscripciones de advertencia: 'Lo que duerme no debe despertar'.",
+                "req_percepcion": 11,
+            },
+        ]
+        tumbas.db.detalles_ocultos = [
+            {
+                "texto": "La luz espectral proviene de hongos parásitos que crecen en los sarcófagos. Son muy raros.",
+                "req_percepcion": 12,
+            },
+            {
+                "texto": "Uno de los sarcófagos tiene un compartimento secreto. Contiene un fragmento de un mapa.",
+                "req_percepcion": 14,
+            },
+        ]
+        camara.db.detalles_ocultos = [
+            {
+                "texto": "El altar tiene un receptáculo con la forma de un sello. El sello del capitán bandido podría encajar aquí.",
+                "req_percepcion": 13,
+            },
+            {
+                "texto": "Bajo el altar hay una caja de metal con un cierre arcano. Está sellada con magia.",
+                "req_percepcion": 16,
+            },
+        ]
+
+        # Conectar: Celda ↕ Túnel ↕ Tumbas ↕ Cámara
+        _link("bajar", "b", "subir", "su", celda, tunel)
+        _link("bajar", "b", "subir", "su", tunel, tumbas)
+        _link("bajar", "b", "subir", "su", tumbas, camara)
+
+        # NPCs
+        _spawn("ESQUELETO", tumbas)
+        _spawn("ESQUELETO", tumbas)
+        _spawn("LICHE_MENOR", camara)
+
+        # Equipo especial en la cámara
+        from evennia.prototypes import spawner
+        grimorio = spawner.spawn("GRIMORIO_NIGROMANTE")[0]
+        grimorio.location = camara
+
+        salas_creadas += 3
+        npcs_creados += 3
+        msg("|gZona 'Catacumbas' creada (3 salas, 3 NPCs + 1 grimorio).|n")
+
+    # -----------------------------------------------------------------------
+    # Resumen
+    # -----------------------------------------------------------------------
+
+    if salas_creadas:
+        msg(
+            f"\n|gExpansión completada.|n\n"
+            f"  Salas nuevas : {salas_creadas}\n"
+            f"  NPCs nuevos  : {npcs_creados}\n"
+        )
+    else:
+        msg("|yNo se creó nada nuevo (todo ya existía).|n")
