@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.6.0] — 2026-05-12
+
+### Añadido
+- Tabla de zonas pura `systems/spawn/tables.py` con las 13 zonas del mundo (ciudad, bosque, calabozo, pantano, catacumbas) y sus prototipos de NPC.
+- Funciones puras `npcs_necesarios()` y `calcular_faltantes()` para calcular qué NPCs faltan en una zona sin depender de Evennia.
+- Manager de spawn `features/spawn/manager.py` con `spawn_npc()`, `repoblar_sala()` y `repoblar_mundo()`.
+- `spawn_npc()` soporta parámetros opcionales: `oculto`, `nivel_sigilo`, `key_npc` y `patrol_sala_key`.
+- `repoblar_sala()` solo crea los NPCs que faltan; no duplica ni elimina los existentes.
+- Comando builder `@spawn <prototipo> [cantidad]` para crear NPCs manualmente en la sala actual.
+- Comando builder `@repoblar` / `@repoblar/mundo` para repoblar la sala actual o todas las zonas.
+- Atributo `db.zona` añadido a todas las salas del mundo en `at_initial_setup` y `build_expansion`.
+- 53 tests nuevos: 19 unitarios puros + 34 de integración (suite total: 364 tests).
+
 ## [0.5.0] — 2026-05-12
 
 ### Añadido

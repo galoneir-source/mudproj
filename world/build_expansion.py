@@ -108,6 +108,8 @@ def construir_expansion(caller=None):
                 "al |cnorte|n, el corazón del pantano."
             ),
         )
+        senda.db.zona = "senda_fangosa"
+
         pantano = _room(
             "Pantano Cenagoso",
             (
@@ -117,6 +119,8 @@ def construir_expansion(caller=None):
                 "Al |csur|n, la Senda Fangosa; al |cnorte|n, la oscura guarida."
             ),
         )
+        pantano.db.zona = "pantano_cenagoso"
+
         guarida = _room(
             "Guarida del Troll",
             (
@@ -126,6 +130,7 @@ def construir_expansion(caller=None):
                 "Al |csur|n está el pantano."
             ),
         )
+        guarida.db.zona = "guarida_troll"
 
         senda.db.detalles_ocultos = [
             {
@@ -206,6 +211,7 @@ def construir_expansion(caller=None):
                 "Al |csur|n (subir) está la celda; al |cnorte|n (bajar), las tumbas."
             ),
         )
+
         tumbas = _room(
             "Sala de las Tumbas",
             (
@@ -215,6 +221,8 @@ def construir_expansion(caller=None):
                 "Al |csur|n (subir) está el túnel; al |cnorte|n (bajar), una cámara más profunda."
             ),
         )
+        tumbas.db.zona = "sala_tumbas"
+
         camara = _room(
             "Cámara del Nigromante",
             (
@@ -224,6 +232,7 @@ def construir_expansion(caller=None):
                 "Al |csur|n (subir) está la sala de las tumbas."
             ),
         )
+        camara.db.zona = "camara_nigromante"
 
         tunel.db.detalles_ocultos = [
             {

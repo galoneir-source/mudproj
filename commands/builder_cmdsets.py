@@ -1,5 +1,6 @@
 from evennia import CmdSet, default_cmds
 from features.doors.builder import CmdDoor, CmdKeyMake
+from features.spawn.commands import SpawnCmdSet
 
 
 class CmdLimpiarMundo(default_cmds.MuxCommand):
@@ -170,3 +171,4 @@ class BuilderCmdSet(CmdSet):
         self.add(CmdLimpiarMundo())
         self.add(CmdConstruirMundo())
         self.add(CmdExpandir())
+        self.add(SpawnCmdSet)
