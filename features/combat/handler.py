@@ -202,6 +202,11 @@ class CombatHandler(DefaultScript):
         actor = self._participante_actual()
         if not actor:
             return
+
+        # Ticks de estado al inicio del turno; si muere, no anunciar
+        if self._aplicar_ticks_estado(actor):
+            return
+
         sala = self.obj
         sala.msg_contents(f"\n|w▶ Turno de: {actor.key}|n")
         # Mostrar opciones al jugador (si tiene sesión)
@@ -258,6 +263,16 @@ class CombatHandler(DefaultScript):
 
                 if resultado.exito:
                     _set_stat(objetivo, "hp", resultado.hp_restante)
+
+                # Aplicar estado si la habilidad lo produce (solo en golpe exitoso y no letal)
+                if resultado.exito and not resultado.muerto and resultado.estado_aplicado:
+                    from systems.combat.states import aplicar_estado
+                    nombre_estado = resultado.estado_aplicado
+                    estados = dict(getattr(objetivo.db, "estados", {}) or {})
+                    objetivo.db.estados = aplicar_estado(estados, nombre_estado)
+                    display = {"veneno": "veneno", "sangrado": "sangrado"}.get(nombre_estado, nombre_estado)
+                    objetivo.msg(f"|r¡Has sido afectado por {display}!|n")
+                    actor.msg(f"|y{objetivo.key} ha sido afectado por {display}.|n")
 
                 if resultado.muerto:
                     self._procesar_muerte(objetivo, asesino=actor)
@@ -368,12 +383,43 @@ class CombatHandler(DefaultScript):
             sala.msg_contents(f"{actor.key} intenta huir pero |rfalla|n.")
             self._siguiente_turno()
 
+    def _aplicar_ticks_estado(self, actor) -> bool:
+        """
+        Aplica ticks de estados activos al actor al inicio de su turno.
+        Devuelve True si el actor murió por un estado (la muerte ya fue procesada).
+        """
+        from systems.combat.states import tick_estados
+        estados = dict(getattr(actor.db, "estados", {}) or {})
+        if not estados:
+            return False
+
+        hp = getattr(actor.db, "hp", 1) or 1
+        hp_max = getattr(actor.db, "hp_max", 100) or 100
+        nuevos_estados, nuevo_hp, mensajes = tick_estados(estados, hp, hp_max)
+
+        actor.db.estados = nuevos_estados
+        actor.db.hp = max(0, nuevo_hp)
+
+        sala = self.obj
+        for msg in mensajes:
+            actor.msg(msg)
+            sala.msg_contents(f"{actor.key}: {msg}", exclude=actor)
+
+        if actor.db.hp <= 0:
+            self._procesar_muerte(actor)
+            return True
+        return False
+
     def _terminar_combate(self):
         sala = self.obj
         self.db.activo = False
-        # Resetear estado de todos los participantes supervivientes
         for participante in list(self.db.participantes or []):
             self._limpiar_estado_combate(participante)
+            # Si quedan estados activos, iniciar script fuera de combate
+            estados = dict(getattr(participante.db, "estados", {}) or {})
+            if estados:
+                from features.combat.states_script import programar_estados_script
+                programar_estados_script(participante)
         sala.msg_contents("|gEl combate ha terminado.|n\n")
         self.delete()
 

@@ -301,7 +301,9 @@ class Consumible(DefaultObject):
             )
 
         if efecto == "curar_veneno":
-            caller.db.envenenado = False
+            from systems.combat.states import limpiar_estado
+            estados = dict(getattr(caller.db, "estados", {}) or {})
+            caller.db.estados = limpiar_estado(estados, "veneno")
             return "|gSientes cómo el veneno se disuelve en tu sangre.|n"
 
         return "No tiene ningún efecto aparente."

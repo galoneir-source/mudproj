@@ -253,6 +253,15 @@ class CmdPerfil(Command):
                 f"  |cHabilidades:|n {', '.join(habilidades)}",
             ]
 
+        estados = getattr(objetivo.db, "estados", {}) or {}
+        if estados:
+            _display = {"veneno": "|rveneno|n", "sangrado": "|rsangrado|n", "regeneracion": "|gRegeneración|n"}
+            estados_txt = ", ".join(
+                f"{_display.get(n, n)} ({d.get('turnos_restantes', '?')} turnos)"
+                for n, d in estados.items()
+            )
+            lineas += ["", f"  |cEstados:|n  {estados_txt}"]
+
         lineas.append(f"|w{'─'*44}|n\n")
         caller.msg("\n".join(lineas))
 

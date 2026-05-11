@@ -37,6 +37,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.equipamiento = {"arma": None, "armadura": None, "accesorio": None}
         # --- Economía ---
         self.db.monedas = 20
+        # --- Estados de combate ---
+        self.db.estados = {}
 
     def at_cmdset_get(self, **kwargs):
         """

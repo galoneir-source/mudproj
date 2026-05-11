@@ -79,10 +79,10 @@ class TestConsumibleAplicar(EvenniaTest):
         self.assertIn("perfectas condiciones", msg)
 
     def test_curar_veneno_limpia_estado(self):
-        self.char1.db.envenenado = True
+        self.char1.db.estados = {"veneno": {"dano_por_turno": 5, "turnos_restantes": 3}}
         poc = _crear_consumible(self.char1, "curar_veneno")
         poc.aplicar(self.char1)
-        self.assertFalse(self.char1.db.envenenado)
+        self.assertNotIn("veneno", self.char1.db.estados or {})
 
     def test_sin_stats_no_explota(self):
         poc = _crear_consumible(self.char1, "curar_hp", potencia=30)

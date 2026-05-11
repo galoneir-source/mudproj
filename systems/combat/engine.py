@@ -50,6 +50,7 @@ class ResultadoAtaque:
     mensaje_sala: str
     hp_restante: int
     muerto: bool = False
+    estado_aplicado: Optional[str] = None  # nombre del estado aplicado al defensor
 
 
 # --------------------------------------------------------------------------- #
@@ -132,6 +133,12 @@ def resolver_ataque(
     critico_txt = " |r¡CRÍTICO!|n" if critico else ""
     hab_txt = f" ({habilidad})" if habilidad else ""
 
+    # Estado que aplica la habilidad (solo en golpes exitosos y no letales)
+    from systems.combat.states import estado_de_habilidad as _estado_hab
+    estado_aplicado = None
+    if habilidad and not muerto:
+        estado_aplicado = _estado_hab(habilidad)
+
     return ResultadoAtaque(
         exito=True,
         dano=dano_final,
@@ -150,6 +157,7 @@ def resolver_ataque(
         ),
         hp_restante=nuevo_hp,
         muerto=muerto,
+        estado_aplicado=estado_aplicado,
     )
 
 

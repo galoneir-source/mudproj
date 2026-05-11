@@ -45,6 +45,7 @@ class NPC(DefaultCharacter):
         self.db.dialogo = {}
         self.db.enraged = False
         self.db.en_combate = False
+        self.db.estados = {}
 
         # Script de patrulla (se añade si patrol_rooms no está vacío)
         # Se inicia manualmente o desde at_init
