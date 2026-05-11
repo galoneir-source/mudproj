@@ -5,6 +5,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.3.0] — 2026-05-11
+
+### Añadido
+- Sistema de crafteo: módulo puro `systems/crafting/recipes.py` con 4 recetas y funciones de validación sin dependencias de Evennia.
+- Comando `craftear` (alias `fabricar`, `elaborar`) para elaborar objetos consumibles desde el inventario.
+- Comando `recetas` (alias `recipes`) para listar y consultar recetas disponibles.
+- Búsqueda de receta por nombre exacto, por prefijo y por contenido; detecta ambigüedad y pide más precisión.
+- Los objetos equipados nunca se consumen accidentalmente al craftear.
+- 4 recetas que dan uso al loot de las zonas de expansión:
+  - `piel de serpiente` → poción de vida
+  - `piel de serpiente` + `veneno de pantano` → antídoto x2
+  - `garra de troll` + `piel de serpiente` → poción de vida mayor
+  - `fragmento de alma` + `escama de lagarto x2` → elixir de restauración
+- 35 tests nuevos: 19 unitarios puros + 16 de integración (suite total: 206 tests).
+
 ## [0.2.0] — 2026-05-11
 
 ### Añadido
