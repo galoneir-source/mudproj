@@ -5,6 +5,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.2.0] — 2026-05-11
+
+### Añadido
+- Sistema de consumibles: typeclass `Consumible` con efectos `curar_hp`, `curar_maximo` y `curar_veneno`.
+- Comando `usar` (alias `beber`, `tomar`, `consumir`) para usar objetos consumibles del inventario.
+- Los consumibles con usos finitos se eliminan automáticamente al agotarse.
+- 4 prototipos nuevos: `POCION_VIDA` (+30 HP), `POCION_VIDA_MAYOR` (+60 HP), `ELIXIR_RESTAURACION` (HP al máximo), `ANTIDOTO` (cura envenenamiento).
+- El mesonero vende poción de vida (15 m) y antídoto (20 m).
+- La mercader vende poción de vida mayor (30 m) y elixir de restauración (75 m).
+- El inventario muestra los consumibles como grupo propio con el efecto resumido.
+- 21 tests de integración para el sistema de consumibles (suite total: 171 tests).
+
 ## [0.1.0] — 2026-05-07
 
 ### Añadido
