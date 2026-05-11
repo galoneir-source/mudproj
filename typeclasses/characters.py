@@ -39,6 +39,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.monedas = 20
         # --- Estados de combate ---
         self.db.estados = {}
+        # --- Misiones ---
+        self.db.quests = {}
 
     def at_cmdset_get(self, **kwargs):
         """

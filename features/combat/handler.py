@@ -322,6 +322,11 @@ class CombatHandler(DefaultScript):
         for obj in list(getattr(muerto, "contents", []) or []):
             obj.move_to(sala, quiet=True)
 
+        # Progreso de quests de kill
+        if asesino and getattr(asesino, "has_account", False):
+            from features.quests.hooks import on_npc_muerte
+            on_npc_muerte(asesino, muerto)
+
         # Loot: generar items desde la tabla db.loot
         items_generados = _generar_loot(muerto, sala)
         if items_generados:

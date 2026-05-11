@@ -75,6 +75,31 @@ class CmdHablar(Command):
                 )
             else:
                 caller.msg(f"{objetivo.key} asiente pero no dice nada.")
+            # Hint de misiones disponibles desde este NPC
+            from systems.quests.quests import quests_de_npc, quest_disponible, QUESTS
+            nivel = getattr(caller.db, "nivel", 1) or 1
+            quests_char = getattr(caller.db, "quests", {}) or {}
+            ids_disponibles = [
+                qid for qid in quests_de_npc(objetivo.key)
+                if quest_disponible(qid, nivel, quests_char)[0]
+            ]
+            ids_entregar = [
+                qid for qid in quests_de_npc(objetivo.key)
+                if quests_char.get(qid, {}).get("estado") == "completada"
+            ]
+            if ids_entregar:
+                titulos = ", ".join(f"|g{QUESTS[q]['titulo']}|n" for q in ids_entregar)
+                caller.msg(f"|g¡Tienes misiones listas para entregar!|n {titulos}")
+            if ids_disponibles:
+                caller.msg(
+                    f"|y{objetivo.key} tiene misiones disponibles.|n "
+                    f"Usa |whablar {nombre_npc} = misión|n para conocerlas."
+                )
+            return
+
+        # Keyword especial: mostrar misiones del NPC
+        if mensaje.lower() in ("misión", "mision", "misiones", "quest", "trabajo", "encargo"):
+            self._mostrar_misiones_npc(objetivo, caller, nombre_npc)
             return
 
         # Enviar el mensaje al NPC para que su at_msg_receive lo procese
@@ -84,6 +109,44 @@ class CmdHablar(Command):
         )
         caller.msg(f"Le dices a {objetivo.key}: \"{mensaje}\"")
         objetivo.at_msg_receive(mensaje, from_obj=caller)
+
+    def _mostrar_misiones_npc(self, npc, caller, nombre_npc):
+        from systems.quests.quests import QUESTS, quests_de_npc, quest_disponible, quests_para_entregar
+        nivel = getattr(caller.db, "nivel", 1) or 1
+        quests_char = dict(getattr(caller.db, "quests", {}) or {})
+
+        ids_npc = quests_de_npc(npc.key)
+        disponibles = [qid for qid in ids_npc if quest_disponible(qid, nivel, quests_char)[0]]
+        activas = [qid for qid in ids_npc if quests_char.get(qid, {}).get("estado") == "activa"]
+        entregables = quests_para_entregar(npc.key, quests_char)
+
+        lineas = [f"\n{npc.key} te mira y habla:"]
+
+        if entregables:
+            lineas.append("  |g¡Tienes misiones listas para entregar!|n")
+            for qid in entregables:
+                lineas.append(f"    |c·|n {QUESTS[qid]['titulo']}  — |wentregar {QUESTS[qid]['titulo']}|n")
+
+        if activas:
+            lineas.append("  |yMisiones en curso:|n")
+            for qid in activas:
+                lineas.append(f"    |c·|n {QUESTS[qid]['titulo']}  — |wmisiones {QUESTS[qid]['titulo']}|n")
+
+        if disponibles:
+            lineas.append("  |wMisiones disponibles:|n")
+            for qid in disponibles:
+                q = QUESTS[qid]
+                lineas.append(
+                    f"    |c·|n {q['titulo']} (Nv.{q['nivel_minimo']}+)\n"
+                    f"       \"{q['texto_oferta']}\"\n"
+                    f"       |waceptar {q['titulo']}|n para aceptar."
+                )
+
+        if not disponibles and not activas and not entregables:
+            lineas.append("  \"No tengo nada para ti en este momento.\"")
+
+        lineas.append("")
+        caller.msg("\n".join(lineas))
 
 
 # --------------------------------------------------------------------------- #

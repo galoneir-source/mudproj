@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.5.0] — 2026-05-12
+
+### Añadido
+- Sistema de misiones (quests): módulo puro `systems/quests/quests.py` sin dependencias de Evennia.
+- 5 misiones iniciales en dos categorías:
+  - **Kill**: "El Problema de los Goblins" (nv.1), "La Mercancía Robada" (nv.3), "La Amenaza de las Catacumbas" (nv.5).
+  - **Fetch**: "Veneno del Pantano" (nv.2), "La Garra del Troll" (nv.5).
+- Comando `misiones` (alias `quests`, `quest`, `log misiones`): muestra el registro de misiones activas, completadas y entregadas; con argumento muestra el detalle y progreso de una misión concreta.
+- Comando `aceptar` (alias `accept`): acepta una misión si el NPC dador está en la sala y se cumplen los requisitos de nivel.
+- Comando `entregar` (alias `turnin`): entrega una misión completada al NPC receptor; consume automáticamente los objetos en misiones fetch y otorga XP, monedas e items de recompensa.
+- Hook `on_npc_muerte`: se llama desde `CombatHandler._procesar_muerte` para actualizar el progreso de kill quests y notificar al jugador.
+- Integración con `CmdHablar`: al hablar con un NPC se muestran las misiones disponibles, en curso y listas para entregar; la palabra clave `misión`/`quest` muestra el detalle completo.
+- `buscar_quest` normaliza espacios a guiones bajos para que "problema goblins" encuentre "problema_goblins".
+- `db.quests = {}` inicializado en `Character.at_object_creation`.
+- 66 tests nuevos: 34 unitarios puros + 32 de integración (suite total: 311 tests).
+
 ## [0.4.0] — 2026-05-11
 
 ### Añadido
