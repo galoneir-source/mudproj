@@ -21,6 +21,7 @@ from features.doors.commands import (
 from features.combat.commands import CombatCmdSet
 from features.equipment.commands import EquipmentCmdSet
 from features.shop.commands import ShopCmdSet
+from features.crafting.commands import CraftingCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -52,6 +53,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(EquipmentCmdSet)
         # --- Tienda ---
         self.add(ShopCmdSet)
+        # --- Crafteo ---
+        self.add(CraftingCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
