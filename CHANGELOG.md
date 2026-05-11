@@ -5,6 +5,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.4.0] — 2026-05-11
+
+### Añadido
+- Sistema de estados de combate: veneno, sangrado y regeneración.
+- La habilidad `veneno` aplica envenenamiento al impactar (−5 HP/turno durante 3 turnos).
+- La habilidad `corte` aplica sangrado al impactar (−3 HP/turno durante 2 turnos).
+- Los estados tickan al inicio del turno del afectado en combate, y cada 5 s fuera de él (`EstadosScript`).
+- Fuera de combate el HP nunca baja de 1 por efecto de estado.
+- El antídoto (comprable y crafteable) ahora cura el veneno de forma efectiva.
+- El comando `perfil` muestra los estados activos con los turnos restantes.
+- `ResultadoAtaque` incluye el campo `estado_aplicado`; solo se aplica en golpes exitosos y no letales.
+- `db.estados` inicializado en personajes y NPCs al crearse.
+- 39 tests nuevos: 27 unitarios puros + 12 de integración (suite total: 245 tests).
+
 ## [0.3.0] — 2026-05-11
 
 ### Añadido
