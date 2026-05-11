@@ -260,6 +260,51 @@ class CmdPerfil(Command):
 
 
 # --------------------------------------------------------------------------- #
+#  Comando: usar
+# --------------------------------------------------------------------------- #
+
+class CmdUsar(Command):
+    """
+    Usar un objeto consumible del inventario (poción, elixir, antídoto...).
+
+    Uso:
+      usar <objeto>
+
+    Ejemplos:
+      usar poción de vida
+      usar antídoto
+    """
+    key = "usar"
+    aliases = ["use", "consumir", "beber", "tomar"]
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        caller = self.caller
+        if not self.args:
+            caller.msg("¿Qué quieres usar? Uso: |wusar <objeto>|n")
+            return
+
+        obj = caller.search(self.args.strip(), location=caller)
+        if not obj:
+            return
+
+        from typeclasses.objects import Consumible
+        if not isinstance(obj, Consumible):
+            caller.msg(f"|w{obj.key}|n no es algo que puedas consumir.")
+            return
+
+        caller.location.msg_contents(
+            f"{caller.key} usa {obj.key}.",
+            exclude=caller,
+        )
+
+        if obj.consumir(caller):
+            caller.msg(f"El |w{obj.key}|n se ha agotado.")
+            obj.delete()
+
+
+# --------------------------------------------------------------------------- #
 #  Comando: percibir
 # --------------------------------------------------------------------------- #
 
@@ -384,10 +429,12 @@ class CmdInventario(Command):
         if not mochila:
             lineas.append("  |x  (vacía)|n")
         else:
-            # Agrupar: equipo no equipado, llaves, misc
-            grupo_equipo = [o for o in mochila if isinstance(o, Equipo)]
-            grupo_llaves = [o for o in mochila if isinstance(o, Key)]
-            grupo_misc   = [o for o in mochila if not isinstance(o, (Equipo, Key))]
+            from typeclasses.objects import Consumible
+            # Agrupar: equipo no equipado, llaves, consumibles, misc
+            grupo_equipo      = [o for o in mochila if isinstance(o, Equipo)]
+            grupo_llaves      = [o for o in mochila if isinstance(o, Key)]
+            grupo_consumibles = [o for o in mochila if isinstance(o, Consumible)]
+            grupo_misc        = [o for o in mochila if not isinstance(o, (Equipo, Key, Consumible))]
 
             for item in grupo_equipo:
                 bonuses = item.db.bonuses or {}
@@ -402,6 +449,21 @@ class CmdInventario(Command):
                 is_master = item.db.is_master or False
                 info = " |x(maestra)|n" if is_master else (f" |x({keycode})|n" if keycode else "")
                 lineas.append(f"  |c{'·':>2}|n |c[llave]|n  |w{item.key}|n{info}")
+
+            for item in grupo_consumibles:
+                efecto = item.db.efecto or "curar_hp"
+                potencia = item.db.potencia or 0
+                usos = item.db.usos
+                efecto_txt = {
+                    "curar_hp": f"+{potencia} HP",
+                    "curar_maximo": "HP máx.",
+                    "curar_veneno": "antivnm.",
+                }.get(efecto, efecto)
+                usos_txt = f" |xx{usos}|n" if usos != 1 and usos != -1 else ""
+                lineas.append(
+                    f"  |c{'·':>2}|n |c[consumible]|n |w{item.key}|n"
+                    f"  |x({efecto_txt})|n{usos_txt}"
+                )
 
             # Agrupar misc por nombre para mostrar cantidades
             conteo: dict = {}
@@ -431,3 +493,4 @@ class GeneralCmdSet(CmdSet):
         self.add(CmdPerfil())
         self.add(CmdPercibir())
         self.add(CmdInventario())
+        self.add(CmdUsar())

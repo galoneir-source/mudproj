@@ -106,6 +106,62 @@ ANILLO_DESTREZA = {
 }
 
 # --------------------------------------------------------------------------- #
+#  Consumibles: pociones y elixires
+# --------------------------------------------------------------------------- #
+
+POCION_VIDA = {
+    "prototype_key": "POCION_VIDA",
+    "key": "poción de vida",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": "Un frasco de cristal con líquido rojo brillante. Restaura la vitalidad.",
+    "attrs": [
+        ("efecto", "curar_hp"),
+        ("potencia", 30),
+        ("usos", 1),
+        ("valor", 15),
+    ],
+}
+
+POCION_VIDA_MAYOR = {
+    "prototype_key": "POCION_VIDA_MAYOR",
+    "key": "poción de vida mayor",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": "Un frasco grande de líquido carmesí que parece brillar desde dentro. Restaura mucha vitalidad.",
+    "attrs": [
+        ("efecto", "curar_hp"),
+        ("potencia", 60),
+        ("usos", 1),
+        ("valor", 30),
+    ],
+}
+
+ELIXIR_RESTAURACION = {
+    "prototype_key": "ELIXIR_RESTAURACION",
+    "key": "elixir de restauración",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": "Un vial de líquido dorado que emana una leve luz cálida. Restaura toda la vitalidad.",
+    "attrs": [
+        ("efecto", "curar_maximo"),
+        ("potencia", 0),
+        ("usos", 1),
+        ("valor", 75),
+    ],
+}
+
+ANTIDOTO = {
+    "prototype_key": "ANTIDOTO",
+    "key": "antídoto",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": "Una mezcla de hierbas destiladas en un frasco verde. Neutraliza venenos.",
+    "attrs": [
+        ("efecto", "curar_veneno"),
+        ("potencia", 0),
+        ("usos", 1),
+        ("valor", 20),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
 #  NPCs de combate
 # --------------------------------------------------------------------------- #
 
@@ -312,6 +368,10 @@ MESONERO = {
              "desc": "Un cuenco humeante con trozos de jabalí y verduras de temporada."},
             {"key": "pan de centeno",    "precio": 2,  "cantidad": -1, "valor": 2,
              "desc": "Una hogaza densa de pan de centeno. Llena el estómago."},
+            {"key": "poción de vida",    "prototype_key": "POCION_VIDA",
+             "precio": 15, "cantidad": -1},
+            {"key": "antídoto",          "prototype_key": "ANTIDOTO",
+             "precio": 20, "cantidad": -1},
         ]),
         ("npc_prototipo", "MESONERO"),
         ("respawn_tiempo", 300),
@@ -348,11 +408,13 @@ MERCADER = {
             "grimorio": "Un grimorio del nigromante? Eso es magia oscura. No lo quiero... pero te lo compro igual.",
         }),
         ("tienda", [
-            {"key": "espada de hierro",   "prototype_key": "ESPADA_HIERRO",   "precio": 40, "cantidad": -1},
-            {"key": "daga de bronce",     "prototype_key": "DAGA_BRONCE",     "precio": 25, "cantidad": -1},
-            {"key": "armadura de cuero",  "prototype_key": "ARMADURA_CUERO",  "precio": 50, "cantidad": -1},
-            {"key": "amuleto de fuerza",  "prototype_key": "AMULETO_FUERZA",  "precio": 35, "cantidad": -1},
-            {"key": "anillo de destreza", "prototype_key": "ANILLO_DESTREZA", "precio": 35, "cantidad": -1},
+            {"key": "espada de hierro",       "prototype_key": "ESPADA_HIERRO",       "precio": 40, "cantidad": -1},
+            {"key": "daga de bronce",         "prototype_key": "DAGA_BRONCE",         "precio": 25, "cantidad": -1},
+            {"key": "armadura de cuero",      "prototype_key": "ARMADURA_CUERO",      "precio": 50, "cantidad": -1},
+            {"key": "amuleto de fuerza",      "prototype_key": "AMULETO_FUERZA",      "precio": 35, "cantidad": -1},
+            {"key": "anillo de destreza",     "prototype_key": "ANILLO_DESTREZA",     "precio": 35, "cantidad": -1},
+            {"key": "poción de vida mayor",   "prototype_key": "POCION_VIDA_MAYOR",   "precio": 30, "cantidad": -1},
+            {"key": "elixir de restauración", "prototype_key": "ELIXIR_RESTAURACION", "precio": 75, "cantidad": -1},
         ]),
         ("npc_prototipo", "MERCADER"),
         ("respawn_tiempo", 300),

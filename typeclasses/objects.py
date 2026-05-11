@@ -248,6 +248,98 @@ class Equipo(DefaultObject):
         )
 
 
+class Consumible(DefaultObject):
+    """
+    Objeto consumible: pociones, antídotos, elixires, etc.
+
+    Atributos:
+      db.efecto   — tipo de efecto: "curar_hp" | "curar_maximo" | "curar_veneno"
+      db.potencia — magnitud del efecto (HP recuperados, etc.)
+      db.usos     — usos restantes; -1 = ilimitado
+      db.valor    — precio base de venta al 50%
+    """
+
+    EFECTOS_VALIDOS = ("curar_hp", "curar_maximo", "curar_veneno")
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.db.efecto = "curar_hp"
+        self.db.potencia = 30
+        self.db.usos = 1
+        self.db.valor = 15
+
+    def aplicar(self, caller) -> str:
+        efecto = self.db.efecto or "curar_hp"
+        potencia = self.db.potencia or 0
+
+        if efecto == "curar_hp":
+            hp = getattr(caller.db, "hp", None)
+            hp_max = getattr(caller.db, "hp_max", None)
+            if hp is None or hp_max is None:
+                return "No tiene efecto en ti."
+            if hp >= hp_max:
+                return "Ya estás en perfectas condiciones. No necesitas esto ahora."
+            recuperado = min(potencia, hp_max - hp)
+            caller.db.hp = hp + recuperado
+            return (
+                f"|gRecuperas {recuperado} puntos de vida.|n "
+                f"HP: |w{caller.db.hp}/{hp_max}|n"
+            )
+
+        if efecto == "curar_maximo":
+            hp_max = getattr(caller.db, "hp_max", None)
+            if hp_max is None:
+                return "No tiene efecto en ti."
+            hp = getattr(caller.db, "hp", hp_max)
+            if hp >= hp_max:
+                return "Ya estás en perfectas condiciones. No necesitas esto ahora."
+            recuperado = hp_max - hp
+            caller.db.hp = hp_max
+            return (
+                f"|gRecuperas {recuperado} puntos de vida. ¡HP al máximo!|n "
+                f"HP: |w{hp_max}/{hp_max}|n"
+            )
+
+        if efecto == "curar_veneno":
+            caller.db.envenenado = False
+            return "|gSientes cómo el veneno se disuelve en tu sangre.|n"
+
+        return "No tiene ningún efecto aparente."
+
+    def consumir(self, caller) -> bool:
+        """Aplica el efecto y descuenta un uso. Devuelve True si debe eliminarse."""
+        msg = self.aplicar(caller)
+        caller.msg(msg)
+        usos = self.db.usos
+        if usos == -1:
+            return False
+        usos -= 1
+        if usos <= 0:
+            return True
+        self.db.usos = usos
+        return False
+
+    def return_appearance(self, looker, **kwargs):
+        desc = self.db.desc or "Un objeto consumible sin descripción."
+        efecto = self.db.efecto or "curar_hp"
+        potencia = self.db.potencia or 0
+        usos = self.db.usos
+
+        efecto_txt = {
+            "curar_hp": f"Restaura {potencia} HP",
+            "curar_maximo": "Restaura HP al máximo",
+            "curar_veneno": "Cura el envenenamiento",
+        }.get(efecto, efecto)
+
+        usos_txt = "ilimitados" if usos == -1 else f"{usos} uso{'s' if usos != 1 else ''}"
+
+        return (
+            f"|w{self.key}|n |c[consumible]|n\n"
+            f"{desc}\n"
+            f"Efecto: {efecto_txt}  —  Usos: {usos_txt}"
+        )
+
+
 class Key(DefaultObject):
     """
     Llave con varias formas de autorización:
