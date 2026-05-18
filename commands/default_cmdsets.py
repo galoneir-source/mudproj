@@ -23,6 +23,7 @@ from features.equipment.commands import EquipmentCmdSet
 from features.shop.commands import ShopCmdSet
 from features.crafting.commands import CraftingCmdSet
 from features.quests.commands import QuestCmdSet
+from features.skills.commands import SkillCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -58,6 +59,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CraftingCmdSet)
         # --- Misiones ---
         self.add(QuestCmdSet)
+        # --- Habilidades ---
+        self.add(SkillCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

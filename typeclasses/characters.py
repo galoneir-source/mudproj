@@ -14,6 +14,7 @@ from .objects import ObjectParent
 
 from commands.builder_cmdsets import BuilderCmdSet
 from systems.combat.engine import STAT_DEFAULTS
+from systems.skills.trees import HABILIDADES_INICIALES
 
 
 class Character(ObjectParent, DefaultCharacter):
@@ -32,7 +33,7 @@ class Character(ObjectParent, DefaultCharacter):
         for key, val in STAT_DEFAULTS.items():
             if getattr(self.db, key, None) is None:
                 setattr(self.db, key, val)
-        self.db.habilidades = ["golpe fuerte", "golpe rapido"]  # habilidades iniciales
+        self.db.habilidades_desbloqueadas = list(HABILIDADES_INICIALES)
         # --- Equipamiento ---
         self.db.equipamiento = {"arma": None, "armadura": None, "accesorio": None}
         # --- Economía ---

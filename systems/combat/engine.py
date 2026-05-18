@@ -120,7 +120,7 @@ def resolver_ataque(
     dano_base = calcular_dano_base(fuerza_at, nivel_at)
 
     if habilidad:
-        dano_base = _aplicar_habilidad(dano_base, habilidad, atacante_stats)
+        dano_base = _aplicar_habilidad(dano_base, habilidad, atacante_stats, defensor_stats)
 
     dano_final = reduccion_por_defensa(dano_base, defensa_def)
 
@@ -161,18 +161,48 @@ def resolver_ataque(
     )
 
 
-def _aplicar_habilidad(dano_base: int, habilidad: str, stats: dict) -> int:
+def _aplicar_habilidad(
+    dano_base: int,
+    habilidad: str,
+    stats: dict,
+    stats_def: Optional[dict] = None,
+) -> int:
     """Modifica el daño base según la habilidad usada."""
-    habilidad = habilidad.lower()
+    habilidad = habilidad.lower().replace(" ", "_")
+    stats_def = stats_def or {}
+
+    def _ejecutar(d):
+        hp_def = stats_def.get("hp", 100)
+        hp_max_def = stats_def.get("hp_max", 100) or 100
+        if hp_max_def > 0 and hp_def / hp_max_def < 0.25:
+            return int(d * 3)
+        return int(d * 1.5)
+
+    def _dardo_magico(d):
+        intel = stats.get("inteligencia", 10)
+        bonus = (intel - 10) // 2
+        return max(1, d + bonus)
+
     modificadores = {
-        "golpe fuerte": lambda d: int(d * 1.5),
-        "golpe rapido": lambda d: max(1, d - 2),
-        "embestida": lambda d: d + 5,
-        "corte": lambda d: int(d * 1.3),
-        "veneno": lambda d: d + random.randint(1, 4),
+        "golpe_fuerte":  lambda d: int(d * 1.5),
+        "golpe_rapido":  lambda d: max(1, d - 2),
+        "embestida":     lambda d: d + 5,
+        "corte":         lambda d: int(d * 1.3),
+        "veneno":        lambda d: d + random.randint(1, 4),
+        "golpe_maestro": lambda d: int(d * 2.5),
+        "ejecutar":      _ejecutar,
+        "dardo_magico":  _dardo_magico,
+        "bola_fuego":    lambda d: int(d * 2.0),
+        "drenar_vida":   lambda d: int(d * 1.5),
     }
     fn = modificadores.get(habilidad)
     return fn(dano_base) if fn else dano_base
+
+
+def efecto_postcombat(habilidad: str) -> Optional[str]:
+    """Devuelve el nombre del efecto post-ataque de la habilidad, o None."""
+    efectos = {"drenar_vida": "drenar_vida"}
+    return efectos.get(habilidad.lower().replace(" ", "_"))
 
 
 def calcular_xp_recompensa(nivel_enemigo: int) -> int:

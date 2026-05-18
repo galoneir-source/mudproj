@@ -264,7 +264,12 @@ class CmdPerfil(Command):
         consti  = _s("constitucion")
         inteli  = _s("inteligencia")
         defensa = _s("defensa")
-        habilidades = getattr(objetivo.db, "habilidades", []) or []
+        desbloqueadas = set(getattr(objetivo.db, "habilidades_desbloqueadas", []) or [])
+        if desbloqueadas:
+            from systems.skills.trees import HABILIDADES as _H
+            habilidades = [_H.get(h, {}).get("nombre", h) for h in sorted(desbloqueadas)]
+        else:
+            habilidades = getattr(objetivo.db, "habilidades", []) or []
         faction = getattr(objetivo.db, "faction", None)
         temperamento = getattr(objetivo.db, "temperamento", None)
 

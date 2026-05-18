@@ -114,11 +114,7 @@ class CmdHabilidad(Command):
         args = self.args.strip()
 
         if not args:
-            habilidades = getattr(caller.db, "habilidades", []) or []
-            if habilidades:
-                caller.msg(f"Tus habilidades: {', '.join(habilidades)}")
-            else:
-                caller.msg("No tienes habilidades especiales aún.")
+            caller.msg("Uso: |whabilidad <nombre> <objetivo>|n  —  usa |whabilidades|n para ver tu árbol.")
             return
 
         # Parsear "nombre objetivo" o '"nombre con espacios" objetivo'
@@ -131,11 +127,16 @@ class CmdHabilidad(Command):
         nombre_hab = " ".join(partes[:-1]).strip('"\'')
         nombre_obj = partes[-1]
 
-        habilidades = getattr(caller.db, "habilidades", []) or []
-        if nombre_hab.lower() not in [h.lower() for h in habilidades]:
+        # Verificar que el personaje conoce la habilidad
+        # Prioridad: db.habilidades_desbloqueadas (nuevo) > db.habilidades (legacy NPCs)
+        nombre_norm = nombre_hab.lower().replace(" ", "_")
+        desbloqueadas = set(getattr(caller.db, "habilidades_desbloqueadas", []) or [])
+        habilidades_legacy = [h.lower() for h in (getattr(caller.db, "habilidades", []) or [])]
+
+        if nombre_norm not in desbloqueadas and nombre_hab.lower() not in habilidades_legacy:
             caller.msg(
-                f"No conoces la habilidad '{nombre_hab}'. "
-                f"Tus habilidades: {', '.join(habilidades) or 'ninguna'}"
+                f"No conoces la habilidad '|w{nombre_hab}|n'. "
+                f"Usa |whabilidades|n para ver tu árbol de habilidades."
             )
             return
 
@@ -238,7 +239,12 @@ class CmdStats(Command):
         nivel = _s("nivel")
         xp = _s("experiencia")
         xp_sig = xp_para_siguiente_nivel(nivel)
-        habilidades = getattr(objetivo.db, "habilidades", []) or []
+        desbloqueadas = set(getattr(objetivo.db, "habilidades_desbloqueadas", []) or [])
+        if desbloqueadas:
+            from systems.skills.trees import HABILIDADES as _H
+            habilidades = [_H.get(h, {}).get("nombre", h) for h in sorted(desbloqueadas)]
+        else:
+            habilidades = getattr(objetivo.db, "habilidades", []) or []
 
         barra_hp = _barra(hp, hp_max, 20)
         barra_xp = _barra(xp, xp_sig, 20)
@@ -312,4 +318,3 @@ class CombatCmdSet(CmdSet):
         self.add(CmdHuir())
         self.add(CmdPasarTurno())
         self.add(CmdStats())
-        self.add(CmdListarHabilidades())

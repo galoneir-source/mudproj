@@ -10,7 +10,7 @@ from evennia import DefaultScript
 from evennia.utils import logger
 from systems.combat.engine import (
     resolver_ataque, calcular_xp_recompensa,
-    procesar_subida_de_nivel, STAT_DEFAULTS
+    procesar_subida_de_nivel, STAT_DEFAULTS, efecto_postcombat,
 )
 
 
@@ -264,6 +264,18 @@ class CombatHandler(DefaultScript):
                 if resultado.exito:
                     _set_stat(objetivo, "hp", resultado.hp_restante)
 
+                # Efecto drenar vida: cura al atacante el 50% del daño
+                if (tipo == "habilidad" and habilidad and resultado.exito
+                        and not resultado.muerto):
+                    efecto = efecto_postcombat(habilidad)
+                    if efecto == "drenar_vida":
+                        cura = max(1, resultado.dano // 2)
+                        hp_act = getattr(actor.db, "hp", 0) or 0
+                        hp_max = getattr(actor.db, "hp_max", 100) or 100
+                        nuevo_hp = min(hp_max, hp_act + cura)
+                        actor.db.hp = nuevo_hp
+                        actor.msg(f"|gDrenas {cura} HP de vida.|n (HP: {nuevo_hp}/{hp_max})")
+
                 # Aplicar estado si la habilidad lo produce (solo en golpe exitoso y no letal)
                 if resultado.exito and not resultado.muerto and resultado.estado_aplicado:
                     from systems.combat.states import aplicar_estado
@@ -315,6 +327,7 @@ class CombatHandler(DefaultScript):
                 asesino.msg(
                     f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
                     f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
+                    f"  |g+1 punto de habilidad disponible|n  (usa |whabilidades|n)\n"
                     f"  |gHP restaurado al máximo.|n\n"
                 )
 

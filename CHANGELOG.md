@@ -5,6 +5,29 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.7.0] — 2026-05-12
+
+### Añadido
+- Árbol de habilidades con 12 habilidades distribuidas en tres ramas: Guerrero, Explorador y Mago.
+- Los jugadores empiezan con `golpe_fuerte` y `golpe_rapido` desbloqueados de forma gratuita.
+- Sistema de puntos de habilidad: se gana 1 punto por cada nivel (a partir del nivel 2).
+- Rama **Guerrero**: `golpe_fuerte` → `embestida` → `escudo_fe` (pasiva) → `golpe_maestro`.
+- Rama **Explorador**: `golpe_rapido` → `corte` → `veneno` → `ejecutar`.
+- Rama **Mago**: `dardo_magico` → `escudo_arcano` (pasiva) → `bola_fuego` → `drenar_vida`.
+- Habilidades pasivas (`escudo_fe`, `escudo_arcano`) aplican bonus de defensa al aprenderse.
+- `ejecutar` inflige x3 daño si el objetivo tiene menos del 25% de vida.
+- `dardo_magico` usa Inteligencia en lugar de Fuerza para calcular el daño.
+- `drenar_vida` inflige x1.5 daño y cura al atacante el 50% del daño infligido.
+- Comando `habilidades` (alias `skills`): muestra el árbol completo, por rama o detalle de una habilidad.
+- Comando `aprender <habilidad>` (alias `learn`): desbloquea la habilidad si se cumplen requisitos.
+- `_aplicar_habilidad` normaliza nombres (espacios → guiones bajos) y soporta las 10 habilidades del árbol.
+- Mensaje de subida de nivel actualizado: informa del nuevo punto de habilidad disponible.
+- `db.habilidades_desbloqueadas` en `Character.at_object_creation` reemplaza `db.habilidades` para jugadores.
+- `perfil` y `stats` muestran las habilidades del árbol con nombres legibles.
+- `CmdHabilidad` (combate) verifica `habilidades_desbloqueadas` además del legacy `habilidades`.
+- Módulo puro `systems/skills/trees.py` con el catálogo y `systems/skills/engine.py` con la lógica.
+- 68 tests nuevos: 42 unitarios puros + 26 de integración (suite total: 432 tests).
+
 ## [0.6.0] — 2026-05-12
 
 ### Añadido

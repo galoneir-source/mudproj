@@ -37,7 +37,8 @@ _HABILIDAD_A_ESTADO: dict[str, str] = {
 
 def estado_de_habilidad(habilidad: str) -> Optional[str]:
     """Devuelve el nombre del estado que aplica la habilidad, o None."""
-    return _HABILIDAD_A_ESTADO.get(habilidad.lower())
+    habilidad = habilidad.lower().replace(" ", "_")
+    return _HABILIDAD_A_ESTADO.get(habilidad)
 
 
 def aplicar_estado(estados: dict, nombre: str, **kwargs) -> dict:
