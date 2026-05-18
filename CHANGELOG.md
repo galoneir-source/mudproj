@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.8.0] — 2026-05-18
+
+### Añadido
+- Sistema de grupos (party) de hasta 4 jugadores.
+- Comando `invitar <jugador>`: crea el grupo automáticamente e invita a otro jugador de la misma sala.
+- Comando `unirse`: acepta una invitación de grupo pendiente.
+- Comando `declinar`: rechaza una invitación pendiente.
+- Comando `partido` / `grupo`: muestra la composición del grupo con HP, nivel y ubicación de cada miembro.
+- Comando `abandonar`: sale del grupo; si el líder abandona, el liderazgo se transfiere al siguiente miembro.
+- Comando `expulsar <jugador>`: el líder expulsa a un miembro.
+- Los miembros del grupo se unen automáticamente al combate cuando uno de ellos ataca o es agredido por un NPC en la misma sala.
+- El XP se reparte entre todos los miembros del grupo en sala, con un bonus de grupo del +20%.
+- Los NPCs solo atacan a jugadores (nunca a otros NPCs), evitando que se peguen entre ellos en combate de grupo.
+- Si todos los jugadores mueren o huyen, el combate termina aunque queden NPCs.
+- `db.lider_partido`, `db.miembros_partido`, `db.invitacion_partido` inicializados en `Character.at_object_creation`.
+- Módulo puro `systems/party/engine.py`: `xp_por_miembro`, `puede_invitar_validar`, `MAX_MIEMBROS`.
+- 30 tests nuevos: 13 unitarios puros + 17 de integración (suite total: ~462 tests).
+
 ## [0.7.0] — 2026-05-12
 
 ### Añadido

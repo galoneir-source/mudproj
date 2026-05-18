@@ -169,7 +169,8 @@ class CombatHandler(DefaultScript):
             if self.db.turno_actual >= len(parts):
                 self.db.turno_actual = 0
 
-        if len(parts) <= 1:
+        jugadores = [p for p in parts if getattr(p, "has_account", False)]
+        if len(parts) <= 1 or not jugadores:
             self._terminar_combate()
 
     # ------------------------------------------------------------------ #
@@ -311,25 +312,10 @@ class CombatHandler(DefaultScript):
         sala = self.obj
         sala.msg_contents(f"\n|r💀 {muerto.key} ha caído en combate.|n\n")
 
-        # Recompensa de XP
+        # Recompensa de XP (individual o repartida entre el grupo)
         if asesino:
-            xp = calcular_xp_recompensa(getattr(muerto.db, "nivel", 1) or 1)
-            xp_actual = getattr(asesino.db, "experiencia", 0) or 0
-            asesino.db.experiencia = xp_actual + xp
-            asesino.msg(f"|g+{xp} XP|n (Total: {asesino.db.experiencia})")
-
-            # Subida de nivel
-            stats = _get_stats(asesino)
-            subio, nuevos_stats = procesar_subida_de_nivel(stats)
-            if subio:
-                for k, v in nuevos_stats.items():
-                    _set_stat(asesino, k, v)
-                asesino.msg(
-                    f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
-                    f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
-                    f"  |g+1 punto de habilidad disponible|n  (usa |whabilidades|n)\n"
-                    f"  |gHP restaurado al máximo.|n\n"
-                )
+            xp_base = calcular_xp_recompensa(getattr(muerto.db, "nivel", 1) or 1)
+            self._dar_xp_a_grupo(asesino, xp_base)
 
         # Loot: objetos ya en el inventario del NPC
         for obj in list(getattr(muerto, "contents", []) or []):
@@ -441,6 +427,46 @@ class CombatHandler(DefaultScript):
         sala.msg_contents("|gEl combate ha terminado.|n\n")
         self.delete()
 
+    def _dar_xp_a_grupo(self, asesino, xp_base: int):
+        """Reparte XP al asesino y a los miembros de su grupo que estén en la sala."""
+        from features.party.commands import esta_en_partido, get_miembros
+        from systems.party.engine import xp_por_miembro
+
+        sala = self.obj
+        if not getattr(asesino, "has_account", False):
+            return
+
+        if esta_en_partido(asesino):
+            receptores = [
+                m for m in get_miembros(asesino)
+                if m.location == sala and getattr(m, "has_account", False)
+            ]
+        else:
+            receptores = [asesino]
+
+        n = len(receptores)
+        xp_ind = xp_por_miembro(xp_base, n)
+
+        for m in receptores:
+            xp_actual = getattr(m.db, "experiencia", 0) or 0
+            m.db.experiencia = xp_actual + xp_ind
+            if n > 1:
+                m.msg(f"|g+{xp_ind} XP|n (grupo ×{n}; total: {m.db.experiencia})")
+            else:
+                m.msg(f"|g+{xp_ind} XP|n (Total: {m.db.experiencia})")
+
+            stats = _get_stats(m)
+            subio, nuevos_stats = procesar_subida_de_nivel(stats)
+            if subio:
+                for k, v in nuevos_stats.items():
+                    _set_stat(m, k, v)
+                m.msg(
+                    f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
+                    f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
+                    f"  |g+1 punto de habilidad disponible|n  (usa |whabilidades|n)\n"
+                    f"  |gHP restaurado al máximo.|n\n"
+                )
+
     # ------------------------------------------------------------------ #
     #  IA de NPC (compleja / reactiva)
     # ------------------------------------------------------------------ #
@@ -471,7 +497,8 @@ class CombatHandler(DefaultScript):
         habilidades = getattr(npc.db, "habilidades", []) or []
 
         # Elegir objetivo: el jugador con HP más bajo
-        enemigos = [p for p in participantes if p != npc]
+        # Los NPCs solo atacan a jugadores (has_account=True) para no pegarse entre ellos
+        enemigos = [p for p in participantes if getattr(p, "has_account", False)]
         if not enemigos:
             self.registrar_accion(npc, "pasar")
             return

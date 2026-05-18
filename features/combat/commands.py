@@ -23,22 +23,38 @@ def _get_combat_handler(location):
     return None
 
 
+def _añadir_partido_a_lista(personaje, sala, participantes: list):
+    """Añade los miembros del grupo de personaje que estén en sala a participantes."""
+    try:
+        from features.party.commands import esta_en_partido, get_miembros
+    except ImportError:
+        return
+    if not esta_en_partido(personaje):
+        return
+    for miembro in get_miembros(personaje):
+        if miembro != personaje and miembro.location == sala and miembro not in participantes:
+            participantes.append(miembro)
+            sala.msg_contents(f"|y{miembro.key} se une al combate con su grupo!|n")
+
+
 def _iniciar_combate(atacante, defensor):
     """Crea un CombatHandler en la sala e inicia el combate."""
     from features.combat.handler import CombatHandler
     sala = atacante.location
     handler = _get_combat_handler(sala)
     if handler:
-        # Ya hay combate: unirse si no están dentro
         handler.agregar_participante(atacante)
         handler.agregar_participante(defensor)
-        sala.msg_contents(
-            f"{atacante.key} se une al combate contra {defensor.key}!"
-        )
+        _añadir_partido_a_lista(atacante, sala, handler.db.participantes)
+        sala.msg_contents(f"{atacante.key} se une al combate contra {defensor.key}!")
         return handler
 
+    participantes = [atacante, defensor]
+    _añadir_partido_a_lista(atacante, sala, participantes)
+    _añadir_partido_a_lista(defensor, sala, participantes)
+
     handler = sala.scripts.add(CombatHandler)
-    handler.iniciar([atacante, defensor])
+    handler.iniciar(participantes)
     return handler
 
 
