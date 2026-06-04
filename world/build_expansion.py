@@ -131,6 +131,7 @@ def construir_expansion(caller=None):
             ),
         )
         guarida.db.zona = "guarida_troll"
+        guarida.db.exterior = False   # interior: caverna
 
         senda.db.detalles_ocultos = [
             {
@@ -222,6 +223,7 @@ def construir_expansion(caller=None):
             ),
         )
         tumbas.db.zona = "sala_tumbas"
+        tumbas.db.exterior = False
 
         camara = _room(
             "Cámara del Nigromante",
@@ -233,6 +235,7 @@ def construir_expansion(caller=None):
             ),
         )
         camara.db.zona = "camara_nigromante"
+        camara.db.exterior = False
 
         tunel.db.detalles_ocultos = [
             {

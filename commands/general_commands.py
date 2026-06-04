@@ -382,6 +382,40 @@ class CmdUsar(Command):
 
 
 # --------------------------------------------------------------------------- #
+#  Comando: hora
+# --------------------------------------------------------------------------- #
+
+class CmdHora(Command):
+    """
+    Consultar la hora actual del mundo.
+
+    Uso:
+      hora
+      time
+
+    Muestra la hora de juego y el período del día actual.
+    """
+    key = "hora"
+    aliases = ["time", "tiempo"]
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        from features.time.clock_script import hora_actual
+        from systems.time.clock import periodo_del_dia, hora_a_texto, TEXTOS_AMBIENTE
+
+        hora = hora_actual()
+        pid, nombre, color = periodo_del_dia(hora)
+        hora_txt = hora_a_texto(hora)
+        desc_periodo = TEXTOS_AMBIENTE.get(pid, {}).get("exterior_natural", "")
+
+        self.caller.msg(
+            f"Son las |w{hora_txt}|n — {color}{nombre}|n.\n"
+            + (f"|x{desc_periodo}|n" if desc_periodo else "")
+        )
+
+
+# --------------------------------------------------------------------------- #
 #  Comando: percibir
 # --------------------------------------------------------------------------- #
 
@@ -409,12 +443,23 @@ class CmdPercibir(Command):
 
         from systems.perception.perception_manager import PerceptionManager
         pm = PerceptionManager()
-        nivel = pm.nivel_percepcion(caller)
+
+        # Aplicar penalización nocturna en salas exteriores
+        exterior = getattr(room.db, "exterior", True)
+        hora_juego = None
+        if exterior:
+            try:
+                from features.time.clock_script import hora_actual
+                hora_juego = hora_actual()
+            except Exception:
+                pass
+
+        nivel = pm.nivel_percepcion(caller, hora=hora_juego)
 
         hallazgos = []
 
         # 1. Detalles ocultos de la sala
-        detalles = pm.revelar_detalles(room, caller)
+        detalles = pm.revelar_detalles(room, caller, hora=hora_juego)
         hallazgos.extend(detalles)
 
         # 2. NPCs/objetos ocultos que el personaje puede detectar
@@ -424,7 +469,7 @@ class CmdPercibir(Command):
                 continue
             if not getattr(obj.db, "oculto", False):
                 continue
-            if pm.puede_detectar(caller, obj):
+            if pm.puede_detectar(caller, obj, hora=hora_juego):
                 if isinstance(obj, NPC):
                     hallazgos.append(
                         f"Detectas a |r{obj.key}|n acechando en las sombras. (Nv.{obj.db.nivel or 1})"
@@ -568,6 +613,7 @@ class GeneralCmdSet(CmdSet):
         self.add(CmdHablar())
         self.add(CmdDescansar())
         self.add(CmdPerfil())
+        self.add(CmdHora())
         self.add(CmdPercibir())
         self.add(CmdInventario())
         self.add(CmdUsar())

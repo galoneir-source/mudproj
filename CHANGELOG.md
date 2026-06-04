@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.10.0] — 2026-06-05
+
+### Añadido
+- Ciclo día/noche con 6 períodos: Amanecer (5–7), Mañana (7–12), Mediodía (12–14), Tarde (14–19), Anochecer (19–21), Noche (21–5).
+- Tiempo de juego: 1 minuto real = 1 hora de juego → ciclo completo cada 24 minutos reales.
+- Script global `RelojMundial` (persistente) que avanza la hora cada minuto y notifica a todos los jugadores conectados al cambiar de período.
+- Al cambiar de período, todos los jugadores reciben un mensaje atmosférico de transición.
+- Comando `hora` (alias `time`, `tiempo`): muestra la hora de juego y el período actual.
+- Textos de ambiente en `return_appearance` de salas exteriores: cambian según el período y el tipo de entorno (`exterior_natural` / `exterior_urbano`).
+- Salas interiores (`db.exterior = False`) no muestran texto de ambiente ni sufren penalización nocturna.
+- Salas marcadas como urbanas (`db.tipo_ambiente = "exterior_urbano"`): Plaza, Mercado.
+- Salas marcadas como interiores: Taberna, Cueva Oscura, Calabozo (entrada/pasillo/celda), Guarida del Troll, Catacumbas (túnel/tumbas/cámara).
+- Penalización nocturna a la percepción: Noche −3, Anochecer/Amanecer −1. Solo se aplica en salas exteriores.
+- `PerceptionManager.nivel_percepcion`, `puede_detectar` y `revelar_detalles` aceptan parámetro `hora` opcional.
+- El reloj se inicia automáticamente en `at_server_start` mediante `obtener_reloj()`.
+- Módulo puro `systems/time/clock.py`: períodos, textos de ambiente, penalizaciones, mensajes de transición.
+- 34 tests nuevos: 34 unitarios puros + 13 de integración (suite total: ~573 tests).
+
 ## [0.9.0] — 2026-06-05
 
 ### Añadido

@@ -30,7 +30,11 @@ def at_server_start():
     This is called every time the server starts up, regardless of
     how it was shut down.
     """
-    pass
+    try:
+        from features.time.clock_script import obtener_reloj
+        obtener_reloj()
+    except Exception:
+        pass
 
 
 def at_server_stop():

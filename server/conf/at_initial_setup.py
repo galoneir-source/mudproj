@@ -119,6 +119,7 @@ def at_initial_setup():
         "Al |ceste|n está la Taberna; al |coeste|n, el Mercado."
     )
     plaza.db.zona = "plaza_ciudad"
+    plaza.db.tipo_ambiente = "exterior_urbano"
 
     taberna = _room(
         "Taberna El Jabalí Borracho",
@@ -131,6 +132,7 @@ def at_initial_setup():
         ),
     )
     taberna.db.zona = "taberna"
+    taberna.db.exterior = False   # interior: edificio
 
     mercado = _room(
         "Mercado de la Ciudad",
@@ -142,6 +144,7 @@ def at_initial_setup():
         ),
     )
     mercado.db.zona = "mercado"
+    mercado.db.tipo_ambiente = "exterior_urbano"
 
     # Exits ciudad (norte/sur con bosque y calabozo se añaden más abajo)
     _link("este", "e", "oeste", "o", plaza, taberna)
@@ -175,7 +178,7 @@ def at_initial_setup():
     )
     claro.db.zona = "claro_bosque"
 
-    cueva = _room(
+    cueva = _room(         # exterior=False se fija después de crearla
         "Cueva Oscura",
         (
             "Una cueva húmeda de paredes cubiertas de musgo brillante. "
@@ -184,6 +187,8 @@ def at_initial_setup():
             "Al |coeste|n, la salida hacia el Bosque del Norte."
         ),
     )
+
+    cueva.db.exterior = False   # interior: caverna subterránea
 
     # Detalles ocultos — Bosque
     bosque.db.detalles_ocultos = [
@@ -219,6 +224,7 @@ def at_initial_setup():
         ),
     )
     calabozo_entrada.db.zona = "calabozo_entrada"
+    calabozo_entrada.db.exterior = False
 
     calabozo_pasillo = _room(
         "Pasillo del Calabozo",
@@ -230,6 +236,7 @@ def at_initial_setup():
         ),
     )
     calabozo_pasillo.db.zona = "calabozo_pasillo"
+    calabozo_pasillo.db.exterior = False
 
     calabozo_celda = _room(
         "Celda Abandonada",
@@ -241,6 +248,7 @@ def at_initial_setup():
         ),
     )
     calabozo_celda.db.zona = "calabozo_celda"
+    calabozo_celda.db.exterior = False
 
     # Detalles ocultos — Calabozo
     calabozo_entrada.db.detalles_ocultos = [
