@@ -6,8 +6,19 @@ Rooms are simple containers that has no location of their own.
 """
 
 from evennia.objects.objects import DefaultRoom
+from evennia.utils.utils import inherits_from
 
 from .objects import ObjectParent
+
+
+def _is_character_object(obj) -> bool:
+    """True for player characters and NPCs, False for regular objects/exits."""
+    return inherits_from(obj, "evennia.objects.objects.DefaultCharacter")
+
+
+def _is_exit_object(obj) -> bool:
+    """True for exits, including orphan exits without a destination."""
+    return inherits_from(obj, "evennia.objects.objects.DefaultExit")
 
 
 class Room(ObjectParent, DefaultRoom):
@@ -105,7 +116,7 @@ class Room(ObjectParent, DefaultRoom):
         objects = []
         exit_set = set(exits)
         # IDs de todos los objetos con destination (exits, incluyendo huérfanos sin destination)
-        all_exit_ids = {o.id for o in self.contents if hasattr(o, "destination")}
+        all_exit_ids = {o.id for o in self.contents if _is_exit_object(o)}
         for obj in self.contents:
             if obj == looker or obj in exit_set:
                 continue
@@ -115,7 +126,7 @@ class Room(ObjectParent, DefaultRoom):
             # Omitir entidades ocultas que el looker no puede detectar
             if not _pm.puede_detectar(looker, obj):
                 continue
-            if hasattr(obj, "has_account"):
+            if _is_character_object(obj):
                 # Es un personaje (jugador o NPC)
                 hp = getattr(obj.db, "hp", None)
                 hp_max = getattr(obj.db, "hp_max", None)

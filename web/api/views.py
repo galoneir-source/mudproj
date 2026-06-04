@@ -17,6 +17,7 @@ from django.http import JsonResponse
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET
+from evennia.utils.utils import inherits_from
 
 
 # --------------------------------------------------------------------------- #
@@ -38,6 +39,11 @@ def _require_builder(request) -> bool:
         return account.check_permstring("Builder") or account.check_permstring("Admin")
     except Exception:
         return False
+
+
+def _is_character_object(obj) -> bool:
+    """True for player characters and NPCs, False for regular objects/exits."""
+    return inherits_from(obj, "evennia.objects.objects.DefaultCharacter")
 
 
 def _uptime_str() -> str:
@@ -166,7 +172,6 @@ def api_rooms(request):
         return _error("Se requiere autenticación con perm Builder.", status=403)
 
     try:
-        from evennia.utils.utils import inherits_from
         from evennia import ObjectDB
         rooms_qs = ObjectDB.objects.filter(
             db_typeclass_path__contains="rooms.Room"
@@ -240,8 +245,8 @@ def api_room_detail(request, dbref: str):
             })
             continue
 
-        # Personajes (tienen has_account)
-        if hasattr(obj, "has_account"):
+        # Personajes: jugadores y NPCs heredan de DefaultCharacter.
+        if _is_character_object(obj):
             characters.append({
                 "name": obj.key,
                 "dbref": obj.dbref,

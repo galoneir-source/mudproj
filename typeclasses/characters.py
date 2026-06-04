@@ -46,6 +46,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.lider_partido = None
         self.db.miembros_partido = []
         self.db.invitacion_partido = None
+        # --- Reputación ---
+        self.db.reputacion = {}
 
     def at_cmdset_get(self, **kwargs):
         """

@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.9.0] — 2026-06-05
+
+### Añadido
+- Sistema de reputación con 5 facciones: Ciudadanos, Gremio de Aventureros, Horda Salvaje, Sombras del Pantano y Legión Oscura.
+- 7 rangos de reputación: Enemigo → Hostil → Neutral → Amistoso → Honrado → Venerado → Exaltado.
+- Comando `reputación` (alias `reputacion`, `facciones`, `rep`): muestra la tabla de reputación con rango actual, puntos y distancia al siguiente rango.
+- Las misiones otorgan reputación al entregarse: ganas con la facción del dador y pierdes con la facción enemiga.
+- Los comerciantes aplican descuento o recargo según reputación con su facción: Amistoso −5%, Honrado −10%, Venerado −15%, Exaltado −20%, Hostil +20%.
+- Los comerciantes se niegan a vender si el jugador tiene reputación Enemigo con su facción.
+- El comando `tienda` muestra el precio ajustado y el porcentaje de descuento/recargo activo.
+- Los NPCs con facción agreden al jugador al entrar en la sala si la reputación es Enemigo (< −3000 pts), independientemente de su temperamento (excepción: cobardes).
+- `db.reputacion = {}` inicializado en `Character.at_object_creation`.
+- `db.faccion` añadido a todos los prototipos de NPC de combate y a `NPC.at_object_creation`.
+- Módulo puro `systems/reputation/factions.py`: catálogo de facciones, umbrales y límites.
+- Módulo puro `systems/reputation/engine.py`: `obtener_rep`, `modificar_rep`, `titulo_reputacion`, `proximo_umbral`, `descuento_tienda`, `es_enemigo`, `aplicar_rep_quest`.
+- 56 tests nuevos: 43 unitarios puros + 13 de integración (suite total: ~539 tests).
+
 ## [0.8.0] — 2026-05-18
 
 ### Añadido

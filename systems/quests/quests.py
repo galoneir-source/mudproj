@@ -23,6 +23,7 @@ QUESTS: dict[str, dict] = {
         "dador": "guardia de la ciudad",
         "receptor": "guardia de la ciudad",
         "recompensa": {"xp": 150, "monedas": 25},
+        "rep_reward": {"ciudadanos": 250, "horda_salvaje": -150},
         "texto_oferta": (
             "Los goblins del bosque norte son un problema serio. "
             "¿Podrías encargarte de 3 de ellos? Te recompensaremos bien."
@@ -42,6 +43,7 @@ QUESTS: dict[str, dict] = {
         "dador": "Mira la mercader",
         "receptor": "Mira la mercader",
         "recompensa": {"xp": 300, "monedas": 60, "prototipo": "ANILLO_DESTREZA"},
+        "rep_reward": {"ciudadanos": 300, "horda_salvaje": -200},
         "texto_oferta": (
             "Esos bandidos del calabozo robaron mi mejor mercancía. "
             "Su capitán es el responsable. ¿Le darías una lección?"
@@ -61,6 +63,7 @@ QUESTS: dict[str, dict] = {
         "dador": "Mira la mercader",
         "receptor": "Mira la mercader",
         "recompensa": {"xp": 100, "monedas": 30},
+        "rep_reward": {"ciudadanos": 150, "gremio_aventureros": 100},
         "texto_oferta": (
             "¿Puedes traerme 2 frascos de veneno de pantano? "
             "Los necesito para mis preparados alquímicos."
@@ -80,6 +83,7 @@ QUESTS: dict[str, dict] = {
         "dador": "Gareth el mesonero",
         "receptor": "Gareth el mesonero",
         "recompensa": {"xp": 200, "monedas": 40},
+        "rep_reward": {"ciudadanos": 200, "gremio_aventureros": 150, "sombras_pantano": -100},
         "texto_oferta": (
             "Un alquimista amigo paga bien por garras de troll. "
             "Si consigues una, te doy una buena parte del dinero."
@@ -99,6 +103,7 @@ QUESTS: dict[str, dict] = {
         "dador": "guardia de la ciudad",
         "receptor": "guardia de la ciudad",
         "recompensa": {"xp": 500, "monedas": 100},
+        "rep_reward": {"ciudadanos": 500, "gremio_aventureros": 300, "legion_oscura": -300},
         "texto_oferta": (
             "Las catacumbas bajo el calabozo llevan tiempo activas. "
             "Un liche menor dirige a los no-muertos. ¿Te atreves con él?"

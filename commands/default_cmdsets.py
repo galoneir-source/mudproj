@@ -25,6 +25,7 @@ from features.crafting.commands import CraftingCmdSet
 from features.quests.commands import QuestCmdSet
 from features.skills.commands import SkillCmdSet
 from features.party.commands import PartyCmdSet
+from features.reputation.commands import ReputationCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -64,6 +65,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(SkillCmdSet)
         # --- Grupo ---
         self.add(PartyCmdSet)
+        # --- Reputación ---
+        self.add(ReputationCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

@@ -86,25 +86,53 @@ class CmdTienda(Command):
         tienda = comerciante.db.tienda or []
         monedas = getattr(caller.db, "monedas", 0) or 0
 
+        # Calcular factor de precio según reputación
+        faccion_npc = getattr(comerciante.db, "faccion", None)
+        factor = 1.0
+        rep_linea = ""
+        if faccion_npc:
+            from systems.reputation.engine import obtener_rep, descuento_tienda, titulo_reputacion
+            rep_dict = getattr(caller.db, "reputacion", {}) or {}
+            pts = obtener_rep(rep_dict, faccion_npc)
+            f = descuento_tienda(pts)
+            if f is None:
+                caller.msg(f"|r{comerciante.key} se niega a hacer negocios contigo.|n")
+                return
+            factor = f
+            titulo, color = titulo_reputacion(pts)
+            if factor < 1.0:
+                pct = round((1 - factor) * 100)
+                rep_linea = f"  |gDescuento por reputación: -{pct}%|n ({color}{titulo}|n)"
+            elif factor > 1.0:
+                pct = round((factor - 1) * 100)
+                rep_linea = f"  |rRecargo por reputación: +{pct}%|n ({color}{titulo}|n)"
+
         lineas = [
             f"\n|w{'─'*46}|n",
             f"  |cTienda de {comerciante.key}|n",
             f"  Tus monedas: |y{monedas}|n",
-            f"|w{'─'*46}|n",
         ]
+        if rep_linea:
+            lineas.append(rep_linea)
+        lineas.append(f"|w{'─'*46}|n")
 
         if not tienda:
             lineas.append("  |x(Sin artículos disponibles)|n")
         else:
             for entrada in tienda:
                 nombre_item = entrada.get("key", "objeto desconocido")
-                precio = entrada.get("precio", 0)
+                precio_base = entrada.get("precio", 0)
+                precio_real = round(precio_base * factor)
                 cantidad = entrada.get("cantidad", -1)
                 desc = entrada.get("desc", "")
                 stock_txt = "" if cantidad < 0 else f" |x[{cantidad} en stock]|n"
                 desc_txt = f"\n    |x{desc[:60]}{'...' if len(desc) > 60 else ''}|n" if desc else ""
+                if factor != 1.0:
+                    precio_txt = f"|y{precio_real} monedas|n |x({precio_base} base)|n"
+                else:
+                    precio_txt = f"|y{precio_real} monedas|n"
                 lineas.append(
-                    f"  |w{nombre_item:<24}|n |y{precio:>3} monedas|n{stock_txt}{desc_txt}"
+                    f"  |w{nombre_item:<24}|n {precio_txt}{stock_txt}{desc_txt}"
                 )
 
         lineas += [
@@ -174,7 +202,22 @@ class CmdComprar(Command):
             caller.msg(f"{comerciante.key} no vende '{nombre_item}'. Usa |wtienda|n para ver el catálogo.")
             return
 
-        precio = entrada.get("precio", 0)
+        precio_base = entrada.get("precio", 0)
+
+        # Aplicar factor de reputación
+        faccion_npc = getattr(comerciante.db, "faccion", None)
+        if faccion_npc:
+            from systems.reputation.engine import obtener_rep, descuento_tienda
+            rep_dict = getattr(caller.db, "reputacion", {}) or {}
+            pts = obtener_rep(rep_dict, faccion_npc)
+            factor = descuento_tienda(pts)
+            if factor is None:
+                caller.msg(f"|r{comerciante.key} se niega a hacer negocios contigo.|n")
+                return
+            precio = round(precio_base * factor)
+        else:
+            precio = precio_base
+
         monedas = getattr(caller.db, "monedas", 0) or 0
 
         if monedas < precio:

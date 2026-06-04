@@ -40,7 +40,8 @@ class NPC(DefaultCharacter):
         self.db.temperamento = "neutral"    # neutral | agresivo | cobarde | guardian
         self.db.habilidades = []
         self.db.loot = []
-        self.db.faction = None
+        self.db.faction = None   # para lógica guardian (NPCs de la misma faction no se atacan)
+        self.db.faccion = None   # facción para el sistema de reputación
         self.db.patrol_rooms = []
         self.db.dialogo = {}
         self.db.enraged = False
@@ -96,9 +97,21 @@ class NPC(DefaultCharacter):
 
     def _reaccionar_a_presencia(self, jugador):
         """
-        Decide si agredir al jugador según el temperamento.
+        Decide si agredir al jugador según el temperamento y la reputación.
         """
         temperamento = self.db.temperamento or "neutral"
+
+        # Reputación: NPCs con faccion agred en si el jugador es Enemigo (rep < -3000),
+        # independientemente del temperamento (excepto cobardes).
+        if temperamento != "cobarde":
+            faccion = getattr(self.db, "faccion", None)
+            if faccion:
+                from systems.reputation.engine import obtener_rep, es_enemigo
+                rep = getattr(jugador.db, "reputacion", {}) or {}
+                if es_enemigo(obtener_rep(rep, faccion)):
+                    self._agredir(jugador)
+                    return
+
         if temperamento == "agresivo":
             self._agredir(jugador)
         elif temperamento == "guardian":

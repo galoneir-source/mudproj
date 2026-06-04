@@ -33,6 +33,25 @@ def _inventario_dict(caller) -> dict:
     return inv
 
 
+def _dar_reputacion(caller, rep_reward: dict):
+    """Aplica las recompensas de reputación de un quest y notifica al caller."""
+    if not rep_reward:
+        return
+    from systems.reputation.engine import aplicar_rep_quest
+    from systems.reputation.factions import FACCIONES
+
+    rep = dict(getattr(caller.db, "reputacion", {}) or {})
+    nueva_rep, cambios = aplicar_rep_quest(rep, rep_reward)
+    caller.db.reputacion = nueva_rep
+
+    for faccion_id, delta, titulo, color, cambio_titulo in cambios:
+        nombre = FACCIONES.get(faccion_id, {}).get("nombre", faccion_id)
+        signo = "+" if delta >= 0 else ""
+        caller.msg(f"  Reputación: |y{signo}{delta}|n con |c{nombre}|n → {color}{titulo}|n")
+        if cambio_titulo and delta > 0:
+            caller.msg(f"  |Y¡Nuevo rango con {nombre}: {titulo}!|n")
+
+
 def _dar_recompensa(caller, recompensa: dict):
     """Aplica XP, monedas e items de recompensa al caller."""
     from features.combat.handler import _get_stats, _set_stat
@@ -321,6 +340,7 @@ class CmdEntregar(Command):
 
         # Dar recompensa
         _dar_recompensa(caller, quest.get("recompensa", {}))
+        _dar_reputacion(caller, quest.get("rep_reward", {}))
 
         # Marcar como entregada
         quests_char[quest_id] = dict(quests_char.get(quest_id, {}))
