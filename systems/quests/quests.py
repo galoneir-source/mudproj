@@ -92,6 +92,86 @@ QUESTS: dict[str, dict] = {
         "texto_entrega": "¡Magnífico! Esto le encantará a mi amigo el alquimista.",
         "nivel_minimo": 5,
     },
+    "templo_corrompido": {
+        "titulo": "El Templo Corrompido",
+        "descripcion": (
+            "Las ruinas del antiguo templo al norte del bosque han sido tomadas por espectros. "
+            "El Hermano Aldric necesita que alguien purifique el lugar eliminando a esos seres."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "espectro", "cantidad": 4},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 200, "monedas": 40},
+        "rep_reward": {"ciudadanos": 200, "legion_oscura": -150},
+        "texto_oferta": (
+            "Los espectros que habitan el templo son almas atrapadas y corrompidas. "
+            "Eliminar cuatro de ellos debilitará su presencia. ¿Puedes hacerlo?"
+        ),
+        "texto_progreso": "Llevas {actual} de {total} espectros eliminados. Sigue adelante.",
+        "texto_entrega": "Siento que el templo respira un poco mejor. Gracias, amigo.",
+        "nivel_minimo": 3,
+    },
+    "la_cruz_perdida": {
+        "titulo": "La Cruz Perdida",
+        "descripcion": (
+            "Un símbolo sagrado del templo fue arrebatado por los espectros. "
+            "El Hermano Aldric lo necesita para el ritual de purificación."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "símbolo sagrado", "cantidad": 1},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 250, "monedas": 50},
+        "rep_reward": {"ciudadanos": 250, "gremio_aventureros": 100},
+        "texto_oferta": (
+            "El símbolo sagrado del templo debe estar entre los espectros. "
+            "Sin él no puedo completar el ritual. ¿Me lo traerías?"
+        ),
+        "texto_progreso": "El símbolo sagrado sigue perdido entre los espectros. Búscalo bien.",
+        "texto_entrega": "¡Es él! Con esto podré iniciar el ritual. Tienes mi gratitud eterna.",
+        "nivel_minimo": 3,
+    },
+    "caballero_sombras": {
+        "titulo": "El Caballero de las Sombras",
+        "descripcion": (
+            "El Barón Morthis regresó como caballero oscuro y gobierna a los espectros desde la cripta. "
+            "Debe ser derrotado de forma definitiva para liberar el templo."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "caballero oscuro", "cantidad": 1},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 600, "monedas": 120},
+        "rep_reward": {"ciudadanos": 600, "gremio_aventureros": 300, "legion_oscura": -400},
+        "texto_oferta": (
+            "El Barón Morthis corrompió el templo hace siglos y ahora ha regresado. "
+            "Si eres lo bastante valiente, baja a la cripta y acaba con él."
+        ),
+        "texto_progreso": "El Caballero Oscuro sigue en la cripta. Prepárate bien antes de enfrentarlo.",
+        "texto_entrega": "Lo lograste. El alma del Barón puede descansar por fin. Eres un verdadero héroe.",
+        "nivel_minimo": 6,
+    },
+    "cristales_sagrados": {
+        "titulo": "Los Cristales del Ritual",
+        "descripcion": (
+            "El Hermano Aldric necesita cristales sagrados para el ritual de sellado del templo. "
+            "Solo se encuentran en las ruinas, portados por los espectros."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "cristal sagrado", "cantidad": 2},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 180, "monedas": 35},
+        "rep_reward": {"ciudadanos": 150, "gremio_aventureros": 100},
+        "texto_oferta": (
+            "Necesito dos cristales sagrados para completar el ritual. "
+            "Los espectros los portan consigo. ¿Puedes traérmelos?"
+        ),
+        "texto_progreso": "Aún necesito {faltante} cristal(es) sagrado(s) más.",
+        "texto_entrega": "Perfecto. Con estos cristales el ritual de sellado puede comenzar.",
+        "nivel_minimo": 4,
+    },
     "amenaza_catacumbas": {
         "titulo": "La Amenaza de las Catacumbas",
         "descripcion": (

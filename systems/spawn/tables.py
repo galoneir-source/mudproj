@@ -67,6 +67,25 @@ ZONAS: dict[str, list[dict]] = {
     "camara_nigromante": [
         {"prototipo": "LICHE_MENOR", "cantidad": 1},
     ],
+    # ----------------------------------------------------------------- #
+    #  Expansión: Ruinas del Templo
+    # ----------------------------------------------------------------- #
+    "camino_templo": [
+        {"prototipo": "ESPECTRO", "cantidad": 1},
+    ],
+    "ruinas_templo": [
+        {"prototipo": "ESPECTRO", "cantidad": 2},
+    ],
+    "cripta_baron": [
+        {"prototipo": "CABALLERO_OSCURO", "cantidad": 1},
+    ],
+    # ----------------------------------------------------------------- #
+    #  Ciudad (sacerdote en plaza)
+    # ----------------------------------------------------------------- #
+    "plaza_ciudad": [
+        {"prototipo": "GUARDIA",    "cantidad": 1},
+        {"prototipo": "SACERDOTE",  "cantidad": 1},
+    ],
 }
 
 

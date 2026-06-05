@@ -284,6 +284,116 @@ def construir_expansion(caller=None):
         msg("|gZona 'Catacumbas' creada (3 salas, 3 NPCs + 1 grimorio).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 3: RUINAS DEL TEMPLO
+    # -----------------------------------------------------------------------
+
+    if _find_room("Ruinas del Templo"):
+        msg("|yZona 'Ruinas del Templo' ya existe. Omitida.|n")
+    else:
+        claro = _find_room("Claro del Bosque")
+        if not claro:
+            msg("|rError: no se encontró el Claro del Bosque. Omitiendo zona del Templo.|n")
+        else:
+            camino = _room(
+                "Camino al Templo",
+                (
+                    "Un sendero de losas de piedra antigua, cubiertas de musgo y quebradas por el tiempo. "
+                    "A ambos lados crecen árboles retorcidos que proyectan sombras inquietantes. "
+                    "Se siente una presencia extraña en el aire. "
+                    "Al |csur|n está el Claro del Bosque; "
+                    "al |cnorte|n, las ruinas de un templo olvidado."
+                ),
+            )
+            camino.db.zona = "camino_templo"
+
+            ruinas = _room(
+                "Ruinas del Templo",
+                (
+                    "Las paredes del antiguo templo se desmoronan lentamente. "
+                    "Columnas caídas yacen entre hierbas altas y el silencio es casi total. "
+                    "Una energía espectral y fría impregna cada piedra. "
+                    "Al |csur|n está el camino de vuelta; "
+                    "al |cnorte|n, una cripta sellada bajo el altar."
+                ),
+            )
+            ruinas.db.zona = "ruinas_templo"
+
+            cripta = _room(
+                "Cripta del Barón",
+                (
+                    "Una cámara funeraria bajo el altar mayor. "
+                    "Los relieves de las paredes representan batallas antiguas y figuras encapuchadas. "
+                    "Un sarcófago de piedra negra en el centro ha sido violado desde dentro. "
+                    "El aire es helado y parece resistirse a ser respirado. "
+                    "Al |csur|n (subir) están las ruinas del templo."
+                ),
+            )
+            cripta.db.zona = "cripta_baron"
+            cripta.db.exterior = False
+
+            camino.db.detalles_ocultos = [
+                {
+                    "texto": "Las losas del suelo llevan inscripciones borrosas. Son avisos grabados por clérigos que nunca regresaron.",
+                    "req_percepcion": 11,
+                },
+                {
+                    "texto": "Entre los árboles hay una piedra con el símbolo de una orden clerical antigua. Alguien la dejó como advertencia.",
+                    "req_percepcion": 14,
+                },
+            ]
+            ruinas.db.detalles_ocultos = [
+                {
+                    "texto": "En el altar roto hay restos de un ritual reciente. Los espectros obedecen a alguien.",
+                    "req_percepcion": 12,
+                },
+                {
+                    "texto": "Bajo una columna caída hay un nicho con una ranura. El símbolo sagrado encajaría perfectamente aquí.",
+                    "req_percepcion": 15,
+                },
+            ]
+            cripta.db.detalles_ocultos = [
+                {
+                    "texto": "El sarcófago tiene una inscripción: 'El Barón Morthis, Guardián del Sello Eterno. Que descanse en paz eterna'.",
+                    "req_percepcion": 10,
+                },
+                {
+                    "texto": "En la pared hay un panel de piedra que se mueve. Detrás solo hay polvo y huesos muy antiguos.",
+                    "req_percepcion": 16,
+                },
+            ]
+
+            # Conectar: Claro del Bosque ↕ Camino ↕ Ruinas ↕ Cripta
+            _link("norte", "n", "sur", "s", claro, camino)
+            _link("norte", "n", "sur", "s", camino, ruinas)
+            _link("bajar", "b", "subir", "su", ruinas, cripta)
+
+            # NPCs de combate
+            _spawn("ESPECTRO", camino)
+            _spawn("ESPECTRO", ruinas)
+            _spawn("ESPECTRO", ruinas)
+            _spawn("CABALLERO_OSCURO", cripta)
+
+            salas_creadas += 3
+            npcs_creados += 4
+            msg("|gZona 'Ruinas del Templo' creada (3 salas, 4 NPCs).|n")
+
+    # -----------------------------------------------------------------------
+    # SACERDOTE EN LA PLAZA
+    # -----------------------------------------------------------------------
+
+    plaza = _find_room("Plaza de la Ciudad")
+    if plaza:
+        sacerdote_existe = any(
+            getattr(o.db, "npc_prototipo", None) == "SACERDOTE"
+            for o in plaza.contents
+            if hasattr(o, "db")
+        )
+        if not sacerdote_existe:
+            _spawn("SACERDOTE", plaza)
+            npcs_creados += 1
+            msg("|gHermano Aldric el sacerdote añadido a la Plaza de la Ciudad.|n")
+
+    # -----------------------------------------------------------------------
     # Resumen
     # -----------------------------------------------------------------------
 

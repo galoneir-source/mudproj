@@ -35,6 +35,18 @@ RECETAS: dict[str, dict] = {
         "cantidad": 1,
         "desc_receta": "Magia oscura canalizada a través de escamas de hombre lagarto.",
     },
+    "bálsamo sagrado": {
+        "ingredientes": {"cristal sagrado": 2},
+        "resultado_prototipo": "POCION_VIDA_MAYOR",
+        "cantidad": 1,
+        "desc_receta": "La luz purificada de dos cristales sagrados destilada en una poción curativa.",
+    },
+    "tónico del templo": {
+        "ingredientes": {"cristal sagrado": 1, "fragmento de alma": 1},
+        "resultado_prototipo": "ELIXIR_RESTAURACION",
+        "cantidad": 1,
+        "desc_receta": "La tensión entre lo sagrado y lo oscuro libera una energía restauradora total.",
+    },
 }
 
 

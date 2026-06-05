@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.11.0] — 2026-06-05
+
+### Añadido
+- Nueva zona: **Ruinas del Templo Antiguo** (3 salas): Camino al Templo, Ruinas del Templo, Cripta del Barón.
+  Conectada al norte del Claro del Bosque. La Cripta es interior (`exterior=False`).
+- Nuevos NPCs de combate: **Espectro** (nv.4, Legión Oscura) y **Caballero Oscuro** (nv.8, boss, Legión Oscura).
+- Nuevo NPC civil: **Hermano Aldric el sacerdote** en la Plaza de la Ciudad, con tienda y misiones propias.
+- 4 misiones nuevas (todas vinculadas al sacerdote):
+  - *El Templo Corrompido* (kill 4 espectros, nv.3)
+  - *La Cruz Perdida* (fetch símbolo sagrado, nv.3)
+  - *El Caballero de las Sombras* (kill caballero oscuro, nv.6, boss)
+  - *Los Cristales del Ritual* (fetch 2 cristales sagrados, nv.4)
+- 2 nuevos items de equipo: **Báculo Arcano Antiguo** (arma, INT+6/DEF−1) y **Escudo de Roble** (armadura, DEF+5/HP+8).
+- 2 nuevas recetas de crafteo: **Bálsamo Sagrado** (cristal sagrado ×2 → Poción de Vida Mayor) y **Tónico del Templo** (cristal sagrado + fragmento de alma → Elixir de Restauración).
+- Zona `plaza_ciudad` en spawn tables actualizada: incluye SACERDOTE además de GUARDIA.
+- Detalles ocultos en las 3 nuevas salas (percepción 10–16).
+
 ## [0.10.0] — 2026-06-05
 
 ### Añadido

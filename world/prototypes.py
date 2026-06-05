@@ -433,6 +433,36 @@ MERCADER = {
 #  Equipo: expansión de zonas
 # --------------------------------------------------------------------------- #
 
+BACULO_ARCANO_ANTIGUO = {
+    "prototype_key": "BACULO_ARCANO_ANTIGUO",
+    "key": "báculo arcano antiguo",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un báculo de madera oscura con un cristal azulado engastado en la punta. "
+        "Vibra levemente al tocarlo, como si almacenara energía arcana."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"inteligencia": 6, "defensa": -1}),
+        ("valor", 75),
+    ],
+}
+
+ESCUDO_ROBLE = {
+    "prototype_key": "ESCUDO_ROBLE",
+    "key": "escudo de roble",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un escudo circular de madera de roble reforzada con remaches de hierro. "
+        "Ligero y resistente, ideal para aventureros que empiezan."
+    ),
+    "attrs": [
+        ("slot", "armadura"),
+        ("bonuses", {"defensa": 5, "hp_max": 8}),
+        ("valor", 35),
+    ],
+}
+
 LANZA_HUESO = {
     "prototype_key": "LANZA_HUESO",
     "key": "lanza de hueso",
@@ -589,5 +619,113 @@ LICHE_MENOR = {
         ("faccion", "legion_oscura"),
         ("npc_prototipo", "LICHE_MENOR"),
         ("respawn_tiempo", 600),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs de expansión: Ruinas del Templo
+# --------------------------------------------------------------------------- #
+
+ESPECTRO = {
+    "prototype_key": "ESPECTRO",
+    "key": "espectro",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura etérea de niebla blanquecina con contornos vagamente humanos. "
+        "Sus ojos son dos puntos de luz azul helada y se mueve sin tocar el suelo. "
+        "Emite un lamento apenas audible que hiela la sangre."
+    ),
+    "attrs": [
+        ("nivel", 4),
+        ("hp", 50), ("hp_max", 50),
+        ("fuerza", 8), ("destreza", 13), ("constitucion", 9),
+        ("inteligencia", 16), ("defensa", 4),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["dardo magico", "veneno"]),
+        ("loot", [
+            {"key": "cristal sagrado", "cantidad": 1, "chance": 0.60,
+             "desc": "Un cristal que emite una tenue luz dorada. Los sacerdotes lo usan en rituales de purificación."},
+            {"key": "símbolo sagrado", "cantidad": 1, "chance": 0.40,
+             "desc": "Un símbolo de metal bendito con runas protectoras. Parece importante."},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "ESPECTRO"),
+        ("respawn_tiempo", 120),
+    ],
+}
+
+CABALLERO_OSCURO = {
+    "prototype_key": "CABALLERO_OSCURO",
+    "key": "caballero oscuro",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura imponente enfundada en una armadura negra sin brillo, "
+        "coronada por un yelmo con visera cerrada. No respira. "
+        "Empuña una espada de metal oscuro que absorbe la luz a su alrededor. "
+        "Sus movimientos son lentos pero devastadores."
+    ),
+    "attrs": [
+        ("nivel", 8),
+        ("hp", 180), ("hp_max", 180),
+        ("fuerza", 20), ("destreza", 11), ("constitucion", 17),
+        ("inteligencia", 9), ("defensa", 14),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro"]),
+        ("loot", [
+            {"key": "monedas de oro", "cantidad": 15,
+             "desc": "Monedas de oro antiguas con el escudo del Barón Morthis."},
+            {"prototype_key": "ESCUDO_ROBLE", "cantidad": 1},
+            {"prototype_key": "BACULO_ARCANO_ANTIGUO", "cantidad": 1, "chance": 0.30},
+        ]),
+        ("dialogo", {
+            "baron": "Fui el Barón Morthis. Ahora soy la muerte encarnada.",
+            "templo": "Este templo me pertenece. Y tú pronto serás uno de mis siervos.",
+            "rendirse": "La muerte no conoce la rendición.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "CABALLERO_OSCURO"),
+        ("respawn_tiempo", 900),
+    ],
+}
+
+SACERDOTE = {
+    "prototype_key": "SACERDOTE",
+    "key": "Hermano Aldric el sacerdote",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un hombre de mediana edad con hábito gris y un símbolo sagrado colgado al cuello. "
+        "Sus ojos transmiten calma pero hay preocupación en su frente. "
+        "Murmura oraciones en voz baja mientras contempla el horizonte norte."
+    ),
+    "attrs": [
+        ("nivel", 1),
+        ("hp", 60), ("hp_max", 60),
+        ("fuerza", 9), ("destreza", 9), ("constitucion", 10),
+        ("inteligencia", 13), ("defensa", 2),
+        ("experiencia", 0),
+        ("temperamento", "neutral"),
+        ("habilidades", []),
+        ("faction", "ciudad"),
+        ("faccion", "ciudadanos"),
+        ("dialogo", {
+            "hola": "Que los dioses te guarden, viajero. Soy Hermano Aldric.",
+            "templo": "El antiguo templo al norte del bosque fue profanado hace siglos. Los espectros lo habitan ahora.",
+            "espectros": "Seres de niebla y odio. Los cristales que portan son restos de almas atrapadas.",
+            "caballero": "El Barón Morthis... un guerrero que cayó en la oscuridad. Su espíritu gobierna a los espectros.",
+            "cristales": "Los cristales sagrados tienen propiedades curativas si se procesan correctamente.",
+            "bendición": "La Luz te proteja en tu camino hacia el norte.",
+            "misión": "Necesito ayuda urgente con el templo. ¿Te interesa escuchar?",
+            "comprar": "Tengo artículos que pueden ayudarte.",
+        }),
+        ("tienda", [
+            {"key": "poción de vida",        "prototype_key": "POCION_VIDA",          "precio": 15, "cantidad": -1},
+            {"key": "elixir de restauración","prototype_key": "ELIXIR_RESTAURACION",  "precio": 75, "cantidad": -1},
+            {"key": "báculo arcano antiguo", "prototype_key": "BACULO_ARCANO_ANTIGUO","precio": 80, "cantidad": 3},
+            {"key": "escudo de roble",        "prototype_key": "ESCUDO_ROBLE",         "precio": 30, "cantidad": -1},
+        ]),
+        ("npc_prototipo", "SACERDOTE"),
+        ("respawn_tiempo", 300),
     ],
 }
