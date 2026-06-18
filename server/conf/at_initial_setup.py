@@ -92,7 +92,7 @@ def at_initial_setup():
 
     from world.prototypes import (
         GUARDIA, GOBLIN, GOBLIN_JEFE, BANDIDO, BANDIDO_CAPITAN,
-        MESONERO, MERCADER,
+        MESONERO, MERCADER, BANQUERO,
         ESPADA_HIERRO, DAGA_BRONCE, ARMADURA_CUERO, AMULETO_FUERZA,
     )
 
@@ -276,6 +276,9 @@ def at_initial_setup():
     # Ciudad
     guardia = spawner.spawn(GUARDIA)[0]
     guardia.location = plaza
+
+    banquero = spawner.spawn(BANQUERO)[0]
+    banquero.location = plaza
 
     mesonero = spawner.spawn(MESONERO)[0]
     mesonero.location = taberna

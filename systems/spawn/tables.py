@@ -22,7 +22,8 @@ ZONAS: dict[str, list[dict]] = {
         {"prototipo": "MESONERO", "cantidad": 1},
     ],
     "mercado": [
-        {"prototipo": "MERCADER", "cantidad": 1},
+        {"prototipo": "MERCADER",          "cantidad": 1},
+        {"prototipo": "BUSCADOR_TESOROS",  "cantidad": 1},
     ],
     # ----------------------------------------------------------------- #
     #  Mundo base: Bosque
@@ -80,11 +81,24 @@ ZONAS: dict[str, list[dict]] = {
         {"prototipo": "CABALLERO_OSCURO", "cantidad": 1},
     ],
     # ----------------------------------------------------------------- #
-    #  Ciudad (sacerdote en plaza)
+    #  Expansión: Minas de Hierro Viejo
+    # ----------------------------------------------------------------- #
+    "boca_mina": [
+        {"prototipo": "ARANA_CUEVA", "cantidad": 2},
+    ],
+    "galeria_principal": [
+        {"prototipo": "MINERO_MALDITO", "cantidad": 2},
+    ],
+    "caverna_coloso": [
+        {"prototipo": "GOLEM_PIEDRA", "cantidad": 1},
+    ],
+    # ----------------------------------------------------------------- #
+    #  Ciudad (sacerdote y banquero en plaza)
     # ----------------------------------------------------------------- #
     "plaza_ciudad": [
         {"prototipo": "GUARDIA",    "cantidad": 1},
         {"prototipo": "SACERDOTE",  "cantidad": 1},
+        {"prototipo": "BANQUERO",   "cantidad": 1},
     ],
 }
 

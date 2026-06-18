@@ -33,10 +33,10 @@ class PerceptionManager:
     #  Cálculo de nivel de percepción
     # ------------------------------------------------------------------ #
 
-    def nivel_percepcion(self, observer: Any, hora: int = None) -> int:
+    def nivel_percepcion(self, observer: Any, hora: int = None, clima: str = None) -> int:
         """
         Devuelve el nivel de percepción del observador.
-        Fórmula: inteligencia + nivel // 2 [+ penalización nocturna si hora dado]
+        Fórmula: inteligencia + nivel // 2 [± penalizaciones por hora y clima]
         Si observer es None devuelve 10 (valor neutro).
         """
         if observer is None:
@@ -45,15 +45,18 @@ class PerceptionManager:
         nivel = getattr(observer.db, "nivel", 1) or 1
         base = int(inteligencia + nivel // 2)
         if hora is not None:
-            from systems.time.clock import penalizacion_percepcion
-            base += penalizacion_percepcion(hora)
+            from systems.time.clock import penalizacion_percepcion as _pen_hora
+            base += _pen_hora(hora)
+        if clima is not None:
+            from systems.weather.weather import penalizacion_percepcion as _pen_clima
+            base += _pen_clima(clima)
         return max(1, base)
 
     # ------------------------------------------------------------------ #
     #  Detalles ocultos de sala
     # ------------------------------------------------------------------ #
 
-    def revelar_detalles(self, room: Any, observer: Any, hora: int = None) -> list[str]:
+    def revelar_detalles(self, room: Any, observer: Any, hora: int = None, clima: str = None) -> list[str]:
         """
         Devuelve los textos de detalles ocultos de la sala que el observador
         puede percibir.
@@ -65,7 +68,7 @@ class PerceptionManager:
           ]
         """
         detalles = getattr(room.db, "detalles_ocultos", None) or []
-        nivel = self.nivel_percepcion(observer, hora=hora)
+        nivel = self.nivel_percepcion(observer, hora=hora, clima=clima)
         return [
             d["texto"]
             for d in detalles
@@ -76,26 +79,27 @@ class PerceptionManager:
     #  Detección de entidades ocultas
     # ------------------------------------------------------------------ #
 
-    def puede_detectar(self, observer: Any, obj: Any, hora: int = None) -> bool:
+    def puede_detectar(self, observer: Any, obj: Any, hora: int = None, clima: str = None) -> bool:
         """
         Devuelve True si el observador puede ver al objeto/NPC.
 
         Un objeto es oculto si obj.db.oculto es True.
         Para detectarlo se necesita nivel_percepcion >= obj.db.nivel_sigilo.
         Los objetos no ocultos siempre son visibles.
-        hora — si se pasa, aplica la penalización nocturna a la percepción.
+        hora  — aplica penalización nocturna.
+        clima — aplica penalización climática (niebla, tormenta...).
         """
         if not getattr(obj.db, "oculto", False):
             return True
         nivel_sigilo = getattr(obj.db, "nivel_sigilo", 15) or 15
-        return self.nivel_percepcion(observer, hora=hora) >= nivel_sigilo
+        return self.nivel_percepcion(observer, hora=hora, clima=clima) >= nivel_sigilo
 
-    def filtrar_visibles(self, observer: Any, objetos: list, hora: int = None) -> list:
+    def filtrar_visibles(self, observer: Any, objetos: list, hora: int = None, clima: str = None) -> list:
         """
         Filtra una lista de objetos devolviendo solo los que el observador
         puede detectar.
         """
-        return [o for o in objetos if self.puede_detectar(observer, o, hora=hora)]
+        return [o for o in objetos if self.puede_detectar(observer, o, hora=hora, clima=clima)]
 
     # ------------------------------------------------------------------ #
     #  Procesado de texto (pipeline de mensajes)

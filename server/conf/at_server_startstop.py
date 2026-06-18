@@ -35,6 +35,11 @@ def at_server_start():
         obtener_reloj()
     except Exception:
         pass
+    try:
+        from features.weather.weather_script import obtener_clima_script
+        obtener_clima_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

@@ -416,6 +416,45 @@ class CmdHora(Command):
 
 
 # --------------------------------------------------------------------------- #
+#  Comando: clima
+# --------------------------------------------------------------------------- #
+
+class CmdClima(Command):
+    """
+    Consultar el clima actual del mundo.
+
+    Uso:
+      clima
+
+    Muestra el estado del tiempo en el exterior e indica si hay alguna
+    penalización a la percepción por las condiciones meteorológicas.
+    """
+    key = "clima"
+    aliases = ["weather"]
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        from features.weather.weather_script import clima_actual
+        from systems.weather.weather import CLIMAS, PENALIZACION_PERCEPCION
+
+        clima = clima_actual()
+        data = CLIMAS.get(clima, {})
+        nombre = data.get("nombre", clima.capitalize())
+        color = data.get("color", "|n")
+        texto = data.get("textos", {}).get("exterior_natural", "")
+        penalizacion = PENALIZACION_PERCEPCION.get(clima, 0)
+
+        lineas = [f"Clima actual: {color}{nombre}|n"]
+        if texto:
+            lineas.append(f"|x{texto}|n")
+        if penalizacion < 0:
+            lineas.append(f"|r(Percepción: {penalizacion:+d})|n")
+
+        self.caller.msg("\n".join(lineas))
+
+
+# --------------------------------------------------------------------------- #
 #  Comando: percibir
 # --------------------------------------------------------------------------- #
 
@@ -444,22 +483,28 @@ class CmdPercibir(Command):
         from systems.perception.perception_manager import PerceptionManager
         pm = PerceptionManager()
 
-        # Aplicar penalización nocturna en salas exteriores
+        # Penalizaciones en salas exteriores (hora + clima)
         exterior = getattr(room.db, "exterior", True)
         hora_juego = None
+        clima_juego = None
         if exterior:
             try:
                 from features.time.clock_script import hora_actual
                 hora_juego = hora_actual()
             except Exception:
                 pass
+            try:
+                from features.weather.weather_script import clima_actual as _clima_actual
+                clima_juego = _clima_actual()
+            except Exception:
+                pass
 
-        nivel = pm.nivel_percepcion(caller, hora=hora_juego)
+        nivel = pm.nivel_percepcion(caller, hora=hora_juego, clima=clima_juego)
 
         hallazgos = []
 
         # 1. Detalles ocultos de la sala
-        detalles = pm.revelar_detalles(room, caller, hora=hora_juego)
+        detalles = pm.revelar_detalles(room, caller, hora=hora_juego, clima=clima_juego)
         hallazgos.extend(detalles)
 
         # 2. NPCs/objetos ocultos que el personaje puede detectar
@@ -469,7 +514,7 @@ class CmdPercibir(Command):
                 continue
             if not getattr(obj.db, "oculto", False):
                 continue
-            if pm.puede_detectar(caller, obj, hora=hora_juego):
+            if pm.puede_detectar(caller, obj, hora=hora_juego, clima=clima_juego):
                 if isinstance(obj, NPC):
                     hallazgos.append(
                         f"Detectas a |r{obj.key}|n acechando en las sombras. (Nv.{obj.db.nivel or 1})"
@@ -614,6 +659,7 @@ class GeneralCmdSet(CmdSet):
         self.add(CmdDescansar())
         self.add(CmdPerfil())
         self.add(CmdHora())
+        self.add(CmdClima())
         self.add(CmdPercibir())
         self.add(CmdInventario())
         self.add(CmdUsar())

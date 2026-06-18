@@ -172,6 +172,47 @@ QUESTS: dict[str, dict] = {
         "texto_entrega": "Perfecto. Con estos cristales el ritual de sellado puede comenzar.",
         "nivel_minimo": 4,
     },
+    "veta_perdida": {
+        "titulo": "La Veta Perdida",
+        "descripcion": (
+            "Las Minas de Hierro Viejo, al oeste del bosque, llevan siglos clausuradas. "
+            "Torben necesita muestras del mineral que se extrae allí para confirmar su calidad."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "mineral de hierro", "cantidad": 2},
+        "dador": "Torben el buscador de tesoros",
+        "receptor": "Torben el buscador de tesoros",
+        "recompensa": {"xp": 200, "monedas": 45},
+        "rep_reward": {"gremio_aventureros": 200, "ciudadanos": 100},
+        "texto_oferta": (
+            "Las minas al oeste del bosque tienen un mineral de hierro de calidad excepcional. "
+            "¿Puedes traerme dos trozos para que los examine?"
+        ),
+        "texto_progreso": "Aún necesito {faltante} trozo(s) de mineral de hierro.",
+        "texto_entrega": "¡Magnífico! Esto confirma lo que sospechaba. El mineral es de primera calidad.",
+        "nivel_minimo": 3,
+    },
+    "coloso_despertado": {
+        "titulo": "El Coloso Despertado",
+        "descripcion": (
+            "Un antiguo gólem de piedra guarda las profundidades de las Minas de Hierro Viejo. "
+            "Torben ofrece una recompensa considerable a quien sea capaz de derrotarlo."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "gólem de piedra", "cantidad": 1},
+        "dador": "Torben el buscador de tesoros",
+        "receptor": "Torben el buscador de tesoros",
+        "recompensa": {"xp": 550, "monedas": 110, "prototipo": "ANILLO_CONSTITUCION"},
+        "rep_reward": {"gremio_aventureros": 500, "ciudadanos": 200},
+        "texto_oferta": (
+            "Hay un gólem de piedra en las profundidades de la mina. "
+            "Es un guardián antiguo que no debería seguir activo. "
+            "¿Te atreves a enfrentarlo? La recompensa merece el riesgo."
+        ),
+        "texto_progreso": "El gólem sigue activo en la caverna más profunda. Prepárate bien antes de ir.",
+        "texto_entrega": "¡Lo has logrado! Ahora podemos explorar la mina en paz. Toma, esto es tuyo.",
+        "nivel_minimo": 6,
+    },
     "amenaza_catacumbas": {
         "titulo": "La Amenaza de las Catacumbas",
         "descripcion": (

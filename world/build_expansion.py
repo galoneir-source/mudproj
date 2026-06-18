@@ -378,6 +378,129 @@ def construir_expansion(caller=None):
             msg("|gZona 'Ruinas del Templo' creada (3 salas, 4 NPCs).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 4: MINAS DE HIERRO VIEJO
+    # -----------------------------------------------------------------------
+
+    if _find_room("Boca de la Mina"):
+        msg("|yZona 'Minas de Hierro Viejo' ya existe. Omitida.|n")
+    else:
+        bosque = _find_room("Bosque del Norte")
+        if not bosque:
+            msg("|rError: no se encontró el Bosque del Norte. Omitiendo zona de las Minas.|n")
+        else:
+            boca = _room(
+                "Boca de la Mina",
+                (
+                    "La entrada a las antiguas Minas de Hierro Viejo se abre en la ladera de una colina rocosa. "
+                    "Un cartel de madera podrida advierte 'PELIGRO — MINA CLAUSURADA'. "
+                    "El aire que sale desde el interior huele a piedra húmeda y óxido. "
+                    "Al |ceste|n está el Bosque del Norte; "
+                    "al |cnorte|n, los túneles de la mina."
+                ),
+            )
+            boca.db.zona = "boca_mina"
+
+            galeria = _room(
+                "Galería Principal",
+                (
+                    "Un túnel amplio sostenido por vigas de madera podrida. "
+                    "Las paredes brillan con venas de mineral de hierro que recogen la escasa luz. "
+                    "Telas de araña cubren cada rincón y algo se mueve entre las sombras. "
+                    "Al |csur|n está la boca de la mina; "
+                    "al |cnorte|n, un pasaje que desciende más en las profundidades."
+                ),
+            )
+            galeria.db.zona = "galeria_principal"
+            galeria.db.exterior = False
+
+            caverna = _room(
+                "Caverna del Coloso",
+                (
+                    "Una enorme caverna natural en el corazón de la montaña. "
+                    "El suelo está cubierto de polvo rojizo y las paredes emiten un calor inusual. "
+                    "Herramientas de minero antiguas yacen rotas a los lados. "
+                    "En el centro de la sala, algo colosal aguarda en silencio. "
+                    "Al |csur|n está la galería principal."
+                ),
+            )
+            caverna.db.zona = "caverna_coloso"
+            caverna.db.exterior = False
+
+            boca.db.detalles_ocultos = [
+                {
+                    "texto": "Las marcas en la roca alrededor de la entrada sugieren que la mina fue sellada desde dentro, no desde fuera.",
+                    "req_percepcion": 11,
+                },
+                {
+                    "texto": "Hay huellas recientes de algo enorme cerca de la entrada. El polvo está removido.",
+                    "req_percepcion": 14,
+                },
+            ]
+            galeria.db.detalles_ocultos = [
+                {
+                    "texto": "Una de las vigas tiene tallado un mensaje: 'Día 47. El gólem despertó. No saldremos de aquí'.",
+                    "req_percepcion": 12,
+                },
+                {
+                    "texto": "Hay una grieta en la pared que revela una veta de gemas sin explotar. Alguien debería volver con más tiempo.",
+                    "req_percepcion": 15,
+                },
+            ]
+            caverna.db.detalles_ocultos = [
+                {
+                    "texto": "El suelo bajo el gólem tiene grabados círculos rúnicos. Es una invocación de guardián, obra de un mago muy poderoso.",
+                    "req_percepcion": 13,
+                },
+                {
+                    "texto": "En un rincón hay un cofre aplastado por una roca. Dentro hay huesos y un diario ilegible.",
+                    "req_percepcion": 16,
+                },
+            ]
+
+            # Conectar: Bosque → oeste → Boca → norte → Galería → norte → Caverna
+            _link("oeste", "o", "este", "e", bosque, boca)
+            _link("norte", "n", "sur",  "s", boca,   galeria)
+            _link("norte", "n", "sur",  "s", galeria, caverna)
+
+            # Actualizar descripción del Bosque del Norte para reflejar la nueva salida
+            bosque.db.desc = (
+                "Un denso bosque donde la luz apenas penetra entre las copas. "
+                "El suelo está cubierto de hojas secas y ramas caídas. "
+                "Se escuchan ruidos inquietantes entre los arbustos. "
+                "Al |csur|n se ve la Plaza de la Ciudad; "
+                "al |cnorte|n, un claro iluminado; "
+                "al |ceste|n, una cueva oscura; "
+                "al |coeste|n, una colina rocosa con la boca de una mina antigua."
+            )
+
+            # NPCs
+            _spawn("ARANA_CUEVA", boca)
+            _spawn("ARANA_CUEVA", boca)
+            _spawn("MINERO_MALDITO", galeria)
+            _spawn("MINERO_MALDITO", galeria)
+            _spawn("GOLEM_PIEDRA", caverna)
+
+            salas_creadas += 3
+            npcs_creados += 5
+            msg("|gZona 'Minas de Hierro Viejo' creada (3 salas, 5 NPCs).|n")
+
+    # -----------------------------------------------------------------------
+    # BUSCADOR DE TESOROS EN EL MERCADO
+    # -----------------------------------------------------------------------
+
+    mercado_obj = _find_room("Mercado de la Ciudad")
+    if mercado_obj:
+        buscador_existe = any(
+            getattr(o.db, "npc_prototipo", None) == "BUSCADOR_TESOROS"
+            for o in mercado_obj.contents
+            if hasattr(o, "db")
+        )
+        if not buscador_existe:
+            _spawn("BUSCADOR_TESOROS", mercado_obj)
+            npcs_creados += 1
+            msg("|gTorben el buscador de tesoros añadido al Mercado de la Ciudad.|n")
+
+    # -----------------------------------------------------------------------
     # SACERDOTE EN LA PLAZA
     # -----------------------------------------------------------------------
 

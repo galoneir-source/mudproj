@@ -49,7 +49,7 @@ class TestNpcsNecesarios(unittest.TestCase):
 
     def test_plaza_ciudad(self):
         resultado = npcs_necesarios("plaza_ciudad")
-        self.assertEqual(resultado, {"GUARDIA": 1, "SACERDOTE": 1})
+        self.assertEqual(resultado, {"GUARDIA": 1, "SACERDOTE": 1, "BANQUERO": 1})
 
     def test_bosque_norte_dos_goblins(self):
         resultado = npcs_necesarios("bosque_norte")
@@ -72,14 +72,14 @@ class TestCalcularFaltantes(unittest.TestCase):
 
     def test_sin_npcs_presentes_faltan_todos(self):
         faltantes = calcular_faltantes("plaza_ciudad", {})
-        self.assertEqual(faltantes, {"GUARDIA": 1, "SACERDOTE": 1})
+        self.assertEqual(faltantes, {"GUARDIA": 1, "SACERDOTE": 1, "BANQUERO": 1})
 
     def test_ya_completo_devuelve_vacio(self):
-        faltantes = calcular_faltantes("plaza_ciudad", {"GUARDIA": 1, "SACERDOTE": 1})
+        faltantes = calcular_faltantes("plaza_ciudad", {"GUARDIA": 1, "SACERDOTE": 1, "BANQUERO": 1})
         self.assertEqual(faltantes, {})
 
     def test_exceso_no_da_negativo(self):
-        faltantes = calcular_faltantes("plaza_ciudad", {"GUARDIA": 3, "SACERDOTE": 2})
+        faltantes = calcular_faltantes("plaza_ciudad", {"GUARDIA": 3, "SACERDOTE": 2, "BANQUERO": 2})
         self.assertEqual(faltantes, {})
 
     def test_parcial_bosque_norte(self):

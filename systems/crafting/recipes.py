@@ -47,6 +47,18 @@ RECETAS: dict[str, dict] = {
         "cantidad": 1,
         "desc_receta": "La tensión entre lo sagrado y lo oscuro libera una energía restauradora total.",
     },
+    "antídoto de araña": {
+        "ingredientes": {"hilo de araña": 2},
+        "resultado_prototipo": "ANTIDOTO",
+        "cantidad": 2,
+        "desc_receta": "El hilo de araña de cueva contiene propiedades antiveneno excepcionales.",
+    },
+    "tónico de piedra": {
+        "ingredientes": {"mineral de hierro": 1, "gema en bruto": 1},
+        "resultado_prototipo": "POCION_VIDA_MAYOR",
+        "cantidad": 1,
+        "desc_receta": "La energía mineral de la roca y los cristales de la gema, destilados en un tónico rejuvenecedor.",
+    },
 }
 
 
@@ -66,6 +78,9 @@ def buscar_receta(nombre: str) -> tuple[str | None, dict | None]:
 
     matches = [(k, v) for k, v in RECETAS.items() if k.startswith(nombre_lower)]
     if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        matches.sort(key=lambda x: len(x[0]))
         return matches[0]
 
     matches = [(k, v) for k, v in RECETAS.items() if nombre_lower in k]

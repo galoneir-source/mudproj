@@ -690,6 +690,201 @@ CABALLERO_OSCURO = {
     ],
 }
 
+BANQUERO = {
+    "prototype_key": "BANQUERO",
+    "key": "Cornelio el Banquero",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un hombre de aspecto metódico, con un libro de cuentas bajo el brazo "
+        "y gafas de media luna. Su ropa es discreta pero de buena calidad. "
+        "Te observa con cortesía profesional."
+    ),
+    "attrs": [
+        ("nivel", 1),
+        ("hp", 60), ("hp_max", 60),
+        ("fuerza", 8), ("destreza", 9), ("constitucion", 9),
+        ("inteligencia", 14), ("defensa", 2),
+        ("experiencia", 0),
+        ("temperamento", "neutral"),
+        ("habilidades", []),
+        ("faction", "ciudad"),
+        ("faccion", "ciudadanos"),
+        ("es_banquero", True),
+        ("dialogo", {
+            "hola": "Buenos días. ¿Desea depositar o retirar sus objetos?",
+            "banco": "Su bóveda personal está a su disposición. Acceso seguro, sin coste.",
+            "depositar": "Use el comando 'depositar <objeto>' para guardar sus pertenencias.",
+            "retirar": "Use el comando 'retirar <objeto>' para recuperar sus objetos.",
+            "seguridad": "Su bóveda es completamente privada. Nadie puede acceder excepto usted.",
+            "interés": "No cobramos comisiones. Es un servicio de la ciudad para sus ciudadanos.",
+        }),
+        ("npc_prototipo", "BANQUERO"),
+        ("respawn_tiempo", 300),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  Equipo: Minas de Hierro Viejo
+# --------------------------------------------------------------------------- #
+
+PICO_HIERRO = {
+    "prototype_key": "PICO_HIERRO",
+    "key": "pico de minero",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Un pico de minero reconvertido en arma de combate. Pesado pero con buen filo en la punta.",
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 5, "constitucion": 1}),
+        ("valor", 45),
+    ],
+}
+
+ANILLO_CONSTITUCION = {
+    "prototype_key": "ANILLO_CONSTITUCION",
+    "key": "anillo de constitución",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un anillo forjado con mineral de la mina, cálido al tacto. "
+        "Quien lo porta siente una resistencia sobrenatural."
+    ),
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"constitucion": 4, "hp_max": 15}),
+        ("valor", 55),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs de expansión: Minas de Hierro Viejo
+# --------------------------------------------------------------------------- #
+
+ARANA_CUEVA = {
+    "prototype_key": "ARANA_CUEVA",
+    "key": "araña de cueva",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una araña de patas largas y abdomen oscuro, del tamaño de un perro mediano. "
+        "Sus ocho ojos reflectantes te siguen con frialdad calculada. "
+        "Hilo plateado cuelga de sus quelíceros."
+    ),
+    "attrs": [
+        ("nivel", 3),
+        ("hp", 55), ("hp_max", 55),
+        ("fuerza", 11), ("destreza", 16), ("constitucion", 10),
+        ("inteligencia", 4), ("defensa", 5),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["corte", "veneno"]),
+        ("loot", [
+            {"key": "hilo de araña", "cantidad": 2,
+             "desc": "Hilo de araña resistente y fino. Útil en alquimia y artesanía."},
+            {"key": "colmillo de araña", "cantidad": 1, "chance": 0.40,
+             "desc": "Un colmillo hueco de araña de cueva. Aún rezuma veneno."},
+        ]),
+        ("faccion", "horda_salvaje"),
+        ("npc_prototipo", "ARANA_CUEVA"),
+        ("respawn_tiempo", 120),
+    ],
+}
+
+MINERO_MALDITO = {
+    "prototype_key": "MINERO_MALDITO",
+    "key": "minero maldito",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "El cadáver animado de un minero cuya piel está gris como la piedra. "
+        "Empuña un pico oxidado con manos rígidas. "
+        "Sus ojos no reflejan luz alguna y arrastra los pies con cada paso."
+    ),
+    "attrs": [
+        ("nivel", 4),
+        ("hp", 80), ("hp_max", 80),
+        ("fuerza", 15), ("destreza", 8), ("constitucion", 16),
+        ("inteligencia", 3), ("defensa", 7),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida"]),
+        ("loot", [
+            {"key": "mineral de hierro", "cantidad": 1, "chance": 0.60,
+             "desc": "Un trozo de mineral de hierro sin procesar. De buen color y peso sólido."},
+            {"key": "gema en bruto", "cantidad": 1, "chance": 0.20,
+             "desc": "Una gema sin tallar de color violáceo. Los joyeros la pagarían bien."},
+            {"prototype_key": "PICO_HIERRO", "cantidad": 1, "chance": 0.15},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "MINERO_MALDITO"),
+        ("respawn_tiempo", 180),
+    ],
+}
+
+GOLEM_PIEDRA = {
+    "prototype_key": "GOLEM_PIEDRA",
+    "key": "gólem de piedra",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una colosal figura de roca y arcilla que ocupa casi toda la caverna. "
+        "Su cuerpo está surcado de venas de mineral que brillan con un resplandor rojizo. "
+        "Cada paso hace temblar el suelo. No tiene rostro, "
+        "solo dos grietas luminosas donde deberían estar los ojos."
+    ),
+    "attrs": [
+        ("nivel", 7),
+        ("hp", 200), ("hp_max", 200),
+        ("fuerza", 22), ("destreza", 5), ("constitucion", 20),
+        ("inteligencia", 3), ("defensa", 16),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro"]),
+        ("loot", [
+            {"key": "núcleo de piedra", "cantidad": 1,
+             "desc": "El núcleo arcano que animaba al gólem. Emana calor y vibra levemente."},
+            {"prototype_key": "PICO_HIERRO", "cantidad": 1},
+            {"prototype_key": "ANILLO_CONSTITUCION", "cantidad": 1, "chance": 0.30},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "GOLEM_PIEDRA"),
+        ("respawn_tiempo", 900),
+    ],
+}
+
+BUSCADOR_TESOROS = {
+    "prototype_key": "BUSCADOR_TESOROS",
+    "key": "Torben el buscador de tesoros",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un hombre de mediana edad con ropa de cuero desgastada y varias bolsas colgando del cinturón. "
+        "Sus ojos brillan con entusiasmo cuando habla de riquezas enterradas. "
+        "Consulta un mapa hecho jirones que guarda con celo."
+    ),
+    "attrs": [
+        ("nivel", 1),
+        ("hp", 60), ("hp_max", 60),
+        ("fuerza", 10), ("destreza", 12), ("constitucion", 10),
+        ("inteligencia", 12), ("defensa", 2),
+        ("experiencia", 0),
+        ("temperamento", "neutral"),
+        ("habilidades", []),
+        ("faction", "aventureros"),
+        ("faccion", "gremio_aventureros"),
+        ("dialogo", {
+            "hola": "¡Bienvenido! Tengo información valiosa sobre las minas al oeste del bosque.",
+            "minas": "Las Minas de Hierro Viejo llevan siglos abandonadas. Digo yo que hay algo interesante ahí dentro.",
+            "mineral": "El mineral de hierro de esas minas es de la mejor calidad. Tráeme algunos y te compensaré.",
+            "gólem": "Hay un gólem guardián en las profundidades. Quien lo derrote será famoso en el Gremio.",
+            "gremio": "Soy miembro del Gremio de Aventureros. Siempre buscamos valientes para explorar lugares peligrosos.",
+            "araña": "Las arañas de cueva son el menor de los problemas. Lo que hay más adentro... eso sí que es peligroso.",
+            "comprar": "Tengo equipo para exploradores. ¿Qué necesitas?",
+        }),
+        ("tienda", [
+            {"key": "pico de minero",  "prototype_key": "PICO_HIERRO",  "precio": 45, "cantidad": -1},
+            {"key": "antídoto",        "prototype_key": "ANTIDOTO",      "precio": 20, "cantidad": -1},
+            {"key": "poción de vida",  "prototype_key": "POCION_VIDA",   "precio": 15, "cantidad": -1},
+        ]),
+        ("npc_prototipo", "BUSCADOR_TESOROS"),
+        ("respawn_tiempo", 300),
+    ],
+}
+
 SACERDOTE = {
     "prototype_key": "SACERDOTE",
     "key": "Hermano Aldric el sacerdote",

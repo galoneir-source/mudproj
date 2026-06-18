@@ -84,18 +84,28 @@ class Room(ObjectParent, DefaultRoom):
         if desc:
             desc = f"\n{desc}"
 
-        # --- Ambiente (ciclo día/noche) ---
+        # --- Ambiente (ciclo día/noche + clima) ---
         exterior = getattr(self.db, "exterior", True)
         hora_juego = None
+        clima_juego = None
         if exterior:
+            tipo = getattr(self.db, "tipo_ambiente", "exterior_natural")
             try:
                 from features.time.clock_script import hora_actual
                 from systems.time.clock import texto_ambiente
                 hora_juego = hora_actual()
-                tipo = getattr(self.db, "tipo_ambiente", "exterior_natural")
                 amb = texto_ambiente(hora_juego, tipo)
                 if amb:
                     desc = desc + f"\n|x{amb}|n"
+            except Exception:
+                pass
+            try:
+                from features.weather.weather_script import clima_actual as _clima_actual
+                from systems.weather.weather import texto_ambiente_clima
+                clima_juego = _clima_actual()
+                texto_clima = texto_ambiente_clima(clima_juego, tipo)
+                if texto_clima:
+                    desc = desc + f"\n|x{texto_clima}|n"
             except Exception:
                 pass
 
@@ -139,7 +149,7 @@ class Room(ObjectParent, DefaultRoom):
             if obj.id in all_exit_ids:
                 continue
             # Omitir entidades ocultas que el looker no puede detectar (con penaliz. nocturna)
-            if not _pm.puede_detectar(looker, obj, hora=hora_juego):
+            if not _pm.puede_detectar(looker, obj, hora=hora_juego, clima=clima_juego):
                 continue
             if _is_character_object(obj):
                 # Es un personaje (jugador o NPC)

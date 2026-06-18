@@ -5,6 +5,62 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.14.0] — 2026-06-17
+
+### Añadido
+- Nueva zona: **Minas de Hierro Viejo** (3 salas), conectada al oeste del Bosque del Norte.
+  - **Boca de la Mina** — exterior, entrada con arañas guardianas.
+  - **Galería Principal** — interior, túneles con mineros malditos (no-muertos).
+  - **Caverna del Coloso** — interior, guarida del gólem boss.
+- Nuevos NPCs de combate:
+  - **Araña de Cueva** (nv.3, Horda Salvaje): usa `corte` y `veneno`. Suelta hilo de araña y colmillos.
+  - **Minero Maldito** (nv.4, Legión Oscura): cadáver animado con `golpe fuerte` y `embestida`. Suelta mineral de hierro y gemas.
+  - **Gólem de Piedra** (nv.7, boss, Legión Oscura): boss colosal con `golpe fuerte`, `embestida` y `golpe maestro`. Suelta núcleo de piedra y pico de minero garantizado.
+- Nuevo NPC civil: **Torben el buscador de tesoros** (Gremio de Aventureros) en el Mercado de la Ciudad, con tienda y 2 misiones propias.
+- 2 misiones nuevas (dadas por Torben):
+  - *La Veta Perdida* (fetch 2 minerales de hierro, nv.3)
+  - *El Coloso Despertado* (kill gólem de piedra, nv.6; recompensa: Anillo de Constitución)
+- 2 nuevos items de equipo:
+  - **Pico de Minero** (arma: FUE+5, CON+1)
+  - **Anillo de Constitución** (accesorio: CON+4, HP_MAX+15)
+- 2 nuevas recetas de crafteo (loot de la zona):
+  - **Antídoto de Araña** (hilo de araña ×2 → Antídoto ×2)
+  - **Tónico de Piedra** (mineral de hierro + gema en bruto → Poción de Vida Mayor)
+- Zona `mercado` en spawn tables actualizada: incluye BUSCADOR_TESOROS.
+- Detalles ocultos en las 3 nuevas salas (percepción 11–16).
+- 43 tests unitarios puros + 52 de integración. Suite total: ~1.006 tests.
+
+## [0.13.0] — 2026-06-06
+
+### Añadido
+- **Sistema de clima dinámico** con 5 tipos de tiempo: Despejado, Nublado, Lluvia, Tormenta y Niebla.
+  - Transiciones probabilísticas: el clima cambia de forma gradual cada 10 minutos reales.
+  - Al cambiar de clima, todos los jugadores conectados reciben un mensaje atmosférico de transición.
+  - Salas exteriores muestran el texto de ambiente del clima en su descripción (junto al ciclo día/noche).
+  - Salas interiores (`db.exterior = False`) no muestran texto de clima.
+  - Textos diferenciados por tipo de entorno: `exterior_natural` y `exterior_urbano`.
+- Penalizaciones climáticas a la percepción: Niebla −4, Tormenta −2, Lluvia −1 (se acumulan con la penalización nocturna).
+- `PerceptionManager.nivel_percepcion/puede_detectar/revelar_detalles/filtrar_visibles` aceptan nuevo parámetro `clima` opcional.
+- Comando `clima` (alias `weather`): muestra el tipo de tiempo actual e indica la penalización de percepción activa.
+- El comando `percibir` aplica ahora tanto la penalización nocturna como la climática.
+- Script global `ClimaScript` (persistente, `features/weather/weather_script.py`): arranca automáticamente en `at_server_start`.
+- Módulo puro `systems/weather/weather.py`: `CLIMAS`, `TRANSICIONES`, `PENALIZACION_PERCEPCION`, `MENSAJES_TRANSICION`, `siguiente_clima`, `penalizacion_percepcion`, `texto_ambiente_clima`.
+- 55 tests nuevos: 36 unitarios puros + 19 de integración (suite total: ~911 tests).
+
+## [0.12.0] — 2026-06-05
+
+### Añadido
+- **Sistema de banco**: los jugadores pueden depositar y retirar objetos del banco cerca de un banquero NPC.
+  - Comandos: `banco` (listar), `depositar <objeto>`, `retirar <objeto>`.
+  - Los objetos depositados se guardan en el limbo de la base de datos (persistentes entre sesiones).
+  - Requiere la presencia de un NPC con `db.es_banquero=True` en la misma sala.
+  - No se pueden depositar objetos equipados; la función `limpiar_banco` elimina referencias muertas automáticamente.
+- Nuevo NPC civil: **Cornelio el Banquero** (neutral, Ciudadanos) en la Plaza de la Ciudad, con diálogo.
+- `db.banco = []` inicializado en `Character.at_object_creation`.
+- Prototipo `BANQUERO` añadido a `world/prototypes.py` y zona `plaza_ciudad` en spawn tables.
+- Módulo puro `systems/bank/bank.py`: `puede_depositar`, `limpiar_banco`.
+- 15 tests unitarios puros (`tests/test_bank_system.py`) + 20 tests de integración (`tests/test_bank.py`).
+
 ## [0.11.0] — 2026-06-05
 
 ### Añadido
