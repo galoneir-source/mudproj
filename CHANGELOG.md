@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.16.0] — 2026-06-18
+
+### Añadido
+- **Sistema de encantamiento de equipo**: mejora ítems `Equipo` hasta +3 usando loot del mundo.
+  - Comando `encantar [objeto]`: sin argumento lista los ítems mejorables con su coste; con argumento encanta el ítem.
+  - Alias: `enchant`, `encantamiento`.
+  - Cada nivel añade stats según el slot:
+    - **Arma** +N: +2 al stat con mayor bonus positivo.
+    - **Armadura** +N: +2 defensa, +5 HP_MAX.
+    - **Accesorio** +N: +1 a cada stat con valor positivo.
+  - Costes escalan con el nivel; el nivel 3 requiere materiales raros (núcleo arcano / cenizas arcanas).
+  - Si el ítem está equipado, el bonus se aplica al personaje inmediatamente.
+  - El nombre del ítem se actualiza con el sufijo ` +N` (e.g., `espada de hierro +2`).
+  - Módulo puro `systems/enchantment/enchantment.py` con toda la lógica.
+  - `features/enchantment/commands.py` integrado en `CharacterCmdSet`.
+- Suite de tests: ~1.106 tests (~54 nuevos).
+
 ## [0.15.0] — 2026-06-18
 
 ### Añadido

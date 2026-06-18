@@ -27,6 +27,7 @@ from features.skills.commands import SkillCmdSet
 from features.party.commands import PartyCmdSet
 from features.reputation.commands import ReputationCmdSet
 from features.bank.commands import BankCmdSet
+from features.enchantment.commands import EnchantCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -70,6 +71,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(ReputationCmdSet)
         # --- Banco ---
         self.add(BankCmdSet)
+        # --- Encantamiento ---
+        self.add(EnchantCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
