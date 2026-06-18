@@ -213,6 +213,49 @@ QUESTS: dict[str, dict] = {
         "texto_entrega": "¡Lo has logrado! Ahora podemos explorar la mina en paz. Toma, esto es tuyo.",
         "nivel_minimo": 6,
     },
+    "aprendices_torre": {
+        "titulo": "Los Aprendices de la Torre",
+        "descripcion": (
+            "Los aprendices del archimago Vexthar se han corrompido y vagan peligrosamente "
+            "por la torre al este del Claro del Bosque. "
+            "El Hermano Aldric pide que se reduzca su número para debilitar a su maestro."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "aprendiz corrompido", "cantidad": 3},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 250, "monedas": 50},
+        "rep_reward": {"ciudadanos": 250, "legion_oscura": -200},
+        "texto_oferta": (
+            "Los aprendices de Vexthar son almas perdidas y peligrosas. "
+            "Eliminar tres de ellos debilitaría notablemente el poder del archimago. ¿Puedes hacerlo?"
+        ),
+        "texto_progreso": "Llevas {actual} de {total} aprendices eliminados. Sigue adelante.",
+        "texto_entrega": "Bien hecho. La influencia de Vexthar se debilita. Que los dioses guíen tu camino.",
+        "nivel_minimo": 4,
+    },
+    "archimago_caido": {
+        "titulo": "El Archimago Caído",
+        "descripcion": (
+            "El archimago Vexthar lleva décadas atrapado en su torre, "
+            "corrompido por la magia prohibida que intentó dominar. "
+            "Mira la mercader ofrece una gran recompensa a quien lo detenga definitivamente."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "archimago vexthar", "cantidad": 1},
+        "dador": "Mira la mercader",
+        "receptor": "Mira la mercader",
+        "recompensa": {"xp": 700, "monedas": 150, "prototipo": "MANTO_ARCANO"},
+        "rep_reward": {"ciudadanos": 600, "gremio_aventureros": 400, "legion_oscura": -500},
+        "texto_oferta": (
+            "Vexthar lleva demasiado tiempo siendo una amenaza. "
+            "Si eres lo bastante poderoso para entrar en esa torre y acabar con él, "
+            "te pagaré con lo mejor que tengo: su propio manto arcano."
+        ),
+        "texto_progreso": "El archimago Vexthar sigue en la cámara del ritual. Prepárate muy bien antes de subir.",
+        "texto_entrega": "Lo has logrado. Vexthar puede descansar por fin. Toma el manto, te lo has ganado.",
+        "nivel_minimo": 7,
+    },
     "amenaza_catacumbas": {
         "titulo": "La Amenaza de las Catacumbas",
         "descripcion": (

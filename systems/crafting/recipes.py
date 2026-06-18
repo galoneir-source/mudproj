@@ -59,6 +59,18 @@ RECETAS: dict[str, dict] = {
         "cantidad": 1,
         "desc_receta": "La energía mineral de la roca y los cristales de la gema, destilados en un tónico rejuvenecedor.",
     },
+    "esencia de ceniza": {
+        "ingredientes": {"cenizas arcanas": 2},
+        "resultado_prototipo": "POCION_VIDA_MAYOR",
+        "cantidad": 1,
+        "desc_receta": "Las cenizas impregnadas de magia residual destilan su energía en un poderoso elixir curativo.",
+    },
+    "elixir arcano": {
+        "ingredientes": {"cenizas arcanas": 1, "fragmento arcano": 1},
+        "resultado_prototipo": "ELIXIR_RESTAURACION",
+        "cantidad": 1,
+        "desc_receta": "La fusión de cenizas mágicas y un fragmento arcano solidificado libera una energía restauradora total.",
+    },
 }
 
 

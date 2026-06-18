@@ -93,6 +93,18 @@ ZONAS: dict[str, list[dict]] = {
         {"prototipo": "GOLEM_PIEDRA", "cantidad": 1},
     ],
     # ----------------------------------------------------------------- #
+    #  Expansión: Torre del Mago Caído
+    # ----------------------------------------------------------------- #
+    "base_torre": [
+        {"prototipo": "GUARDIAN_ARCANO", "cantidad": 1},
+    ],
+    "biblioteca_archimago": [
+        {"prototipo": "APRENDIZ_CORRUPTO", "cantidad": 2},
+    ],
+    "camara_ritual": [
+        {"prototipo": "ARCHIMAGO_VEXTHAR", "cantidad": 1},
+    ],
+    # ----------------------------------------------------------------- #
     #  Ciudad (sacerdote y banquero en plaza)
     # ----------------------------------------------------------------- #
     "plaza_ciudad": [

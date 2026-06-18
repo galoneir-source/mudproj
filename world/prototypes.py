@@ -414,6 +414,9 @@ MERCADER = {
             "catacumbas": "Las catacumbas bajo el calabozo llevan siglos selladas. Quien las abrio no volvio.",
             "escama": "Escamas de hombre lagarto? Son resistentes al fuego. Te las pago bien.",
             "grimorio": "Un grimorio del nigromante? Eso es magia oscura. No lo quiero... pero te lo compro igual.",
+            "torre": "Una torre de piedra negra al este del claro del bosque. Un archimago cayó en locura allí hace décadas. Sus aprendices se corrompieron con él.",
+            "archimago": "¿El archimago Vexthar? Un genio... y un lunático. Experimentó con magia prohibida y ahora está atrapado en su propia torre.",
+            "mago": "La magia arcana me fascina, pero esa torre me da mala espina. Si alguien limpiara el problema... ciertos objetos arcanos se pagarían muy bien.",
         }),
         ("tienda", [
             {"key": "espada de hierro",       "prototype_key": "ESPADA_HIERRO",       "precio": 40, "cantidad": -1},
@@ -885,6 +888,142 @@ BUSCADOR_TESOROS = {
     ],
 }
 
+# --------------------------------------------------------------------------- #
+#  Equipo: Torre del Mago Caído
+# --------------------------------------------------------------------------- #
+
+BACULO_ARCHIMAGO = {
+    "prototype_key": "BACULO_ARCHIMAGO",
+    "key": "báculo del archimago",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un báculo de ébano con un cristal esférico en la punta que emite una luz azul pulsante. "
+        "Grabados arcanos recorren toda su longitud. "
+        "Quien lo empuña siente el conocimiento del archimago fluir por sus dedos."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"inteligencia": 8, "defensa": 1}),
+        ("valor", 100),
+    ],
+}
+
+MANTO_ARCANO = {
+    "prototype_key": "MANTO_ARCANO",
+    "key": "manto arcano",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un manto largo de tela oscura con bordados plateados que forman runas de protección. "
+        "Pesa muy poco y parece resistir el frío sobrenatural. "
+        "Lleva el sello del Archimago Vexthar cosido en el interior."
+    ),
+    "attrs": [
+        ("slot", "armadura"),
+        ("bonuses", {"defensa": 5, "inteligencia": 3, "hp_max": 10}),
+        ("valor", 90),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs de expansión: Torre del Mago Caído
+# --------------------------------------------------------------------------- #
+
+APRENDIZ_CORRUPTO = {
+    "prototype_key": "APRENDIZ_CORRUPTO",
+    "key": "aprendiz corrompido",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura en harapos que fueron túnicas de mago. "
+        "Sus ojos brillan con una luz azul antinatural y sus manos chispean de energía arcana incontrolada. "
+        "Murmura fórmulas en un idioma que ya no reconoce."
+    ),
+    "attrs": [
+        ("nivel", 5),
+        ("hp", 85), ("hp_max", 85),
+        ("fuerza", 9), ("destreza", 12), ("constitucion", 10),
+        ("inteligencia", 16), ("defensa", 6),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["dardo magico", "escudo arcano"]),
+        ("loot", [
+            {"key": "cenizas arcanas", "cantidad": 1, "chance": 0.70,
+             "desc": "Cenizas impregnadas de energía mágica residual. Queman la mano al tocarlas."},
+            {"key": "fragmento de saber", "cantidad": 1, "chance": 0.25,
+             "desc": "Un trozo de pergamino con fórmulas arcanas garabateadas. Parcialmente legible."},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "APRENDIZ_CORRUPTO"),
+        ("respawn_tiempo", 150),
+    ],
+}
+
+GUARDIAN_ARCANO = {
+    "prototype_key": "GUARDIAN_ARCANO",
+    "key": "guardián arcano",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una construcción de piedra y metal en forma vagamente humana, "
+        "animada por núcleos de energía arcana que brillan en su pecho y ojos. "
+        "No respira ni emite sonido alguno. Sus puños son bloques de piedra encantada."
+    ),
+    "attrs": [
+        ("nivel", 6),
+        ("hp", 130), ("hp_max", 130),
+        ("fuerza", 16), ("destreza", 7), ("constitucion", 18),
+        ("inteligencia", 8), ("defensa", 13),
+        ("experiencia", 0),
+        ("temperamento", "guardian"),
+        ("habilidades", ["golpe fuerte", "embestida"]),
+        ("loot", [
+            {"key": "fragmento arcano", "cantidad": 1,
+             "desc": "Un fragmento de energía mágica solidificada. Se usaba para animar guardianes."},
+            {"prototype_key": "BACULO_ARCANO_ANTIGUO", "cantidad": 1, "chance": 0.15},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "GUARDIAN_ARCANO"),
+        ("respawn_tiempo", 360),
+    ],
+}
+
+ARCHIMAGO_VEXTHAR = {
+    "prototype_key": "ARCHIMAGO_VEXTHAR",
+    "key": "archimago Vexthar",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un anciano de barba blanca y ropas arcanas en jirones, "
+        "que flota varios palmos sobre el suelo en el centro del círculo ritual. "
+        "Sus ojos son dos orbes de luz blanca cegadora. "
+        "El aire a su alrededor distorsiona la realidad con el peso de su poder. "
+        "Su expresión mezcla lucidez y locura en partes iguales."
+    ),
+    "attrs": [
+        ("nivel", 9),
+        ("hp", 260), ("hp_max", 260),
+        ("fuerza", 9), ("destreza", 13), ("constitucion", 14),
+        ("inteligencia", 24), ("defensa", 10),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["dardo magico", "escudo arcano", "bola fuego", "drenar vida"]),
+        ("loot", [
+            {"key": "núcleo arcano", "cantidad": 1,
+             "desc": "El núcleo de energía pura que mantenía a Vexthar con vida. Emana un calor intenso."},
+            {"prototype_key": "BACULO_ARCHIMAGO", "cantidad": 1},
+            {"prototype_key": "MANTO_ARCANO", "cantidad": 1, "chance": 0.50},
+        ]),
+        ("dialogo", {
+            "poder": "El poder arcano es la única verdad. Todo lo demás es ilusión transitoria.",
+            "torre": "Mi torre era el centro del conocimiento del mundo. Ahora es mi prisión y mi fortaleza.",
+            "aprendices": "Mis discípulos se corrompieron cuando rompí el sello arcano. Su locura los protege.",
+            "sello": "El sello arcano... lo rompí para alcanzar el conocimiento absoluto. El precio fue... inesperado.",
+            "rendirse": "¿Rendirme? El conocimiento no muere. Ni yo tampoco.",
+            "mago": "Fui el más grande archimago de esta era. Ese título sigue siendo mío.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "ARCHIMAGO_VEXTHAR"),
+        ("respawn_tiempo", 1200),
+    ],
+}
+
 SACERDOTE = {
     "prototype_key": "SACERDOTE",
     "key": "Hermano Aldric el sacerdote",
@@ -912,6 +1051,9 @@ SACERDOTE = {
             "cristales": "Los cristales sagrados tienen propiedades curativas si se procesan correctamente.",
             "bendición": "La Luz te proteja en tu camino hacia el norte.",
             "misión": "Necesito ayuda urgente con el templo. ¿Te interesa escuchar?",
+            "torre": "Al este del claro hay una torre oscura. La energía arcana corrompida que emana de ahí me preocupa casi tanto como el templo.",
+            "archimago": "Vexthar fue un gran mago antes de que la oscuridad lo atrapara. Sus aprendices son una amenaza para toda la región.",
+            "aprendices": "Los aprendices corrompidos patrullan la torre. Eliminarlos debilitaría el poder de Vexthar.",
             "comprar": "Tengo artículos que pueden ayudarte.",
         }),
         ("tienda", [

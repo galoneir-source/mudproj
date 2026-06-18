@@ -5,6 +5,31 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.15.0] — 2026-06-18
+
+### Añadido
+- Nueva zona: **Torre del Mago Caído** (3 salas), conectada al este del Claro del Bosque.
+  - **Base de la Torre** — exterior, entrada sellada con inscripciones arcanas.
+  - **Biblioteca del Archimago** — interior, estanterías quemadas y círculos arcanos.
+  - **Cámara del Ritual** — interior, sala superior donde mora el archimago boss.
+- Nuevos NPCs de combate:
+  - **Aprendiz Corrompido** (nv.5, Legión Oscura): usa `dardo mágico` y `escudo arcano`. Suelta cenizas arcanas y fragmentos de saber.
+  - **Guardián Arcano** (nv.6, Legión Oscura): constructo mágico con `golpe fuerte` y `embestida`. Suelta fragmento arcano.
+  - **Archimago Vexthar** (nv.9, boss, Legión Oscura): usa `dardo mágico`, `escudo arcano`, `bola de fuego` y `drenar vida`. Suelta núcleo arcano y báculo del archimago garantizados.
+- 2 nuevos ítems de equipo:
+  - **Báculo del Archimago** (arma: INT+8, DEF+1)
+  - **Manto Arcano** (armadura: DEF+5, INT+3, HP_MAX+10)
+- 2 nuevas misiones:
+  - *Los Aprendices de la Torre* (kill 3 aprendices, nv.4; dador: Hermano Aldric)
+  - *El Archimago Caído* (kill Vexthar, nv.7; dador: Mira la mercader; recompensa: Manto Arcano)
+- 2 nuevas recetas de crafteo (loot de la zona):
+  - **Esencia de Ceniza** (cenizas arcanas ×2 → Poción de Vida Mayor)
+  - **Elixir Arcano** (cenizas arcanas ×1 + fragmento arcano ×1 → Elixir de Restauración)
+- Descripción del Claro del Bosque actualizada para reflejar la salida este hacia la torre.
+- Nuevos diálogos en Mira la mercader y Hermano Aldric sobre la torre y el archimago.
+- Detalles ocultos en las 3 nuevas salas (percepción 11–16).
+- Suite de tests actualizada: ~1.052 tests (~46 nuevos).
+
 ## [0.14.0] — 2026-06-17
 
 ### Añadido

@@ -485,6 +485,113 @@ def construir_expansion(caller=None):
             msg("|gZona 'Minas de Hierro Viejo' creada (3 salas, 5 NPCs).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 5: TORRE DEL MAGO CAÍDO
+    # -----------------------------------------------------------------------
+
+    if _find_room("Base de la Torre"):
+        msg("|yZona 'Torre del Mago Caído' ya existe. Omitida.|n")
+    else:
+        claro = _find_room("Claro del Bosque")
+        if not claro:
+            msg("|rError: no se encontró el Claro del Bosque. Omitiendo zona de la Torre.|n")
+        else:
+            base = _room(
+                "Base de la Torre",
+                (
+                    "Una estructura cilíndrica de piedra negra se alza al borde del claro, "
+                    "parcialmente cubierta de enredaderas muertas. "
+                    "La puerta de entrada, de madera chamuscada, cuelga abierta de un gozne. "
+                    "Inscripciones arcanas en el dintel brillan con una luz azulada intermitente. "
+                    "Al |coeste|n está el Claro del Bosque; "
+                    "al |cnorte|n (entrar), la planta baja de la torre."
+                ),
+            )
+            base.db.zona = "base_torre"
+
+            biblioteca = _room(
+                "Biblioteca del Archimago",
+                (
+                    "Una estancia circular atestada de estanterías derruidas. "
+                    "Los libros se han convertido en polvo o ceniza "
+                    "y el suelo está cubierto de pergaminos quemados. "
+                    "Círculos arcanos grabados en el suelo emiten una luz verdosa débil. "
+                    "El aire sabe a ozono y quemado. "
+                    "Al |csur|n (salir) está la base de la torre; "
+                    "al |cnorte|n, una escalera de piedra sube hacia las alturas."
+                ),
+            )
+            biblioteca.db.zona = "biblioteca_archimago"
+            biblioteca.db.exterior = False
+
+            camara = _room(
+                "Cámara del Ritual",
+                (
+                    "La sala superior de la torre, circular y de techo abovedado. "
+                    "Un ritual inconcluso lleva décadas grabado en el suelo con polvo de runas. "
+                    "Desde las ventanas rajadas se ve el bosque en todas direcciones. "
+                    "En el centro de la sala, una figura flotante aguarda inmóvil. "
+                    "Al |csur|n (bajar) está la biblioteca."
+                ),
+            )
+            camara.db.zona = "camara_ritual"
+            camara.db.exterior = False
+
+            base.db.detalles_ocultos = [
+                {
+                    "texto": "Las inscripciones del dintel son un sello de contención. Fue roto desde dentro hace décadas.",
+                    "req_percepcion": 11,
+                },
+                {
+                    "texto": "Hay huellas de botas en la tierra alrededor de la torre. Alguien sale a patrullar regularmente.",
+                    "req_percepcion": 14,
+                },
+            ]
+            biblioteca.db.detalles_ocultos = [
+                {
+                    "texto": "En una estantería derruida hay un diario parcialmente legible. El último entrada dice: 'El sello cedió. Ya no puedo parar'.",
+                    "req_percepcion": 12,
+                },
+                {
+                    "texto": "Bajo los pergaminos quemados hay un panel de suelo que no encaja bien. Contiene un frasco de antídoto intacto.",
+                    "req_percepcion": 15,
+                },
+            ]
+            camara.db.detalles_ocultos = [
+                {
+                    "texto": "El círculo del suelo es una jaula arcana, no un altar. Vexthar está atrapado aquí, no es su elección permanecer.",
+                    "req_percepcion": 13,
+                },
+                {
+                    "texto": "En la pared hay una placa de metal: 'Archimago Vexthar, primer grado del Gremio Arcano. Desaparecido en el año 847'.",
+                    "req_percepcion": 16,
+                },
+            ]
+
+            # Conectar: Claro → este → Base → norte → Biblioteca → norte → Cámara
+            _link("este", "e", "oeste", "o", claro, base)
+            _link("norte", "n", "sur",  "s", base, biblioteca)
+            _link("norte", "n", "sur",  "s", biblioteca, camara)
+
+            # Actualizar descripción del Claro para reflejar la nueva salida
+            claro.db.desc = (
+                "Un pequeño claro donde los rayos de sol logran atravesar las ramas. "
+                "En el suelo hay huellas de criaturas pequeñas y restos de fogatas. "
+                "Al |csur|n está el Bosque del Norte; "
+                "al |cnorte|n, el camino hacia las ruinas del templo; "
+                "al |ceste|n, la silueta de una torre de piedra negra entre los árboles."
+            )
+
+            # NPCs
+            _spawn("GUARDIAN_ARCANO", base)
+            _spawn("APRENDIZ_CORRUPTO", biblioteca)
+            _spawn("APRENDIZ_CORRUPTO", biblioteca)
+            _spawn("ARCHIMAGO_VEXTHAR", camara)
+
+            salas_creadas += 3
+            npcs_creados += 4
+            msg("|gZona 'Torre del Mago Caído' creada (3 salas, 4 NPCs).|n")
+
+    # -----------------------------------------------------------------------
     # BUSCADOR DE TESOROS EN EL MERCADO
     # -----------------------------------------------------------------------
 
