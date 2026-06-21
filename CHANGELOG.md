@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.20.0] — 2026-06-21
+
+### Añadido
+- **Sistema de misiones encadenadas**: las quests pueden declarar un campo `requiere` con el ID de otra quest que debe estar en estado `"entregada"` para desbloquearlas.
+  - `quest_disponible()` comprueba el prerrequisito antes del nivel mínimo.
+  - El comando `hablar <npc> = misión` muestra una sección **"Próximamente disponibles"** con quests bloqueadas solo por prerrequisito cuando la quest requerida ya está en el log del jugador (cualquier estado), permitiendo ver el camino de la cadena.
+- **Cadena 1: La Oscuridad se Extiende** (Hermano Aldric, requiere `caballero_sombras`):
+  - `ecos_del_baron` (lv.6, fetch 2 "fragmento de alma oscura"): el caballero oscuro apunta a la Ciudadela.
+  - `legion_en_marcha` (lv.7, kill 3 "caballero de la muerte"): detener la vanguardia de la Legión.
+  - `filo_del_abismo` (lv.8, kill 2 "hechicero sombrío"): interrumpir el ritual de invocación masiva. Recompensa final: `TUNICA_LICHE`.
+- **Cadena 2: Secretos de la Legión** (Mira la mercader, requiere `archimago_caido`):
+  - `secretos_de_la_torre` (lv.7, fetch 3 "cenizas sombrías"): Mira investiga la conexión entre Vexthar y el liche.
+  - `corazon_de_tinieblas` (lv.8, kill 2 "hechicero sombrío"): debilitar el nexo arcano.
+  - `esencia_del_poder` (lv.9, fetch 1 "esencia del liche"): completar la investigación de Mira. Recompensa final: `BACULO_ARCHIMAGO`.
+- Suite de tests: ~1.343 tests (~56 nuevos: 39 puros + 17 integración).
+
 ## [0.19.0] — 2026-06-21
 
 ### Añadido

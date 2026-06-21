@@ -299,6 +299,157 @@ QUESTS: dict[str, dict] = {
         "texto_entrega": "¡Impresionante! Con esto podré estudiar la necromancia de primera mano. Gracias.",
         "nivel_minimo": 7,
     },
+    # ----------------------------------------------------------------- #
+    #  Cadena 1: La Oscuridad se Extiende  (Aldric, empieza desde caballero_sombras)
+    # ----------------------------------------------------------------- #
+    "ecos_del_baron": {
+        "titulo": "Los Ecos del Barón",
+        "descripcion": (
+            "El caballero oscuro que gobernaba el templo no era sino un reflejo de algo mayor: "
+            "la Ciudadela Oscura al norte. "
+            "Sus fragmentos de alma guardan el eco del camino hacia allí. "
+            "El Hermano Aldric los necesita para rastrear el origen de la corrupción."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "fragmento de alma oscura", "cantidad": 2},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 350, "monedas": 70},
+        "rep_reward": {"ciudadanos": 300, "gremio_aventureros": 150, "legion_oscura": -200},
+        "texto_oferta": (
+            "El barón no actuaba solo. Sus memorias residuales apuntan a la Ciudadela Oscura. "
+            "Necesito fragmentos de alma oscura de sus nuevos siervos para rastrear la fuente. "
+            "¿Puedes traerme dos?"
+        ),
+        "texto_progreso": "Aún necesito {faltante} fragmento(s) de alma oscura más.",
+        "texto_entrega": "Esto es exactamente lo que necesitaba. Los ecos son clarísimos. La Ciudadela está detrás de todo.",
+        "nivel_minimo": 6,
+        "requiere": "caballero_sombras",
+    },
+    "legion_en_marcha": {
+        "titulo": "La Legión en Marcha",
+        "descripcion": (
+            "Los ecos del barón revelan que la Ciudadela envía caballeros de la muerte "
+            "como vanguardia para explorar y debilitar los asentamientos cercanos. "
+            "El Hermano Aldric pide detener a tres de ellos antes de que avancen más."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "caballero de la muerte", "cantidad": 3},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 500, "monedas": 100},
+        "rep_reward": {"ciudadanos": 450, "gremio_aventureros": 250, "legion_oscura": -350},
+        "texto_oferta": (
+            "Los ecos lo confirman: la Ciudadela lanza exploradores al mundo. "
+            "Los caballeros de la muerte son su vanguardia. "
+            "Detenlos antes de que abran el camino a algo peor. Necesito tres eliminados."
+        ),
+        "texto_progreso": "Llevas {actual} de {total} caballeros de la muerte eliminados. Continúa.",
+        "texto_entrega": "Bien hecho. La presión sobre las fronteras afloja un poco. Pero no es suficiente.",
+        "nivel_minimo": 7,
+        "requiere": "ecos_del_baron",
+    },
+    "filo_del_abismo": {
+        "titulo": "El Filo del Abismo",
+        "descripcion": (
+            "Los hechiceros sombríos de la Ciudadela preparan un ritual de invocación masiva "
+            "que multiplicaría el ejército de no-muertos. "
+            "El Hermano Aldric pide que lo interrumpas derrotando a dos de ellos."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "hechicero sombrío", "cantidad": 2},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 650, "monedas": 130, "prototipo": "TUNICA_LICHE"},
+        "rep_reward": {"ciudadanos": 600, "gremio_aventureros": 350, "legion_oscura": -500},
+        "texto_oferta": (
+            "Los hechiceros están preparando algo terrible: un ritual de invocación en masa. "
+            "Si lo completan, el ejército de no-muertos se triplicará. "
+            "Debes detenerlos. Elimina a dos antes de que sea tarde. "
+            "Toma esta túnica como anticipo de mi gratitud."
+        ),
+        "texto_progreso": "Llevas {actual} de {total} hechiceros sombríos eliminados. Date prisa.",
+        "texto_entrega": "El ritual se interrumpió. Salvaste miles de vidas. Toma la túnica, te la mereces.",
+        "nivel_minimo": 8,
+        "requiere": "legion_en_marcha",
+    },
+
+    # ----------------------------------------------------------------- #
+    #  Cadena 2: Secretos de la Legión  (Mira, empieza desde archimago_caido)
+    # ----------------------------------------------------------------- #
+    "secretos_de_la_torre": {
+        "titulo": "Secretos de la Torre",
+        "descripcion": (
+            "Las cenizas sombrías de los hechiceros de la Ciudadela Oscura "
+            "contienen la misma impronta arcana que las de Vexthar. "
+            "Mira la mercader necesita tres muestras para confirmar su teoría "
+            "sobre la conexión entre el archimago caído y el liche inmortal."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "cenizas sombrías", "cantidad": 3},
+        "dador": "Mira la mercader",
+        "receptor": "Mira la mercader",
+        "recompensa": {"xp": 400, "monedas": 80},
+        "rep_reward": {"gremio_aventureros": 300, "ciudadanos": 200},
+        "texto_oferta": (
+            "Estudié las cenizas arcanas de Vexthar y reconocí el patrón. "
+            "Es el mismo que el de los hechiceros de la Ciudadela. "
+            "Están todos conectados. Necesito tres muestras de cenizas sombrías para confirmarlo. "
+            "¿Puedes traérmelas?"
+        ),
+        "texto_progreso": "Aún necesito {faltante} muestra(s) de cenizas sombrías más.",
+        "texto_entrega": "¡Lo sabía! El patrón es idéntico. Vexthar y el liche comparten el mismo origen arcano. Esto lo cambia todo.",
+        "nivel_minimo": 7,
+        "requiere": "archimago_caido",
+    },
+    "corazon_de_tinieblas": {
+        "titulo": "El Corazón de las Tinieblas",
+        "descripcion": (
+            "La teoría de Mira se confirma: los hechiceros sombríos son el nexo "
+            "entre Vexthar y el liche inmortal. "
+            "Debilitar ese nexo podría exponer una vulnerabilidad en la Ciudadela."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "hechicero sombrío", "cantidad": 2},
+        "dador": "Mira la mercader",
+        "receptor": "Mira la mercader",
+        "recompensa": {"xp": 600, "monedas": 120},
+        "rep_reward": {"gremio_aventureros": 500, "ciudadanos": 300, "legion_oscura": -400},
+        "texto_oferta": (
+            "Los hechiceros mantienen vivo el vínculo entre el liche y su origen arcano. "
+            "Sin ese vínculo, el liche quedará más expuesto. "
+            "Elimina a dos de los más poderosos y busca evidencia de cómo funciona la conexión."
+        ),
+        "texto_progreso": "Llevas {actual} de {total} hechiceros sombríos eliminados. Avanza.",
+        "texto_entrega": "Los encontré. Los vínculos se debilitan. El liche está más vulnerable de lo que cree. Solo falta una cosa.",
+        "nivel_minimo": 8,
+        "requiere": "secretos_de_la_torre",
+    },
+    "esencia_del_poder": {
+        "titulo": "La Esencia del Poder",
+        "descripcion": (
+            "Mira necesita la esencia del liche inmortal para completar su investigación. "
+            "Solo con ella podrá revelar el secreto detrás de la Legión Oscura "
+            "y la verdadera naturaleza de la conexión entre Vexthar y el liche."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "esencia del liche", "cantidad": 1},
+        "dador": "Mira la mercader",
+        "receptor": "Mira la mercader",
+        "recompensa": {"xp": 900, "monedas": 180, "prototipo": "BACULO_ARCHIMAGO"},
+        "rep_reward": {"ciudadanos": 700, "gremio_aventureros": 500, "legion_oscura": -600},
+        "texto_oferta": (
+            "Para cerrar la investigación necesito la esencia del liche inmortal. "
+            "Solo el propio liche la porta, y solo muere si alguien muy poderoso lo derrota. "
+            "¿Puedes traérmela? A cambio te daré el báculo de Vexthar. "
+            "No hay nadie más merecedor de tenerlo que tú."
+        ),
+        "texto_progreso": "La esencia del liche sigue en manos del liche. Tendrás que enfrentarlo.",
+        "texto_entrega": "Lo tengo. La investigación está completa. Y tú tienes el báculo de Vexthar. Úsalo bien, aventurero.",
+        "nivel_minimo": 9,
+        "requiere": "corazon_de_tinieblas",
+    },
+
     "amenaza_catacumbas": {
         "titulo": "La Amenaza de las Catacumbas",
         "descripcion": (
@@ -387,6 +538,12 @@ def quest_disponible(quest_id: str, nivel: int, quests_personaje: dict) -> tuple
         return False, "Ya completaste esta misión."
     if estado in ("activa", "completada"):
         return False, "Ya tienes esta misión en curso."
+    requiere = quest.get("requiere")
+    if requiere:
+        estado_req = quests_personaje.get(requiere, {}).get("estado")
+        if estado_req != "entregada":
+            titulo_req = QUESTS.get(requiere, {}).get("titulo", requiere)
+            return False, f"Primero debes completar: |c{titulo_req}|n."
     if nivel < quest.get("nivel_minimo", 1):
         return False, f"Necesitas nivel {quest['nivel_minimo']} para esta misión."
     return True, ""

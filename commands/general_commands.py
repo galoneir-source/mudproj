@@ -142,7 +142,27 @@ class CmdHablar(Command):
                     f"       |waceptar {q['titulo']}|n para aceptar."
                 )
 
-        if not disponibles and not activas and not entregables:
+        # Misiones encadenadas próximas: bloqueadas sólo por prerrequisito
+        # (el jugador conoce ya el prerrequisito — está en su log)
+        proximas = [
+            qid for qid in ids_npc
+            if qid not in quests_char
+            and not quest_disponible(qid, nivel, quests_char)[0]
+            and QUESTS[qid].get("requiere") in quests_char
+        ]
+        if proximas:
+            lineas.append("  |xPróximamente disponibles:|n")
+            for qid in proximas:
+                q = QUESTS[qid]
+                req_id = q.get("requiere")
+                req_titulo = QUESTS.get(req_id, {}).get("titulo", req_id) if req_id else "?"
+                _, motivo = quest_disponible(qid, nivel, quests_char)
+                lineas.append(
+                    f"    |x·|n {q['titulo']} (Nv.{q['nivel_minimo']}+)  "
+                    f"|x[{motivo}]|n"
+                )
+
+        if not disponibles and not activas and not entregables and not proximas:
             lineas.append("  \"No tengo nada para ti en este momento.\"")
 
         lineas.append("")
