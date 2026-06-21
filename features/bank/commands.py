@@ -137,6 +137,11 @@ class CmdDepositar(Command):
             exclude=caller,
         )
 
+        if not getattr(caller.db, "banco_usado", False):
+            caller.db.banco_usado = True
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+
 
 class CmdRetirar(Command):
     """

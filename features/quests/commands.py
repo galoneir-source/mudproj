@@ -353,6 +353,9 @@ class CmdEntregar(Command):
             exclude=caller,
         )
 
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+
 
 # --------------------------------------------------------------------------- #
 #  CmdSet

@@ -50,6 +50,14 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.reputacion = {}
         # --- Banco ---
         self.db.banco = []
+        self.db.banco_usado = False
+        # --- Logros y títulos ---
+        self.db.logros = []
+        self.db.titulo_activo = None
+        self.db.kills_totales = 0
+        self.db.jefes_derrotados = []
+        self.db.objetos_crafteados = 0
+        self.db.encantamiento_max = 0
 
     def at_cmdset_get(self, **kwargs):
         """

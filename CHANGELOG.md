@@ -5,6 +5,26 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.17.0] — 2026-06-21
+
+### Añadido
+- **Sistema de logros y títulos**: 20 logros distribuidos en 7 categorías que recompensan el progreso del jugador.
+  - Categorías: Progresión, Misiones, Combate, Habilidades, Encantamiento, Reputación, Crafteo, Economía.
+  - Cada logro puede otorgar un título equipable que aparece junto al nombre en el perfil.
+  - Notificación inmediata al desbloquear un logro (con indicación del título si lo hay).
+  - Comando `logros` (alias `achievements`): muestra todos los logros con estado ✔/✗, filtrable por categoría.
+  - Comando `titulo <titulo>` (alias `title`): activa un título desbloqueado; sin argumento lo elimina.
+  - El título activo aparece junto al nombre en el comando `perfil`.
+- Seguimiento de estadísticas nuevas en `Character`:
+  - `db.kills_totales` — total de NPCs derrotados.
+  - `db.jefes_derrotados` — lista de prototype_key de jefes eliminados (GOBLIN_JEFE, BANDIDO_CAPITAN, TROLL, CABALLERO_OSCURO, GOLEM_PIEDRA, ARCHIMAGO_VEXTHAR).
+  - `db.objetos_crafteados` — objetos elaborados en total.
+  - `db.encantamiento_max` — nivel de encantamiento más alto alcanzado.
+  - `db.banco_usado` — indica si el jugador ha depositado alguna vez en el banco.
+- Comprobación automática de logros tras: kill NPC, subida de nivel, entrega de misión, aprendizaje de habilidad, encantamiento, crafteo y depósito en banco.
+- Módulo puro `systems/achievements/achievements.py` con toda la lógica de condiciones.
+- Suite de tests: ~1.166 tests (~60 nuevos).
+
 ## [0.16.0] — 2026-06-18
 
 ### Añadido

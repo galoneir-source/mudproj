@@ -207,6 +207,9 @@ class CmdAprender(Command):
             nombre_display = info["nombre"].lower()
             caller.msg(f"  Úsala en combate: |whabilidad {nombre_display} <objetivo>|n\n")
 
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+
 
 class SkillCmdSet(CmdSet):
     key = "SkillCmdSet"

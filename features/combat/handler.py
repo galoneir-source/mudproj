@@ -326,6 +326,25 @@ class CombatHandler(DefaultScript):
             from features.quests.hooks import on_npc_muerte
             on_npc_muerte(asesino, muerto)
 
+        # Kill tracking, boss tracking y comprobación de logros
+        if asesino and getattr(asesino, "has_account", False):
+            from systems.achievements.achievements import JEFES
+            from features.achievements.commands import comprobar_y_notificar
+            proto = getattr(muerto.db, "npc_prototipo", None)
+            is_boss = bool(proto and proto in JEFES)
+            jugadores = [
+                p for p in (self.db.participantes or [])
+                if getattr(p, "has_account", False)
+            ]
+            for j in jugadores:
+                j.db.kills_totales = (getattr(j.db, "kills_totales", 0) or 0) + 1
+                if is_boss:
+                    jefes_list = list(getattr(j.db, "jefes_derrotados", []) or [])
+                    if proto not in jefes_list:
+                        jefes_list.append(proto)
+                        j.db.jefes_derrotados = jefes_list
+                comprobar_y_notificar(j)
+
         # Loot: generar items desde la tabla db.loot
         items_generados = _generar_loot(muerto, sala)
         if items_generados:

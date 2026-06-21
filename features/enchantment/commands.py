@@ -172,6 +172,12 @@ class CmdEncantar(Command):
             exclude=caller,
         )
 
+        enc_max = getattr(caller.db, "encantamiento_max", 0) or 0
+        if nivel_nuevo > enc_max:
+            caller.db.encantamiento_max = nivel_nuevo
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+
     def _mostrar_encantables(self, caller):
         from typeclasses.objects import Equipo
 

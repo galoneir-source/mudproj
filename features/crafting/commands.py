@@ -167,6 +167,11 @@ class CmdCraftear(Command):
                 f"{caller.key} elabora algo con sus materiales.",
                 exclude=caller,
             )
+            caller.db.objetos_crafteados = (
+                getattr(caller.db, "objetos_crafteados", 0) or 0
+            ) + len(creados)
+            from features.achievements.commands import comprobar_y_notificar
+            comprobar_y_notificar(caller)
         else:
             caller.msg("|rError al crear el objeto. Contacta a un administrador.|n")
 

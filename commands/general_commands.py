@@ -291,9 +291,14 @@ class CmdPerfil(Command):
         hp_bar = _barra(hp, hp_max, 24, hp_color)
         xp_bar = _barra(xp, xp_sig, 24, "|c")
 
+        titulo_activo = getattr(objetivo.db, "titulo_activo", None)
+        nombre_con_titulo = (
+            f"{objetivo.key}  |Y{titulo_activo}|n" if titulo_activo else objetivo.key
+        )
+
         lineas = [
             f"\n|w{'─'*44}|n",
-            f"  |cNombre:|n  {objetivo.key}",
+            f"  |cNombre:|n  {nombre_con_titulo}",
         ]
         if faction:
             lineas.append(f"  |cFacción:|n  {faction}")

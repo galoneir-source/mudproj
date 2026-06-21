@@ -1,0 +1,320 @@
+"""
+tests/test_logros_system.py
+
+Tests de integración para el sistema de logros y títulos (v0.17.0).
+Cubre: comprobar_y_notificar, CmdLogros, CmdTitulo.
+
+Ejecutar con:
+  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_logros_system
+"""
+from evennia.utils.test_resources import EvenniaTest
+
+from features.achievements.commands import (
+    CmdLogros,
+    CmdTitulo,
+    comprobar_y_notificar,
+    _extraer_datos,
+)
+from systems.achievements.achievements import LOGROS, JEFES
+
+
+def _make_cmd(CmdClass, caller, args=""):
+    cmd = CmdClass()
+    cmd.caller = caller
+    cmd.args = args
+    cmd.cmdstring = cmd.key
+    cmd.session = None
+    cmd.obj = caller
+    cmd.raw_string = cmd.key + (" " + args if args else "")
+    cmd.switches = []
+    cmd.lhs = args
+    cmd.rhs = ""
+    return cmd
+
+
+def _init_char(char):
+    """Inicializa los atributos de logros en un personaje de test."""
+    char.db.logros = []
+    char.db.titulo_activo = None
+    char.db.kills_totales = 0
+    char.db.jefes_derrotados = []
+    char.db.objetos_crafteados = 0
+    char.db.encantamiento_max = 0
+    char.db.banco_usado = False
+    if not hasattr(char.db, "quests") or char.db.quests is None:
+        char.db.quests = {}
+    if not hasattr(char.db, "habilidades_desbloqueadas") or char.db.habilidades_desbloqueadas is None:
+        char.db.habilidades_desbloqueadas = ["golpe_fuerte", "golpe_rapido"]
+    if not hasattr(char.db, "reputacion") or char.db.reputacion is None:
+        char.db.reputacion = {}
+    if not hasattr(char.db, "nivel") or char.db.nivel is None:
+        char.db.nivel = 1
+
+
+class _MsgCapture:
+    """Captura los mensajes enviados al jugador durante un test."""
+
+    def __init__(self, char):
+        self.msgs = []
+        self.char = char
+        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        char.location.msg_contents = lambda m, **kw: None
+
+    def all(self) -> str:
+        return "\n".join(self.msgs)
+
+
+# ─── _extraer_datos ──────────────────────────────────────────────────────────
+
+class TestExtraerDatos(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+
+    def test_extrae_nivel(self):
+        self.char1.db.nivel = 5
+        datos = _extraer_datos(self.char1)
+        self.assertEqual(datos["nivel"], 5)
+
+    def test_extrae_quests_entregadas(self):
+        self.char1.db.quests = {
+            "q1": {"estado": "entregada"},
+            "q2": {"estado": "activa"},
+            "q3": {"estado": "entregada"},
+        }
+        datos = _extraer_datos(self.char1)
+        self.assertEqual(datos["quests_entregadas"], 2)
+
+    def test_extrae_kills(self):
+        self.char1.db.kills_totales = 25
+        datos = _extraer_datos(self.char1)
+        self.assertEqual(datos["kills_totales"], 25)
+
+    def test_extrae_encantamiento_max(self):
+        self.char1.db.encantamiento_max = 2
+        datos = _extraer_datos(self.char1)
+        self.assertEqual(datos["encantamiento_max"], 2)
+
+    def test_extrae_banco_usado(self):
+        self.char1.db.banco_usado = True
+        datos = _extraer_datos(self.char1)
+        self.assertTrue(datos["banco_usado"])
+
+    def test_defaults_sin_atributos(self):
+        datos = _extraer_datos(self.char1)
+        self.assertEqual(datos["nivel"], 1)
+        self.assertEqual(datos["kills_totales"], 0)
+        self.assertFalse(datos["banco_usado"])
+
+
+# ─── comprobar_y_notificar ───────────────────────────────────────────────────
+
+class TestComprobarYNotificar(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_sin_condiciones_cumplidas_no_notifica(self):
+        comprobar_y_notificar(self.char1)
+        self.assertEqual(list(self.char1.db.logros), [])
+
+    def test_notifica_nivel_2(self):
+        self.char1.db.nivel = 2
+        comprobar_y_notificar(self.char1)
+        self.assertIn("nivel_2", self.char1.db.logros)
+
+    def test_mensaje_contiene_nombre_logro(self):
+        self.char1.db.nivel = 2
+        comprobar_y_notificar(self.char1)
+        self.assertIn("Primer Paso", self.cap.all())
+
+    def test_mensaje_contiene_titulo_si_lo_hay(self):
+        self.char1.db.nivel = 2
+        comprobar_y_notificar(self.char1)
+        self.assertIn("el Novato", self.cap.all())
+
+    def test_notifica_primera_mision(self):
+        self.char1.db.quests = {"q1": {"estado": "entregada"}}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_mision", self.char1.db.logros)
+
+    def test_no_repite_logros_ya_desbloqueados(self):
+        self.char1.db.logros = ["nivel_2"]
+        self.char1.db.nivel = 2
+        comprobar_y_notificar(self.char1)
+        self.assertEqual(list(self.char1.db.logros).count("nivel_2"), 1)
+
+    def test_desbloquea_multiples_en_una_llamada(self):
+        self.char1.db.nivel = 5
+        self.char1.db.kills_totales = 10
+        comprobar_y_notificar(self.char1)
+        logros = list(self.char1.db.logros)
+        self.assertIn("nivel_2", logros)
+        self.assertIn("nivel_5", logros)
+        self.assertIn("diez_kills", logros)
+
+    def test_desbloquea_kills(self):
+        self.char1.db.kills_totales = 50
+        comprobar_y_notificar(self.char1)
+        self.assertIn("diez_kills", self.char1.db.logros)
+        self.assertIn("cincuenta_kills", self.char1.db.logros)
+
+    def test_desbloquea_tres_jefes(self):
+        self.char1.db.jefes_derrotados = list(JEFES)[:3]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("tres_jefes", self.char1.db.logros)
+
+    def test_desbloquea_todos_jefes(self):
+        self.char1.db.jefes_derrotados = list(JEFES)
+        comprobar_y_notificar(self.char1)
+        self.assertIn("todos_jefes", self.char1.db.logros)
+
+    def test_desbloquea_primer_encantamiento(self):
+        self.char1.db.encantamiento_max = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_encantamiento", self.char1.db.logros)
+
+    def test_desbloquea_encantamiento_max(self):
+        self.char1.db.encantamiento_max = 3
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_encantamiento", self.char1.db.logros)
+        self.assertIn("encantamiento_max", self.char1.db.logros)
+
+    def test_desbloquea_primer_deposito(self):
+        self.char1.db.banco_usado = True
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_deposito", self.char1.db.logros)
+
+    def test_desbloquea_primer_crafteo(self):
+        self.char1.db.objetos_crafteados = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_crafteo", self.char1.db.logros)
+
+    def test_desbloquea_habilidad_extra(self):
+        self.char1.db.habilidades_desbloqueadas = ["golpe_fuerte", "golpe_rapido", "embestida"]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_habilidad", self.char1.db.logros)
+
+    def test_desbloquea_rama_completa(self):
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("rama_completa", self.char1.db.logros)
+
+    def test_desbloquea_reputacion_honrado(self):
+        self.char1.db.reputacion = {"ciudadanos": 3000}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("honrado_ciudadanos", self.char1.db.logros)
+
+    def test_desbloquea_diplomatico(self):
+        self.char1.db.reputacion = {
+            "ciudadanos": 1000,
+            "gremio_aventureros": 1500,
+            "horda_salvaje": 2000,
+        }
+        comprobar_y_notificar(self.char1)
+        self.assertIn("diplomatico", self.char1.db.logros)
+
+
+# ─── CmdLogros ───────────────────────────────────────────────────────────────
+
+class TestCmdLogros(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def _run(self, args=""):
+        cmd = _make_cmd(CmdLogros, self.char1, args)
+        cmd.func()
+
+    def test_muestra_sin_logros(self):
+        self.char1.db.logros = []
+        self._run()
+        self.assertIn("0/20", self.cap.all())
+
+    def test_muestra_logros_desbloqueados(self):
+        self.char1.db.logros = ["nivel_2", "primera_mision"]
+        self._run()
+        texto = self.cap.all()
+        self.assertIn("Primer Paso", texto)
+        self.assertIn("Aventurero", texto)
+        self.assertIn("2/20", texto)
+
+    def test_filtra_por_categoria(self):
+        self.char1.db.logros = ["nivel_2"]
+        self._run("progresion")
+        texto = self.cap.all()
+        self.assertIn("Progresión", texto)
+        self.assertIn("Primer Paso", texto)
+
+    def test_muestra_titulo_activo(self):
+        self.char1.db.logros = ["nivel_2"]
+        self.char1.db.titulo_activo = "el Novato"
+        self._run()
+        self.assertIn("el Novato", self.cap.all())
+
+    def test_muestra_titulos_disponibles(self):
+        self.char1.db.logros = ["nivel_5", "cinco_misiones"]
+        self._run()
+        texto = self.cap.all()
+        self.assertIn("el Veterano", texto)
+        self.assertIn("el Héroe", texto)
+
+    def test_contador_correcto_con_varios(self):
+        self.char1.db.logros = list(LOGROS.keys())[:7]
+        self._run()
+        self.assertIn("7/20", self.cap.all())
+
+
+# ─── CmdTitulo ───────────────────────────────────────────────────────────────
+
+class TestCmdTitulo(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def _run(self, args=""):
+        cmd = _make_cmd(CmdTitulo, self.char1, args)
+        cmd.func()
+
+    def test_sin_logros_no_puede_poner_titulo(self):
+        self._run("el Héroe")
+        self.assertIn("ningún título", self.cap.all())
+
+    def test_pone_titulo_desbloqueado(self):
+        self.char1.db.logros = ["nivel_2"]
+        self._run("el Novato")
+        self.assertEqual(self.char1.db.titulo_activo, "el Novato")
+
+    def test_titulo_case_insensitive(self):
+        self.char1.db.logros = ["nivel_2"]
+        self._run("EL NOVATO")
+        self.assertEqual(self.char1.db.titulo_activo, "el Novato")
+
+    def test_titulo_no_desbloqueado_falla(self):
+        self.char1.db.logros = ["nivel_2"]
+        self._run("la Leyenda")
+        self.assertIn("No tienes el título", self.cap.all())
+        self.assertIsNone(self.char1.db.titulo_activo)
+
+    def test_sin_argumento_elimina_titulo(self):
+        self.char1.db.titulo_activo = "el Novato"
+        self._run("")
+        self.assertIsNone(self.char1.db.titulo_activo)
+        self.assertIn("eliminado", self.cap.all())
+
+    def test_muestra_titulos_disponibles_al_fallar(self):
+        self.char1.db.logros = ["nivel_5"]
+        self._run("titulo inexistente")
+        self.assertIn("el Veterano", self.cap.all())
