@@ -116,6 +116,7 @@ class CombatHandler(DefaultScript):
         self.db.acciones = {}           # {dbref: {"tipo": ..., "objetivo": ..., "habilidad": ...}}
         self.db.turno_tiempo = 0        # segundos transcurridos en el turno actual
         self.db.activo = True
+        self.db.modo_duelo = False      # True → duelo PvP, termina al 10 % HP
 
     # ------------------------------------------------------------------ #
     #  API pública
@@ -226,14 +227,25 @@ class CombatHandler(DefaultScript):
         if actor.has_account:
             enemigos = [p for p in self.db.participantes if p != actor]
             nombres_enemigos = ", ".join(e.key for e in enemigos)
-            actor.msg(
-                f"  |cAcciones disponibles:|n\n"
-                f"  |watacar <objetivo>|n  — ataque básico\n"
-                f"  |whabilidad <nombre> <objetivo>|n  — habilidad especial\n"
-                f"  |whuir|n  — intentar escapar\n"
-                f"  |wpasar|n  — pasar turno\n"
-                f"  Enemigos: {nombres_enemigos}"
-            )
+            if self.db.modo_duelo:
+                opciones = (
+                    f"  |cAcciones disponibles:|n\n"
+                    f"  |watacar <objetivo>|n  — ataque básico\n"
+                    f"  |whabilidad <nombre> <objetivo>|n  — habilidad especial\n"
+                    f"  |wrendirse|n  — conceder la victoria\n"
+                    f"  |wpasar|n  — pasar turno\n"
+                    f"  Rival: {nombres_enemigos}"
+                )
+            else:
+                opciones = (
+                    f"  |cAcciones disponibles:|n\n"
+                    f"  |watacar <objetivo>|n  — ataque básico\n"
+                    f"  |whabilidad <nombre> <objetivo>|n  — habilidad especial\n"
+                    f"  |whuir|n  — intentar escapar\n"
+                    f"  |wpasar|n  — pasar turno\n"
+                    f"  Enemigos: {nombres_enemigos}"
+                )
+            actor.msg(opciones)
         else:
             # NPC — IA reactiva compleja (llamada diferida para no bloquear)
             from evennia.utils import delay
@@ -275,6 +287,15 @@ class CombatHandler(DefaultScript):
                         p.msg(resultado.mensaje_sala)
 
                 if resultado.exito:
+                    # Duelo: detener al 10 % de HP en lugar de procesar muerte
+                    if self.db.modo_duelo:
+                        from systems.duels.duels import calcular_hp_umbral
+                        hp_max = getattr(objetivo.db, "hp_max", 100) or 100
+                        umbral = calcular_hp_umbral(hp_max)
+                        if resultado.hp_restante <= umbral:
+                            objetivo.db.hp = umbral
+                            self._fin_duelo(ganador=actor, perdedor=objetivo)
+                            return
                     _set_stat(objetivo, "hp", resultado.hp_restante)
 
                 # Efecto drenar vida: cura al atacante el 50% del daño
@@ -320,7 +341,45 @@ class CombatHandler(DefaultScript):
         self.db.turno_actual = (self.db.turno_actual + 1) % len(parts)
         self._anunciar_turno()
 
+    def _fin_duelo(self, ganador, perdedor):
+        """Cierra un duelo PvP: actualiza estadísticas, transfiere apuesta y elimina el handler."""
+        from systems.duels.duels import formatear_resultado
+        sala = self.obj
+
+        apuesta = getattr(ganador.db, "apuesta_duelo", 0) or 0
+        if not apuesta:
+            apuesta = getattr(perdedor.db, "apuesta_duelo", 0) or 0
+
+        pago_real = 0
+        if apuesta:
+            monedas_perdedor = getattr(perdedor.db, "monedas", 0) or 0
+            pago_real = min(apuesta, monedas_perdedor)
+            perdedor.db.monedas = monedas_perdedor - pago_real
+            ganador.db.monedas = (getattr(ganador.db, "monedas", 0) or 0) + pago_real
+
+        sala.msg_contents(formatear_resultado(ganador.key, perdedor.key, pago_real))
+
+        ganador.db.duelos_ganados = (getattr(ganador.db, "duelos_ganados", 0) or 0) + 1
+        perdedor.db.duelos_perdidos = (getattr(perdedor.db, "duelos_perdidos", 0) or 0) + 1
+
+        for p in [ganador, perdedor]:
+            p.db.apuesta_duelo = 0
+
+        for p in list(self.db.participantes or []):
+            self._limpiar_estado_combate(p)
+        self.db.activo = False
+        sala.msg_contents("|gEl combate ha terminado.|n\n")
+        self.delete()
+
     def _procesar_muerte(self, muerto, asesino=None):
+        # Fallback: si un tick de estado mata a alguien durante un duelo
+        if getattr(self.db, "modo_duelo", False) and asesino and getattr(muerto, "has_account", False):
+            from systems.duels.duels import calcular_hp_umbral
+            hp_max = getattr(muerto.db, "hp_max", 100) or 100
+            muerto.db.hp = calcular_hp_umbral(hp_max)
+            self._fin_duelo(ganador=asesino, perdedor=muerto)
+            return
+
         sala = self.obj
         sala.msg_contents(f"\n|r💀 {muerto.key} ha caído en combate.|n\n")
 
@@ -464,6 +523,8 @@ class CombatHandler(DefaultScript):
         self.db.activo = False
         for participante in list(self.db.participantes or []):
             self._limpiar_estado_combate(participante)
+            if getattr(self.db, "modo_duelo", False):
+                participante.db.apuesta_duelo = 0
             # Si quedan estados activos, iniciar script fuera de combate
             estados = dict(getattr(participante.db, "estados", {}) or {})
             if estados:

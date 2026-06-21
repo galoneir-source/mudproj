@@ -67,8 +67,8 @@ class TestNuevasQuests(unittest.TestCase):
                 self.assertIn(campo, q, f"{qid} falta '{campo}'")
 
     def test_total_quests_aumentado(self):
-        # 13 previas + 2 nuevas = 15
-        self.assertEqual(len(QUESTS), 15)
+        # 13 previas + 2 nuevas (v0.18) + 6 encadenadas (v0.20) = 21
+        self.assertEqual(len(QUESTS), 21)
 
 
 # ---------------------------------------------------------------------------

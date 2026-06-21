@@ -30,6 +30,7 @@ from features.bank.commands import BankCmdSet
 from features.enchantment.commands import EnchantCmdSet
 from features.achievements.commands import AchievementCmdSet
 from features.events.commands import EventCmdSet
+from features.duels.commands import DuelCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -79,6 +80,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(AchievementCmdSet)
         # --- Eventos ---
         self.add(EventCmdSet)
+        # --- Duelos ---
+        self.add(DuelCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

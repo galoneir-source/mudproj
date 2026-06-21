@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.21.0] — 2026-06-21
+
+### Añadido
+- **Sistema de duelos entre jugadores**: combate PvP reglado y sin penalización de muerte.
+  - `retar <jugador> [= <monedas>]` — envía un reto de duelo con apuesta opcional. El rival tiene 60 s para responder.
+  - `aceptar duelo` / `rechazar duelo` — aceptar o rechazar el reto.
+  - `rendirse` — ceder la victoria durante un duelo activo (transfiere la apuesta).
+  - El duelo reutiliza el `CombatHandler` existente con `modo_duelo = True`:
+    - Termina automáticamente cuando un jugador llega al **10% de HP** (no hay muerte ni envío al inicio).
+    - Las opciones de turno muestran `rendirse` en lugar de `huir`.
+    - Si alguien usa `huir`, el duelo termina sin ganador y la apuesta se cancela.
+  - Estadísticas por personaje: `db.duelos_ganados` y `db.duelos_perdidos`.
+  - Validación de apuesta: se comprueba que ambos jugadores tengan las monedas antes de iniciar.
+- `features/duels/commands.py`: `CmdRetar`, `CmdAceptarDuelo`, `CmdRechazarDuelo`, `CmdRendirse`, `DuelCmdSet`.
+- `systems/duels/duels.py`: lógica pura — `validar_apuesta()`, `calcular_hp_umbral()`, `formatear_resultado()`, `reto_expirado()`.
+- Suite de tests: ~1.418 tests (~75 nuevos: 43 puros + 32 integración).
+
 ## [0.20.0] — 2026-06-21
 
 ### Añadido
