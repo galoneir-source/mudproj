@@ -50,6 +50,11 @@ def at_server_start():
         obtener_records_script()
     except Exception:
         pass
+    try:
+        from features.market.market_script import obtener_mercado_script
+        obtener_mercado_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

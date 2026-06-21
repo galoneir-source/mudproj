@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.25.0] — 2026-06-21
+
+### Añadido
+- **Mercado global de jugadores**: sistema de compraventa asíncrona donde los jugadores pueden vender objetos aunque estén desconectados.
+  - `mercado` — listado de todos los anuncios activos con ID, nombre del objeto, precio y vendedor.
+  - `mercado vender <objeto> <precio>` — poner un objeto del inventario a la venta. El objeto pasa a reserva hasta que se venda o se retire.
+  - `mercado comprar <#>` — comprar el anuncio con ese número. El dinero se transfiere al instante y el vendedor recibe notificación si está conectado.
+  - `mercado retirar <#>` — recuperar tu propio anuncio; el objeto vuelve al inventario.
+  - `mercado mis ventas` — ver solo tus anuncios activos.
+  - Comisión del 5% sobre el precio de venta (redondeada hacia arriba). El vendedor siempre cobra aunque esté offline.
+  - Límite de 10 anuncios simultáneos por jugador.
+  - Precio válido: 1 – 999.999 monedas.
+- `MarketScript`: script persistente sin intervalo (contenedor de datos puro), key `"mercado_global"`. Se inicializa al arrancar el servidor.
+- `systems/market/market.py`: lógica pura — `validar_precio()`, `calcular_comision()`, `calcular_ganancia()`, `formatear_listing()`.
+- `features/market/market_script.py`: `MarketScript` + `obtener_mercado_script()`.
+- `features/market/commands.py`: `CmdMercado` + `MarketCmdSet`.
+- Suite de tests: ~1.769 tests (~95 nuevos: 44 puros + 51 integración).
+
 ## [0.24.0] — 2026-06-21
 
 ### Añadido
