@@ -48,10 +48,16 @@ class CmdRecetas(Command):
             )
             cant = receta.get("cantidad", 1)
             resultado_txt = f"|y{nombre}|n" + (f" x{cant}" if cant > 1 else "")
+            tipo_txt = " |g[equipo]|n" if receta.get("tipo") == "equipo" else ""
+            calidad_txt = (
+                "\n  |xCalidad      : Normal/Fino/Magistral (según objetos crafteados)|n"
+                if receta.get("tipo") == "equipo" else ""
+            )
             caller.msg(
-                f"\n|c{nombre}|n\n"
+                f"\n|c{nombre}|n{tipo_txt}\n"
                 f"  Ingredientes : {ingrs}\n"
-                f"  Resultado    : {resultado_txt}\n"
+                f"  Resultado    : {resultado_txt}"
+                f"{calidad_txt}\n"
                 f"  |x{receta['desc_receta']}|n\n"
             )
         else:
@@ -62,7 +68,8 @@ class CmdRecetas(Command):
                 )
                 cant = receta.get("cantidad", 1)
                 result_txt = f"|y{nombre}|n" + (f" x{cant}" if cant > 1 else "")
-                lineas.append(f"  {result_txt}  |x←|n  {ingrs}")
+                tipo_tag = " |g[equipo]|n" if receta.get("tipo") == "equipo" else ""
+                lineas.append(f"  {result_txt}{tipo_tag}  |x←|n  {ingrs}")
             lineas.append(
                 "\nUsa |wrecetas <nombre>|n para ver detalles. "
                 "Usa |wcraftear <nombre>|n para elaborar.\n"
@@ -145,6 +152,17 @@ class CmdCraftear(Command):
                     obj.delete()
                     consumidos += 1
 
+        # Calidad para recetas de equipo (calculada antes de incrementar contador)
+        es_equipo = receta.get("tipo") == "equipo"
+        calidad_nombre = None
+        bonus_stat = 0
+        if es_equipo:
+            from systems.crafting.equipment import (
+                calcular_calidad, aplicar_bonuses_calidad, nombre_con_calidad,
+            )
+            nivel_crafteo = int(getattr(caller.db, "objetos_crafteados", 0) or 0)
+            calidad_nombre, bonus_stat = calcular_calidad(nivel_crafteo)
+
         # Crear resultado(s) desde prototipo
         from evennia.prototypes import spawner
         from evennia.utils import logger
@@ -156,6 +174,11 @@ class CmdCraftear(Command):
             try:
                 obj = spawner.spawn(prototype_key)[0]
                 obj.location = caller
+                if es_equipo:
+                    bonuses_base = dict(obj.db.bonuses or {})
+                    obj.db.bonuses = aplicar_bonuses_calidad(bonuses_base, bonus_stat)
+                    obj.key = nombre_con_calidad(obj.key, calidad_nombre)
+                    obj.db.calidad = calidad_nombre
                 creados.append(obj.key)
             except Exception as err:
                 logger.log_err(f"craftear: error spawning '{prototype_key}': {err}")
@@ -163,6 +186,11 @@ class CmdCraftear(Command):
         if creados:
             nombres = ", ".join(f"|y{n}|n" for n in creados)
             caller.msg(f"|g¡Crafteo exitoso!|n Has elaborado: {nombres}")
+            if calidad_nombre and calidad_nombre != "Normal":
+                caller.msg(
+                    f"|y¡Calidad {calidad_nombre}!|n Tu experiencia como artesano "
+                    f"ha mejorado el objeto."
+                )
             caller.location.msg_contents(
                 f"{caller.key} elabora algo con sus materiales.",
                 exclude=caller,

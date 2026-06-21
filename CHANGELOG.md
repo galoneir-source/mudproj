@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.24.0] — 2026-06-21
+
+### Añadido
+- **Crafteo de equipo con calidades**: los personajes ahora pueden craftear armas, armaduras y accesorios. La calidad del objeto escala con la experiencia del artesano (`db.objetos_crafteados`).
+  - **Calidades**: Normal (0–14 crafteados), Fino (+1 a todos los stats, 15–29), Magistral (+2 a todos los stats, 30+).
+  - El nombre del objeto refleja la calidad: `"daga de acero (Fino)"`, `"espada del cazador (Magistral)"`.
+  - `db.calidad` guardado en el objeto para referencia.
+  - Mensaje especial al craftear calidad Fino o Magistral.
+- **8 nuevas recetas de equipo** (campo `tipo: "equipo"` en `RECETAS`):
+  - *Armas*: `daga de acero` (hierro + piel serpiente), `espada del cazador` (hierro + garra troll), `vara arcana` (cenizas arcanas + fragmento arcano), `hacha tallada` (hierro + escama lagarto).
+  - *Armaduras*: `coraza de hierro` (hierro x4 + piel serpiente), `túnica del mago` (cenizas arcanas + hilo araña + cristal sagrado).
+  - *Accesorios*: `amuleto de combate` (gema en bruto + fragmento de alma), `anillo de sombras` (cristal de oscuridad + cenizas sombrías).
+- **8 nuevos prototipos** en `world/prototypes.py`: `DAGA_ACERO`, `ESPADA_CAZADOR`, `VARA_ARCANA`, `HACHA_TALLADA`, `CORAZA_HIERRO`, `TUNICA_MAGO`, `AMULETO_COMBATE`, `ANILLO_SOMBRAS`.
+- `systems/crafting/equipment.py`: lógica pura — `calcular_calidad()`, `aplicar_bonuses_calidad()`, `nombre_con_calidad()`.
+- `CmdRecetas` actualizado: las recetas de equipo aparecen con etiqueta `[equipo]`; el detalle muestra la escala de calidades.
+- Suite de tests: ~1.674 tests (~86 nuevos: 51 puros + 35 integración).
+
 ## [0.23.0] — 2026-06-21
 
 ### Añadido

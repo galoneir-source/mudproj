@@ -83,6 +83,63 @@ RECETAS: dict[str, dict] = {
         "cantidad": 2,
         "desc_receta": "El cristal que absorbe la luz y las cenizas sombrías liberan, al fundirse, una cura poderosa y sombría.",
     },
+    # --- Equipo ---
+    "daga de acero": {
+        "tipo": "equipo",
+        "ingredientes": {"mineral de hierro": 2, "piel de serpiente": 1},
+        "resultado_prototipo": "DAGA_ACERO",
+        "cantidad": 1,
+        "desc_receta": "Daga forjada con hierro de las minas y cuero de serpiente. La maestría del artesano determina su calidad.",
+    },
+    "espada del cazador": {
+        "tipo": "equipo",
+        "ingredientes": {"mineral de hierro": 3, "garra de troll": 1},
+        "resultado_prototipo": "ESPADA_CAZADOR",
+        "cantidad": 1,
+        "desc_receta": "Espada templada con la dureza natural del hierro y reforzada con la esencia de un troll.",
+    },
+    "vara arcana": {
+        "tipo": "equipo",
+        "ingredientes": {"cenizas arcanas": 2, "fragmento arcano": 2},
+        "resultado_prototipo": "VARA_ARCANA",
+        "cantidad": 1,
+        "desc_receta": "Canal de madera impregnado con cenizas y fragmentos arcanos. Amplifica el poder mágico del portador.",
+    },
+    "hacha tallada": {
+        "tipo": "equipo",
+        "ingredientes": {"mineral de hierro": 2, "escama de lagarto": 2},
+        "resultado_prototipo": "HACHA_TALLADA",
+        "cantidad": 1,
+        "desc_receta": "Hacha de hoja de hierro con empuñadura reforzada con escamas de lagarto para mejor agarre.",
+    },
+    "coraza de hierro": {
+        "tipo": "equipo",
+        "ingredientes": {"mineral de hierro": 4, "piel de serpiente": 2},
+        "resultado_prototipo": "CORAZA_HIERRO",
+        "cantidad": 1,
+        "desc_receta": "Coraza de placas de hierro con forro interior de piel de serpiente. Protección seria para combates serios.",
+    },
+    "túnica del mago": {
+        "tipo": "equipo",
+        "ingredientes": {"cenizas arcanas": 2, "hilo de araña": 1, "cristal sagrado": 1},
+        "resultado_prototipo": "TUNICA_MAGO",
+        "cantidad": 1,
+        "desc_receta": "Prenda tejida con hilo de araña encantado, impregnada de cenizas arcanas y un cristal sagrado. Canaliza la magia del portador.",
+    },
+    "amuleto de combate": {
+        "tipo": "equipo",
+        "ingredientes": {"gema en bruto": 2, "fragmento de alma": 1},
+        "resultado_prototipo": "AMULETO_COMBATE",
+        "cantidad": 1,
+        "desc_receta": "Amuleto forjado con dos gemas en bruto cargadas con la esencia de un alma atrapada.",
+    },
+    "anillo de sombras": {
+        "tipo": "equipo",
+        "ingredientes": {"cristal de oscuridad": 1, "cenizas sombrías": 1},
+        "resultado_prototipo": "ANILLO_SOMBRAS",
+        "cantidad": 1,
+        "desc_receta": "Anillo impregnado de oscuridad que agudiza los sentidos y amplifica la magia de las sombras.",
+    },
 }
 
 

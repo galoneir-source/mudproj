@@ -106,6 +106,110 @@ ANILLO_DESTREZA = {
 }
 
 # --------------------------------------------------------------------------- #
+#  Equipo crafteable: armas
+# --------------------------------------------------------------------------- #
+
+DAGA_ACERO = {
+    "prototype_key": "DAGA_ACERO",
+    "key": "daga de acero",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Daga de acero con filo afilado y hoja ligera. Equilibrio entre velocidad y poder.",
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 3, "destreza": 2}),
+        ("valor", 50),
+    ],
+}
+
+ESPADA_CAZADOR = {
+    "prototype_key": "ESPADA_CAZADOR",
+    "key": "espada del cazador",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Espada larga forjada para cazadores de monstruos. Equilibra potencia y resistencia.",
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 5, "defensa": 1}),
+        ("valor", 80),
+    ],
+}
+
+VARA_ARCANA = {
+    "prototype_key": "VARA_ARCANA",
+    "key": "vara arcana",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Vara de madera de ceniza encantada, ideal para canalizar energía mágica.",
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"inteligencia": 5, "fuerza": 1}),
+        ("valor", 75),
+    ],
+}
+
+HACHA_TALLADA = {
+    "prototype_key": "HACHA_TALLADA",
+    "key": "hacha tallada",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Hacha de doble hoja con empuñadura de escamas de lagarto talladas. Robusta y fiable.",
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 4, "constitucion": 1}),
+        ("valor", 70),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  Equipo crafteable: armaduras y accesorios
+# --------------------------------------------------------------------------- #
+
+CORAZA_HIERRO = {
+    "prototype_key": "CORAZA_HIERRO",
+    "key": "coraza de hierro",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Coraza de placas de hierro forjadas y remachadas. Protección seria para combates serios.",
+    "attrs": [
+        ("slot", "armadura"),
+        ("bonuses", {"defensa": 5, "constitucion": 2}),
+        ("valor", 90),
+    ],
+}
+
+TUNICA_MAGO = {
+    "prototype_key": "TUNICA_MAGO",
+    "key": "túnica del mago",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Túnica bordada con hilo de araña y cenizas arcanas. Ligera pero cargada de magia.",
+    "attrs": [
+        ("slot", "armadura"),
+        ("bonuses", {"defensa": 2, "inteligencia": 4}),
+        ("valor", 85),
+    ],
+}
+
+AMULETO_COMBATE = {
+    "prototype_key": "AMULETO_COMBATE",
+    "key": "amuleto de combate",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Amuleto de gema en bruto cargado con energía anímica. Fortalece cuerpo y espíritu.",
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"fuerza": 2, "constitucion": 2}),
+        ("valor", 55),
+    ],
+}
+
+ANILLO_SOMBRAS = {
+    "prototype_key": "ANILLO_SOMBRAS",
+    "key": "anillo de sombras",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": "Anillo de obsidiana impregnado de oscuridad. Agudiza los sentidos y amplifica la magia sombría.",
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"inteligencia": 3, "destreza": 2}),
+        ("valor", 70),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
 #  Consumibles: pociones y elixires
 # --------------------------------------------------------------------------- #
 
