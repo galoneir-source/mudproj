@@ -5,6 +5,30 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.18.0] — 2026-06-21
+
+### Añadido
+- **Zona de endgame: Ciudadela Oscura** — 3 salas conectadas al norte de la Cripta del Barón.
+  - **Portal de la Ciudadela**: entrada custodiada por 2 Caballeros de la Muerte (nv.8).
+  - **Salón del Trono**: 1 Caballero de la Muerte + 2 Hechiceros Sombríos (nv.9).
+  - **Altar del Liche**: cámara final con el Liche Inmortal (boss nv.10, jefe de la Legión Oscura).
+- **3 nuevos NPCs** de la Legión Oscura:
+  - `CABALLERO_MUERTE` (nv.8): guerrero melee con loot de fragmentos de alma oscura y posibilidad de soltar la Túnica del Liche.
+  - `HECHICERO_SOMBRIO` (nv.9): mago oscuro que suelta cenizas sombrías y cristales de oscuridad.
+  - `LICHE_INMORTAL` (nv.10, boss, respawn 30 min): con árbol completo de habilidades, loot de Esencia del Liche + Corona Oscura, y diálogo.
+- **2 nuevos ítems de endgame**:
+  - `CORONA_OSCURA` (slot arma): +10 INT, +2 FUE.
+  - `TUNICA_LICHE` (slot armadura): +7 DEF, +5 INT, +15 HP_MAX.
+- **2 nuevas misiones**:
+  - `liche_inmortal` (kill, nv.9, Aldric): derrotar al Liche Inmortal. Recompensa: 900 XP, 200 monedas.
+  - `fragmentos_oscuridad` (fetch, nv.7, Mira): recolectar 3 fragmentos de alma oscura. Recompensa: 400 XP, 90 monedas.
+- **2 nuevas recetas de crafteo**:
+  - `elixir sombrío`: 2 cenizas sombrías + 1 fragmento de alma oscura → Elixir de Restauración.
+  - `tónico de las sombras`: 1 cristal de oscuridad + 1 cenizas sombrías → 2× Poción de Vida Mayor.
+- **`LICHE_INMORTAL` añadido a `JEFES`** en el sistema de logros (ahora 7 jefes totales).
+  - El logro `todos_jefes` requiere derrotar los 7 jefes del mundo.
+- Suite de tests: ~1.233 tests (~67 nuevos: 47 puros + 20 de integración).
+
 ## [0.17.0] — 2026-06-21
 
 ### Añadido

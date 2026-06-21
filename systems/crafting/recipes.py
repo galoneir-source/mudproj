@@ -71,6 +71,18 @@ RECETAS: dict[str, dict] = {
         "cantidad": 1,
         "desc_receta": "La fusión de cenizas mágicas y un fragmento arcano solidificado libera una energía restauradora total.",
     },
+    "elixir sombrío": {
+        "ingredientes": {"cenizas sombrías": 2, "fragmento de alma oscura": 1},
+        "resultado_prototipo": "ELIXIR_RESTAURACION",
+        "cantidad": 1,
+        "desc_receta": "Las cenizas de magia oscura disueltas en la esencia de un alma atrapada destilan un restaurador total de insólito poder.",
+    },
+    "tónico de las sombras": {
+        "ingredientes": {"cristal de oscuridad": 1, "cenizas sombrías": 1},
+        "resultado_prototipo": "POCION_VIDA_MAYOR",
+        "cantidad": 2,
+        "desc_receta": "El cristal que absorbe la luz y las cenizas sombrías liberan, al fundirse, una cura poderosa y sombría.",
+    },
 }
 
 

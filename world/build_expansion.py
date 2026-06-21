@@ -592,6 +592,116 @@ def construir_expansion(caller=None):
             msg("|gZona 'Torre del Mago Caído' creada (3 salas, 4 NPCs).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 6: CIUDADELA OSCURA
+    # -----------------------------------------------------------------------
+
+    if _find_room("Portal de la Ciudadela"):
+        msg("|yZona 'Ciudadela Oscura' ya existe. Omitida.|n")
+    else:
+        cripta = _find_room("Cripta del Barón")
+        if not cripta:
+            msg("|rError: no se encontró la Cripta del Barón. Omitiendo zona de la Ciudadela.|n")
+        else:
+            portal = _room(
+                "Portal de la Ciudadela",
+                (
+                    "Un arco de piedra negra de más de cuatro metros de altura marca la entrada a la ciudadela. "
+                    "Runas de maldición grabadas en cada piedra brillan con una luz rojiza pulsante. "
+                    "El aire al cruzarlo se vuelve pesado, frío, y cargado de una energía de no-muerte. "
+                    "Al |csur|n (salir) está la Cripta del Barón; "
+                    "al |cnorte|n, el imponente salón del trono de la Legión Oscura."
+                ),
+            )
+            portal.db.zona = "portal_ciudadela"
+            portal.db.exterior = False
+
+            salon = _room(
+                "Salón del Trono",
+                (
+                    "Una sala monumental con columnas de mármol negro que sostienen un techo abovedado. "
+                    "Estandartes desgarrados de la Legión Oscura cuelgan de las paredes. "
+                    "Esqueletos de guerreros caídos forman dos filas desde la entrada hasta el trono vacío. "
+                    "La magia oscura hace vibrar el aire y el suelo. "
+                    "Al |csur|n está el portal de entrada; "
+                    "al |cnorte|n, el altar del liche."
+                ),
+            )
+            salon.db.zona = "salon_trono"
+            salon.db.exterior = False
+
+            altar = _room(
+                "Altar del Liche",
+                (
+                    "La cámara más profunda de la ciudadela, circular y de piedra negra pulida. "
+                    "Un altar de obsidiana en el centro irradia una energía de no-muerte de intensidad aplastante. "
+                    "Símbolos de necromancia cubren el suelo, el techo y cada centímetro de las paredes. "
+                    "La temperatura es varios grados bajo cero y el aliento forma nubes visibles. "
+                    "En el trono de huesos ante el altar aguarda la figura del liche. "
+                    "Al |csur|n (salir) está el salón del trono."
+                ),
+            )
+            altar.db.zona = "altar_liche"
+            altar.db.exterior = False
+
+            portal.db.detalles_ocultos = [
+                {
+                    "texto": "Las runas del arco son un sello de vinculación. Cualquiera que muera aquí dentro podría levantarse como no-muerto.",
+                    "req_percepcion": 12,
+                },
+                {
+                    "texto": "En el suelo hay marcas de arrastre recientes. Algo enorme pasó hacia dentro hace pocas horas.",
+                    "req_percepcion": 15,
+                },
+            ]
+            salon.db.detalles_ocultos = [
+                {
+                    "texto": "Los estandartes muestran el escudo de cuatro reinos distintos. La Legión Oscura ha conquistado todo eso.",
+                    "req_percepcion": 11,
+                },
+                {
+                    "texto": "Bajo los esqueletos de guardia hay runas de animación. Si el liche muere, estos guerreros también caerán.",
+                    "req_percepcion": 14,
+                },
+            ]
+            altar.db.detalles_ocultos = [
+                {
+                    "texto": "El altar contiene una filoacteria, el receptáculo del alma del liche. Si se destruye, él muere de verdad.",
+                    "req_percepcion": 14,
+                },
+                {
+                    "texto": "Las paredes registran su historia: un rey corrompido por el deseo de inmortalidad hace cuatro siglos.",
+                    "req_percepcion": 16,
+                },
+            ]
+
+            # Conectar: Cripta del Barón → norte → Portal → norte → Salón → norte → Altar
+            _link("norte", "n", "sur", "s", cripta, portal)
+            _link("norte", "n", "sur", "s", portal, salon)
+            _link("norte", "n", "sur", "s", salon,  altar)
+
+            # Actualizar descripción de la Cripta para reflejar la nueva salida
+            cripta.db.desc = (
+                "Una cámara funeraria bajo el altar mayor. "
+                "Los relieves de las paredes representan batallas antiguas y figuras encapuchadas. "
+                "Un sarcófago de piedra negra en el centro ha sido violado desde dentro. "
+                "El aire es helado y parece resistirse a ser respirado. "
+                "Al |csur|n (subir) están las ruinas del templo; "
+                "al |cnorte|n, un arco de piedra oscura de proporciones monumentales."
+            )
+
+            # NPCs
+            _spawn("CABALLERO_MUERTE", portal)
+            _spawn("CABALLERO_MUERTE", portal)
+            _spawn("CABALLERO_MUERTE", salon)
+            _spawn("HECHICERO_SOMBRIO", salon)
+            _spawn("HECHICERO_SOMBRIO", salon)
+            _spawn("LICHE_INMORTAL", altar)
+
+            salas_creadas += 3
+            npcs_creados += 6
+            msg("|gZona 'Ciudadela Oscura' creada (3 salas, 6 NPCs).|n")
+
+    # -----------------------------------------------------------------------
     # BUSCADOR DE TESOROS EN EL MERCADO
     # -----------------------------------------------------------------------
 

@@ -27,6 +27,7 @@ JEFES: frozenset[str] = frozenset({
     "CABALLERO_OSCURO",
     "GOLEM_PIEDRA",
     "ARCHIMAGO_VEXTHAR",
+    "LICHE_INMORTAL",
 })
 
 # Habilidades iniciales que no cuentan como "aprendidas" para logros

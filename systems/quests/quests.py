@@ -256,6 +256,49 @@ QUESTS: dict[str, dict] = {
         "texto_entrega": "Lo has logrado. Vexthar puede descansar por fin. Toma el manto, te lo has ganado.",
         "nivel_minimo": 7,
     },
+    "liche_inmortal": {
+        "titulo": "El Liche Inmortal",
+        "descripcion": (
+            "El liche que gobierna la Ciudadela Oscura lleva siglos convocando no-muertos "
+            "y amenazando con expandir su legión hacia las tierras habitadas. "
+            "El Hermano Aldric pide a los más valientes que entren en la ciudadela y lo detengan."
+        ),
+        "tipo": "kill",
+        "objetivo": {"target": "liche inmortal", "cantidad": 1},
+        "dador": "Hermano Aldric el sacerdote",
+        "receptor": "Hermano Aldric el sacerdote",
+        "recompensa": {"xp": 900, "monedas": 200},
+        "rep_reward": {"ciudadanos": 800, "gremio_aventureros": 500, "legion_oscura": -600},
+        "texto_oferta": (
+            "La Ciudadela Oscura al norte del templo es el corazón de la Legión Oscura. "
+            "Su liche lleva siglos construyendo ese ejército. "
+            "Si eres lo bastante poderoso, tienes que detenerlo. Te lo pido en nombre de todos."
+        ),
+        "texto_progreso": "El liche inmortal sigue en su trono. Prepárate lo mejor que puedas antes de enfrentarlo.",
+        "texto_entrega": "Lo hiciste. Llevas siglos de miedo encima y los has vencido. Que los dioses guíen tu descanso.",
+        "nivel_minimo": 9,
+    },
+    "fragmentos_oscuridad": {
+        "titulo": "Fragmentos de Oscuridad",
+        "descripcion": (
+            "Mira la mercader necesita fragmentos de alma oscura para estudiar la magia de no-muerte. "
+            "Solo los caballeros de la muerte de la Ciudadela Oscura los portan."
+        ),
+        "tipo": "fetch",
+        "objetivo": {"target": "fragmento de alma oscura", "cantidad": 3},
+        "dador": "Mira la mercader",
+        "receptor": "Mira la mercader",
+        "recompensa": {"xp": 400, "monedas": 90},
+        "rep_reward": {"gremio_aventureros": 300, "ciudadanos": 200},
+        "texto_oferta": (
+            "Los fragmentos de alma oscura son rarísimos. "
+            "Solo los caballeros de la muerte de la Ciudadela los llevan consigo. "
+            "¿Puedes traerme tres? Pagaré bien por ellos."
+        ),
+        "texto_progreso": "Aún necesito {faltante} fragmento(s) de alma oscura más.",
+        "texto_entrega": "¡Impresionante! Con esto podré estudiar la necromancia de primera mano. Gracias.",
+        "nivel_minimo": 7,
+    },
     "amenaza_catacumbas": {
         "titulo": "La Amenaza de las Catacumbas",
         "descripcion": (

@@ -59,8 +59,8 @@ class TestCatalogo(unittest.TestCase):
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
 
-    def test_seis_jefes_definidos(self):
-        self.assertEqual(len(JEFES), 6)
+    def test_siete_jefes_definidos(self):
+        self.assertEqual(len(JEFES), 7)
 
 
 # ─── Progresión ──────────────────────────────────────────────────────────────

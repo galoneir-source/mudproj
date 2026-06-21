@@ -105,6 +105,19 @@ ZONAS: dict[str, list[dict]] = {
         {"prototipo": "ARCHIMAGO_VEXTHAR", "cantidad": 1},
     ],
     # ----------------------------------------------------------------- #
+    #  Expansión: Ciudadela Oscura
+    # ----------------------------------------------------------------- #
+    "portal_ciudadela": [
+        {"prototipo": "CABALLERO_MUERTE", "cantidad": 2},
+    ],
+    "salon_trono": [
+        {"prototipo": "CABALLERO_MUERTE",   "cantidad": 1},
+        {"prototipo": "HECHICERO_SOMBRIO",  "cantidad": 2},
+    ],
+    "altar_liche": [
+        {"prototipo": "LICHE_INMORTAL", "cantidad": 1},
+    ],
+    # ----------------------------------------------------------------- #
     #  Ciudad (sacerdote y banquero en plaza)
     # ----------------------------------------------------------------- #
     "plaza_ciudad": [

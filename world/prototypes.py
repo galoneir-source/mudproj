@@ -1024,6 +1024,142 @@ ARCHIMAGO_VEXTHAR = {
     ],
 }
 
+# --------------------------------------------------------------------------- #
+#  Equipo: Ciudadela Oscura
+# --------------------------------------------------------------------------- #
+
+CORONA_OSCURA = {
+    "prototype_key": "CORONA_OSCURA",
+    "key": "corona oscura",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Una corona de metal negro con gemas que emiten una luz rojiza y pulsante. "
+        "Su mera presencia hace bajar la temperatura varios grados. "
+        "El liche la usaba como foco de su poder necromántico."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"inteligencia": 10, "fuerza": 2}),
+        ("valor", 120),
+    ],
+}
+
+TUNICA_LICHE = {
+    "prototype_key": "TUNICA_LICHE",
+    "key": "túnica del liche",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Una túnica de tela negra con costuras de hilo plateado que forman runas de no-muerte. "
+        "Es sorprendentemente ligera y parece absorber la oscuridad a su alrededor. "
+        "Quien la lleva siente que sus heridas se cierran más deprisa."
+    ),
+    "attrs": [
+        ("slot", "armadura"),
+        ("bonuses", {"defensa": 7, "inteligencia": 5, "hp_max": 15}),
+        ("valor", 110),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs de expansión: Ciudadela Oscura
+# --------------------------------------------------------------------------- #
+
+CABALLERO_MUERTE = {
+    "prototype_key": "CABALLERO_MUERTE",
+    "key": "caballero de la muerte",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura colosal enfundada en armadura negra que no refleja la luz. "
+        "Su yelmo no deja ver si hay un rostro dentro. "
+        "Se mueve con una cadencia mecánica y mortal, sin respirar ni hacer ruido alguno."
+    ),
+    "attrs": [
+        ("nivel", 8),
+        ("hp", 220), ("hp_max", 220),
+        ("fuerza", 20), ("destreza", 10), ("constitucion", 18),
+        ("inteligencia", 7), ("defensa", 18),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro"]),
+        ("loot", [
+            {"key": "fragmento de alma oscura", "cantidad": 1,
+             "desc": "Un fragmento de alma atrapada en cristal negro. Irradia frío y desesperación."},
+            {"key": "monedas de oro", "cantidad": 6},
+            {"prototype_key": "TUNICA_LICHE", "cantidad": 1, "chance": 0.20},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "CABALLERO_MUERTE"),
+        ("respawn_tiempo", 300),
+    ],
+}
+
+HECHICERO_SOMBRIO = {
+    "prototype_key": "HECHICERO_SOMBRIO",
+    "key": "hechicero sombrío",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura delgada envuelta en capas de tela oscura que ondean sin viento. "
+        "Sus manos huesudas forman gestos arcanos continuamente "
+        "y su voz suena como el eco de una cripta vacía."
+    ),
+    "attrs": [
+        ("nivel", 9),
+        ("hp", 180), ("hp_max", 180),
+        ("fuerza", 8), ("destreza", 14), ("constitucion", 11),
+        ("inteligencia", 22), ("defensa", 9),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["dardo magico", "bola fuego", "drenar vida"]),
+        ("loot", [
+            {"key": "cenizas sombrías", "cantidad": 1, "chance": 0.70,
+             "desc": "Cenizas de magia oscura cristalizada. Emiten un frío sobrenatural al tacto."},
+            {"key": "cristal de oscuridad", "cantidad": 1, "chance": 0.35,
+             "desc": "Un cristal negro que absorbe la luz a su alrededor. Muy demandado por alquimistas."},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "HECHICERO_SOMBRIO"),
+        ("respawn_tiempo", 240),
+    ],
+}
+
+LICHE_INMORTAL = {
+    "prototype_key": "LICHE_INMORTAL",
+    "key": "liche inmortal",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un esqueleto vestido con ropas reales que flotan a su alrededor como si estuviera bajo el agua. "
+        "En sus cuencas vacías arden dos llamas de un verde profundo e imposible. "
+        "Irradia una autoridad terrible y ancestral; el aire a su alrededor se distorsiona "
+        "con el peso de siglos de magia oscura acumulada. "
+        "Su sola presencia hace que el valor abandone el cuerpo."
+    ),
+    "attrs": [
+        ("nivel", 10),
+        ("hp", 320), ("hp_max", 320),
+        ("fuerza", 18), ("destreza", 16), ("constitucion", 20),
+        ("inteligencia", 26), ("defensa", 16),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe maestro", "bola fuego", "drenar vida", "ejecutar"]),
+        ("loot", [
+            {"key": "esencia del liche", "cantidad": 1,
+             "desc": "La esencia de no-muerte condensada del liche. Un alquimista pagaría fortunas por ella."},
+            {"prototype_key": "CORONA_OSCURA", "cantidad": 1},
+        ]),
+        ("dialogo", {
+            "hola": "Mortales. Qué absurdo el instinto que os trajo hasta aquí.",
+            "ciudadela": "Construí esta ciudadela hace cuatro siglos. Sobrevivirá cuatro más.",
+            "muerte": "La muerte es una ilusión que los débiles inventaron para no temer su destino.",
+            "legion": "La Legión Oscura es mi voluntad hecha ejército. Cada no-muerto que ves es una extensión de mí.",
+            "derrota": "¿Derrotarme? Ni los dioses lo intentaron dos veces.",
+            "debilidad": "Sólo hay una cosa que puede acabar conmigo. Y tú no la tienes.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "LICHE_INMORTAL"),
+        ("respawn_tiempo", 1800),
+    ],
+}
+
 SACERDOTE = {
     "prototype_key": "SACERDOTE",
     "key": "Hermano Aldric el sacerdote",
