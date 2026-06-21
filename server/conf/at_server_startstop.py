@@ -45,6 +45,11 @@ def at_server_start():
         obtener_evento_script()
     except Exception:
         pass
+    try:
+        from features.records.records_script import obtener_records_script
+        obtener_records_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

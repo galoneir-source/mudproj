@@ -32,6 +32,7 @@ from features.achievements.commands import AchievementCmdSet
 from features.events.commands import EventCmdSet
 from features.duels.commands import DuelCmdSet
 from features.guilds.commands import GuildCmdSet
+from features.records.commands import RecordsCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -85,6 +86,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(DuelCmdSet)
         # --- Gremios ---
         self.add(GuildCmdSet)
+        # --- Récords ---
+        self.add(RecordsCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

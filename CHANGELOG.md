@@ -5,6 +5,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.23.0] — 2026-06-21
+
+### Añadido
+- **Libro de récords globales**: comando `records` con vista global y personal.
+  - `records` — top-5 global en las 5 categorías: Guerrero Supremo (kills), Aventurero Ejemplar (misiones), Cazador de Jefes, Duelista Invicto, Gran Artesano.
+  - `records personal` (alias `records yo`) — resumen completo del propio personaje: nivel, gremio, título activo y las 5 estadísticas con valores exactos.
+  - `records <categoria>` — top-5 de una sola categoría (kills, misiones, jefes, duelos, crafteo).
+  - `RecordsScript`: script persistente que cachea el top-5 por categoría; se actualiza cada 5 min y al arrancar el servidor (`at_server_start`). Solo incluye personajes con cuenta de jugador asociada.
+  - Números con separador de miles en convención española (punto).
+  - Indicador de tiempo desde la última actualización en el pie del tablón.
+- `systems/records/records.py`: lógica pura — definición de `CATEGORIAS`, extractores de stats individuales, `top_n()`, `formatear_posicion()`, `tiempo_desde()`.
+- `features/records/records_script.py`: `RecordsScript` + `obtener_records_script()`.
+- `features/records/commands.py`: `CmdRecords` + `RecordsCmdSet`.
+- Suite de tests: ~1.588 tests (~77 nuevos: 54 puros + 23 integración).
+
 ## [0.22.0] — 2026-06-21
 
 ### Añadido
