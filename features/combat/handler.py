@@ -44,6 +44,16 @@ def _set_stat(obj, key: str, value):
     setattr(obj.db, key, value)
 
 
+def _subir_vinculo_mascota(char, delta: int):
+    """Aumenta (o reduce) el vínculo de la mascota del personaje."""
+    mascota = dict(getattr(char.db, "mascota", None) or {})
+    if not mascota:
+        return
+    from systems.pets.pets import calcular_nuevo_vinculo
+    mascota["vinculo"] = calcular_nuevo_vinculo(mascota.get("vinculo", 0), delta)
+    char.db.mascota = mascota
+
+
 def _generar_loot(muerto, sala) -> list:
     """
     Lee db.loot del NPC muerto y genera los items en la sala.
@@ -237,11 +247,16 @@ class CombatHandler(DefaultScript):
                     f"  Rival: {nombres_enemigos}"
                 )
             else:
+                captura_txt = (
+                    "  |wcapturar|n  — capturar al enemigo debilitado (≤20% HP)\n"
+                    if not actor.db.mascota else ""
+                )
                 opciones = (
                     f"  |cAcciones disponibles:|n\n"
                     f"  |watacar <objetivo>|n  — ataque básico\n"
                     f"  |whabilidad <nombre> <objetivo>|n  — habilidad especial\n"
                     f"  |whuir|n  — intentar escapar\n"
+                    f"{captura_txt}"
                     f"  |wpasar|n  — pasar turno\n"
                     f"  Enemigos: {nombres_enemigos}"
                 )
@@ -319,6 +334,16 @@ class CombatHandler(DefaultScript):
                     display = {"veneno": "veneno", "sangrado": "sangrado"}.get(nombre_estado, nombre_estado)
                     objetivo.msg(f"|r¡Has sido afectado por {display}!|n")
                     actor.msg(f"|y{objetivo.key} ha sido afectado por {display}.|n")
+
+                # Ataque de mascota: si el jugador tiene mascota y el enemigo sobrevivió
+                if (resultado.exito
+                        and not resultado.muerto
+                        and not self.db.modo_duelo
+                        and bool(getattr(actor, "account", None))):
+                    self._aplicar_ataque_mascota(actor, objetivo)
+                    if (getattr(objetivo.db, "hp", 0) or 0) <= 0:
+                        self._procesar_muerte(objetivo, asesino=actor)
+                        return
 
                 if resultado.muerto:
                     self._procesar_muerte(objetivo, asesino=actor)
@@ -428,6 +453,7 @@ class CombatHandler(DefaultScript):
                     if proto not in jefes_list:
                         jefes_list.append(proto)
                         j.db.jefes_derrotados = jefes_list
+                _subir_vinculo_mascota(j, 5)
                 comprobar_y_notificar(j)
 
         # Loot: generar items desde la tabla db.loot
@@ -517,6 +543,81 @@ class CombatHandler(DefaultScript):
             self._procesar_muerte(actor)
             return True
         return False
+
+    def _aplicar_ataque_mascota(self, actor, objetivo):
+        """Aplica el ataque de la mascota del actor al objetivo."""
+        mascota = dict(getattr(actor.db, "mascota", None) or {})
+        if not mascota:
+            return
+        from systems.pets.pets import calcular_daño_mascota
+        daño = calcular_daño_mascota(mascota.get("vinculo", 0), mascota.get("ataque", 5))
+        if daño <= 0:
+            return
+        hp_obj = max(0, (getattr(objetivo.db, "hp", 0) or 0) - daño)
+        _set_stat(objetivo, "hp", hp_obj)
+        nombre_mascota = mascota.get("nombre", "tu mascota")
+        self.obj.msg_contents(
+            f"|y{nombre_mascota}|n muerde a |r{objetivo.key}|n "
+            f"causando |w{daño}|n de daño."
+        )
+
+    def _intentar_captura(self, actor):
+        """Procesa el intento de captura durante el combate."""
+        from systems.pets.pets import puede_capturar, datos_mascota_desde_criatura
+        sala = self.obj
+
+        if actor.db.mascota:
+            actor.msg(
+                "Ya tienes una mascota. "
+                "Usa |wmascota liberar|n antes de capturar otra."
+            )
+            self._siguiente_turno()
+            return
+
+        enemigo = next(
+            (p for p in (self.db.participantes or [])
+             if p != actor and not bool(getattr(p, "account", None))),
+            None,
+        )
+        if not enemigo:
+            actor.msg("No hay ningún enemigo que puedas capturar.")
+            self._siguiente_turno()
+            return
+
+        hp = int(getattr(enemigo.db, "hp", 1) or 1)
+        hp_max = int(getattr(enemigo.db, "hp_max", 100) or 100)
+
+        if not puede_capturar(hp, hp_max):
+            pct = int(hp / hp_max * 100)
+            actor.msg(
+                f"|y{enemigo.key}|n aún tiene {pct}% de HP. "
+                f"Debilítalo hasta el 20% para capturarlo."
+            )
+            self._siguiente_turno()
+            return
+
+        actor.db.mascota = datos_mascota_desde_criatura(
+            nombre=enemigo.key,
+            especie=enemigo.key,
+            hp_max=hp_max,
+            ataque=int(getattr(enemigo.db, "ataque", 5) or 5),
+            defensa=int(getattr(enemigo.db, "defensa", 2) or 2),
+        )
+
+        sala.msg_contents(
+            f"|g{actor.key} ha capturado a |y{enemigo.key}|n|g!|n"
+        )
+        actor.msg(
+            f"|g¡Has capturado a |y{enemigo.key}|n|g! Ahora te acompaña.\n|n"
+            f"Usa |wmascota|n para ver sus estadísticas y |wmascota nombre <nuevo>|n "
+            f"para ponerle nombre."
+        )
+
+        self._limpiar_estado_combate(enemigo)
+        self.eliminar_participante(enemigo)
+        from features.respawn.respawn import programar_respawn
+        programar_respawn(sala, enemigo)
+        enemigo.delete()
 
     def _terminar_combate(self):
         sala = self.obj

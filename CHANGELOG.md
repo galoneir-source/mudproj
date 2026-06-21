@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.26.0] — 2026-06-22
+
+### Añadido
+- **Mascotas de combate**: los jugadores pueden capturar criaturas debilitadas para que les acompañen en batalla.
+  - `capturar` — durante tu turno de combate, si el enemigo tiene ≤ 20 % de HP, lo capturas como mascota. Solo una mascota a la vez.
+  - `mascota` — muestra estadísticas de tu mascota: especie, HP, ataque, defensa y vínculo con descripción cualitativa.
+  - `mascota liberar` — libera a la mascota.
+  - `mascota alimentar` — gasta 10 monedas para aumentar el vínculo en 10 puntos.
+  - `mascota nombre <nuevo>` — renombra a tu mascota.
+- **Sistema de vínculo**: escala de 0 a 100. Afecta directamente al daño de la mascota (50 % con vínculo 0, 100 % con vínculo 100). Ganas +5 por cada enemigo derrotado con la mascota presente; +10 al alimentarla.
+  - Descripciones cualitativas: Indiferente (0–24) / Amistoso (25–49) / Leal (50–79) / Devoto (80–100).
+- **Ataque de mascota en CombatHandler**: si el jugador tiene mascota y su ataque principal aterriza sin matar al enemigo, la mascota ataca automáticamente ese mismo turno. Puede dar el golpe de gracia.
+- La opción `capturar` aparece en las acciones disponibles del turno si el jugador no tiene mascota aún.
+- `systems/pets/pets.py`: lógica pura — `puede_capturar()`, `calcular_daño_mascota()`, `calcular_nuevo_vinculo()`, `vinculo_descripcion()`, `datos_mascota_desde_criatura()`, `formatear_mascota()`.
+- `features/pets/commands.py`: `CmdCapturar`, `CmdMascota`, `PetsCmdSet`.
+- Suite de tests: ~1.855 tests (~86 nuevos: 56 puros + 30 integración).
+
 ## [0.25.0] — 2026-06-21
 
 ### Añadido

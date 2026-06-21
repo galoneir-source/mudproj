@@ -34,6 +34,7 @@ from features.duels.commands import DuelCmdSet
 from features.guilds.commands import GuildCmdSet
 from features.records.commands import RecordsCmdSet
 from features.market.commands import MarketCmdSet
+from features.pets.commands import PetsCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -91,6 +92,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(RecordsCmdSet)
         # --- Mercado ---
         self.add(MarketCmdSet)
+        # --- Mascotas ---
+        self.add(PetsCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
