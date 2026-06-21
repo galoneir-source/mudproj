@@ -5,6 +5,27 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.22.0] — 2026-06-21
+
+### Añadido
+- **Sistema de gremios de jugadores**: grupos persistentes con jerarquía de rangos y banco compartido.
+  - `crear gremio <nombre>` — funda un gremio por 500 monedas. Hasta 24 caracteres en el nombre.
+  - `gremio` — muestra roster completo, descripción, banco y fecha de fundación.
+  - `gremio descripcion <texto>` — el Líder puede editar la descripción.
+  - `invitar <jugador>` — Líderes y Oficiales pueden invitar jugadores de la misma sala (2 min para responder).
+  - `aceptar gremio` / `rechazar gremio` — gestión de invitaciones pendientes.
+  - `salir gremio` — abandonar el gremio (el Líder debe transferir el mando primero).
+  - `expulsar <jugador>` — Líder expulsa a Oficiales/Miembros; Oficial solo a Miembros.
+  - `promover <jugador>` — ascender rangos; promover un Oficial lo convierte en Líder (con traspaso automático).
+  - `degradar <jugador>` — el Líder baja un Oficial a Miembro.
+  - `gbanco [depositar <n> | retirar <n>]` — banco del gremio; Miembros pueden depositar, Oficiales y Líder pueden retirar.
+  - `disolver gremio` — el Líder disuelve el gremio y recupera las monedas del banco.
+- Jerarquía de rangos: **Miembro → Oficial → Líder** (3 niveles, controles de permisos por operación).
+- `GuildScript`: script persistente sin intervalo, uno por gremio, key `guild_<nombre_normalizado>`.
+- `systems/guilds/guilds.py`: lógica pura — validación de nombre, permisos por rango, normalización.
+- `features/guilds/guild_script.py`: `GuildScript` + helpers `obtener_gremio_por_nombre()` / `obtener_gremio_de()`.
+- Suite de tests: ~1.511 tests (~93 nuevos: 49 puros + 44 integración).
+
 ## [0.21.0] — 2026-06-21
 
 ### Añadido
