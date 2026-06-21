@@ -25,6 +25,18 @@ def _get_stats(obj) -> dict:
         stats[key] = getattr(obj.db, key, None)
         if stats[key] is None:
             stats[key] = default
+    # Evento: tormenta mágica (+INT para jugadores)
+    if getattr(obj, "has_account", False):
+        try:
+            from features.events.event_script import obtener_evento_activo
+            from systems.events.events import EVENTOS
+            ev_id = obtener_evento_activo()
+            if ev_id:
+                bonus = EVENTOS.get(ev_id, {}).get("efectos", {}).get("bonus_inteligencia", 0)
+                if bonus:
+                    stats["inteligencia"] = (stats.get("inteligencia") or 10) + bonus
+        except Exception:
+            pass
     return stats
 
 
@@ -315,6 +327,20 @@ class CombatHandler(DefaultScript):
         # Recompensa de XP (individual o repartida entre el grupo)
         if asesino:
             xp_base = calcular_xp_recompensa(getattr(muerto.db, "nivel", 1) or 1)
+            # Evento: invasión de no-muertos (XP × factor si la facción coincide)
+            try:
+                from features.events.event_script import obtener_evento_activo
+                from systems.events.events import EVENTOS
+                ev_id = obtener_evento_activo()
+                if ev_id:
+                    ev_efectos = EVENTOS.get(ev_id, {}).get("efectos", {})
+                    xp_factor = ev_efectos.get("xp_factor", 1.0)
+                    facciones = ev_efectos.get("facciones_afectadas", [])
+                    faccion_npc = getattr(muerto.db, "faccion", None)
+                    if xp_factor != 1.0 and (not facciones or faccion_npc in facciones):
+                        xp_base = int(xp_base * xp_factor)
+            except Exception:
+                pass
             self._dar_xp_a_grupo(asesino, xp_base)
 
         # Loot: objetos ya en el inventario del NPC

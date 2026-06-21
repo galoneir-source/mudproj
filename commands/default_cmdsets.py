@@ -29,6 +29,7 @@ from features.reputation.commands import ReputationCmdSet
 from features.bank.commands import BankCmdSet
 from features.enchantment.commands import EnchantCmdSet
 from features.achievements.commands import AchievementCmdSet
+from features.events.commands import EventCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -76,6 +77,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(EnchantCmdSet)
         # --- Logros ---
         self.add(AchievementCmdSet)
+        # --- Eventos ---
+        self.add(EventCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

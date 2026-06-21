@@ -40,6 +40,11 @@ def at_server_start():
         obtener_clima_script()
     except Exception:
         pass
+    try:
+        from features.events.event_script import obtener_evento_script
+        obtener_evento_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

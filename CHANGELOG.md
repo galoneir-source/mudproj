@@ -5,6 +5,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.19.0] — 2026-06-21
+
+### Añadido
+- **Sistema de eventos mundiales**: tres eventos periódicos que afectan a todos los jugadores conectados.
+  - **Invasión de No-Muertos** (20 min, cada ≥2h, peso 3): doble XP al derrotar a enemigos de la `legion_oscura`.
+  - **Feria del Mercado** (15 min, cada ≥3h, peso 2): 20% de descuento adicional en todas las tiendas.
+  - **Tormenta Mágica** (10 min, cada ≥4h, peso 1): +3 Inteligencia en combate para todos los jugadores.
+  - Los eventos se disparan aleatoriamente (20% de probabilidad por minuto) si el evento está fuera de su cooldown.
+  - La selección es ponderada: eventos con mayor `peso` son más frecuentes.
+  - Broadcast global al inicio y fin con mensaje con color.
+  - Comando `evento` (alias `eventos`): muestra el evento activo con nombre, efectos y tiempo restante.
+- `EventoMundialScript`: script global persistente (tick 60s) que gestiona el ciclo inicio/duración/fin y los cooldowns por evento.
+- Módulo puro `systems/events/events.py`: catálogo, `eventos_elegibles()` y `elegir_evento()` testables.
+- Integración con tienda: descuento de feria se acumula sobre el factor de reputación.
+- Integración con combate:
+  - XP multiplicado si la facción del NPC coincide con las `facciones_afectadas` del evento activo.
+  - INT del jugador aumentada en `bonus_inteligencia` durante la tormenta (en `_get_stats`).
+- Suite de tests: ~1.287 tests (~54 nuevos: 31 puros + 23 integración).
+
 ## [0.18.0] — 2026-06-21
 
 ### Añadido

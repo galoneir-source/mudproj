@@ -107,6 +107,23 @@ class CmdTienda(Command):
                 pct = round((factor - 1) * 100)
                 rep_linea = f"  |rRecargo por reputación: +{pct}%|n ({color}{titulo}|n)"
 
+        # Evento: Feria del Mercado (descuento extra sobre factor de rep)
+        feria_linea = ""
+        try:
+            from features.events.event_script import obtener_evento_activo
+            from systems.events.events import EVENTOS
+            ev_id = obtener_evento_activo()
+            if ev_id:
+                descuento_ev = EVENTOS.get(ev_id, {}).get("efectos", {}).get("descuento_tienda", 0)
+                if descuento_ev:
+                    factor = factor * (1 - descuento_ev)
+                    pct_ev = int(descuento_ev * 100)
+                    ev_nombre = EVENTOS[ev_id]["nombre"]
+                    ev_color = EVENTOS[ev_id].get("color", "|g")
+                    feria_linea = f"  {ev_color}🛒 {ev_nombre}: -{pct_ev}% adicional|n"
+        except Exception:
+            pass
+
         lineas = [
             f"\n|w{'─'*46}|n",
             f"  |cTienda de {comerciante.key}|n",
@@ -114,6 +131,8 @@ class CmdTienda(Command):
         ]
         if rep_linea:
             lineas.append(rep_linea)
+        if feria_linea:
+            lineas.append(feria_linea)
         lineas.append(f"|w{'─'*46}|n")
 
         if not tienda:
@@ -214,9 +233,22 @@ class CmdComprar(Command):
             if factor is None:
                 caller.msg(f"|r{comerciante.key} se niega a hacer negocios contigo.|n")
                 return
-            precio = round(precio_base * factor)
         else:
-            precio = precio_base
+            factor = 1.0
+
+        # Evento: Feria del Mercado
+        try:
+            from features.events.event_script import obtener_evento_activo
+            from systems.events.events import EVENTOS
+            ev_id = obtener_evento_activo()
+            if ev_id:
+                descuento_ev = EVENTOS.get(ev_id, {}).get("efectos", {}).get("descuento_tienda", 0)
+                if descuento_ev:
+                    factor = factor * (1 - descuento_ev)
+        except Exception:
+            pass
+
+        precio = round(precio_base * factor)
 
         monedas = getattr(caller.db, "monedas", 0) or 0
 
