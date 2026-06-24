@@ -313,17 +313,27 @@ class CombatHandler(DefaultScript):
                             return
                     _set_stat(objetivo, "hp", resultado.hp_restante)
 
-                # Efecto drenar vida: cura al atacante el 50% del daño
+                # Efectos de curación post-ataque (drenar vida / sagrado / esencia)
                 if (tipo == "habilidad" and habilidad and resultado.exito
                         and not resultado.muerto):
                     efecto = efecto_postcombat(habilidad)
-                    if efecto == "drenar_vida":
+                    if efecto in ("drenar_vida", "drenar_esencia"):
                         cura = max(1, resultado.dano // 2)
                         hp_act = getattr(actor.db, "hp", 0) or 0
                         hp_max = getattr(actor.db, "hp_max", 100) or 100
                         nuevo_hp = min(hp_max, hp_act + cura)
                         actor.db.hp = nuevo_hp
-                        actor.msg(f"|gDrenas {cura} HP de vida.|n (HP: {nuevo_hp}/{hp_max})")
+                        if efecto == "drenar_vida":
+                            actor.msg(f"|gDrenas {cura} HP de vida.|n (HP: {nuevo_hp}/{hp_max})")
+                        else:
+                            actor.msg(f"|gDrenas {cura} de esencia vital.|n (HP: {nuevo_hp}/{hp_max})")
+                    elif efecto == "golpe_sagrado":
+                        cura = max(1, resultado.dano // 4)
+                        hp_act = getattr(actor.db, "hp", 0) or 0
+                        hp_max = getattr(actor.db, "hp_max", 100) or 100
+                        nuevo_hp = min(hp_max, hp_act + cura)
+                        actor.db.hp = nuevo_hp
+                        actor.msg(f"|gTu fe restaura {cura} HP.|n (HP: {nuevo_hp}/{hp_max})")
 
                 # Aplicar estado si la habilidad lo produce (solo en golpe exitoso y no letal)
                 if resultado.exito and not resultado.muerto and resultado.estado_aplicado:

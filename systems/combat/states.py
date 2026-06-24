@@ -26,8 +26,10 @@ _NOMBRES_DISPLAY = {
 
 # Habilidades que aplican estado al impactar
 _HABILIDAD_A_ESTADO: dict[str, str] = {
-    "veneno": "veneno",
-    "corte":  "sangrado",
+    "veneno":        "veneno",
+    "corte":         "sangrado",
+    "trampa_mortal": "veneno",
+    "golpe_letal":   "sangrado",
 }
 
 

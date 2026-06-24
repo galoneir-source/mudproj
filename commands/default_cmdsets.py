@@ -37,6 +37,7 @@ from features.market.commands import MarketCmdSet
 from features.pets.commands import PetsCmdSet
 from features.contracts.commands import ContractCmdSet
 from features.classes.commands import ClassCmdSet
+from features.subclasses.commands import SubclassCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -100,6 +101,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(ContractCmdSet)
         # --- Clases ---
         self.add(ClassCmdSet)
+        # --- Subclases ---
+        self.add(SubclassCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

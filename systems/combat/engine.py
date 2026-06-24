@@ -183,17 +183,37 @@ def _aplicar_habilidad(
         bonus = (intel - 10) // 2
         return max(1, d + bonus)
 
+    def _nova_arcana(d):
+        intel = stats.get("inteligencia", 10)
+        bonus = (intel - 10) // 2
+        return max(1, int((d + bonus) * 2.5))
+
     modificadores = {
-        "golpe_fuerte":  lambda d: int(d * 1.5),
-        "golpe_rapido":  lambda d: max(1, d - 2),
-        "embestida":     lambda d: d + 5,
-        "corte":         lambda d: int(d * 1.3),
-        "veneno":        lambda d: d + random.randint(1, 4),
-        "golpe_maestro": lambda d: int(d * 2.5),
-        "ejecutar":      _ejecutar,
-        "dardo_magico":  _dardo_magico,
-        "bola_fuego":    lambda d: int(d * 2.0),
-        "drenar_vida":   lambda d: int(d * 1.5),
+        # Rama guerrero
+        "golpe_fuerte":    lambda d: int(d * 1.5),
+        "embestida":       lambda d: d + 5,
+        "golpe_maestro":   lambda d: int(d * 2.5),
+        # Rama explorador
+        "golpe_rapido":    lambda d: max(1, d - 2),
+        "corte":           lambda d: int(d * 1.3),
+        "veneno":          lambda d: d + random.randint(1, 4),
+        "ejecutar":        _ejecutar,
+        # Rama mago
+        "dardo_magico":    _dardo_magico,
+        "bola_fuego":      lambda d: int(d * 2.0),
+        "drenar_vida":     lambda d: int(d * 1.5),
+        # Subclase: Paladín
+        "golpe_sagrado":   lambda d: int(d * 2.0),
+        # Subclase: Berserker
+        "golpe_demoledor": lambda d: int(d * 3.5),
+        # Subclase: Asesino
+        "golpe_letal":     lambda d: int(d * 2.5),
+        # Subclase: Cazador
+        "trampa_mortal":   lambda d: d + random.randint(1, 4),
+        # Subclase: Hechicero
+        "nova_arcana":     _nova_arcana,
+        # Subclase: Nigromante
+        "drenar_esencia":  lambda d: int(d * 2.0),
     }
     fn = modificadores.get(habilidad)
     return fn(dano_base) if fn else dano_base
@@ -201,7 +221,11 @@ def _aplicar_habilidad(
 
 def efecto_postcombat(habilidad: str) -> Optional[str]:
     """Devuelve el nombre del efecto post-ataque de la habilidad, o None."""
-    efectos = {"drenar_vida": "drenar_vida"}
+    efectos = {
+        "drenar_vida":    "drenar_vida",
+        "golpe_sagrado":  "golpe_sagrado",
+        "drenar_esencia": "drenar_esencia",
+    }
     return efectos.get(habilidad.lower().replace(" ", "_"))
 
 

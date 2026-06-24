@@ -5,6 +5,29 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.30.0] — 2026-06-25
+
+### Añadido
+- **Sistema de subclases de personaje**: especialización a partir del nivel 5 (una vez elegida la clase).
+  - `subclase` — muestra las subclases disponibles para tu clase y tu estado actual.
+  - `subclase <nombre>` — elige una especialización. Solo a nivel 5, solo una vez, requiere clase.
+- **Seis subclases** (dos por clase base):
+  - **Paladín** (Guerrero): +2 DEF, +15 HP máx. Habilidades: Escudo Divino (+3 DEF pasiva) y Golpe Sagrado (x2 daño + cura 25%).
+  - **Berserker** (Guerrero): +4 FUE. Habilidades: Furia Berserker (+3 FUE pasiva) y Golpe Demoledor (x3.5 daño).
+  - **Asesino** (Explorador): +3 DES. Habilidades: Golpe Certero (+2 DES pasiva) y Golpe Letal (x2.5 daño + sangrado).
+  - **Cazador** (Explorador): +2 DES, +2 CON. Habilidades: Instinto Cazador (+1 DES +1 CON pasiva) y Trampa Mortal (x2 daño + veneno).
+  - **Hechicero** (Mago): +3 INT. Habilidades: Concentración Arcana (+2 INT pasiva) y Nova Arcana (x2.5 daño mágico con INT).
+  - **Nigromante** (Mago): +2 INT, +2 CON. Habilidades: Escudo Sombrío (+2 CON pasiva) y Drenar Esencia (x2 daño + cura 50%).
+- **12 nuevas habilidades** de subclase en `systems/skills/trees.py` (rama = id de subclase, nv.5 pasivas / nv.7 activas, coste 2pt).
+- Nuevos efectos de curación en el motor de combate: `golpe_sagrado` (25%) y `drenar_esencia` (50%).
+- Nuevos estados en combat handler: `trampa_mortal` → veneno, `golpe_letal` → sangrado.
+- El árbol `habilidades` muestra sección **SUBCLASE** con las habilidades propias; `habilidades <subclase>` filtra por subclase.
+- Habilidades de subclase ajena muestran `|x[S]|n` (bloqueadas por subclase); las de clase ajena siguen con `|m[C]|n`.
+- `systems/subclasses/subclasses.py`: lógica pura — `SUBCLASES`, `puede_elegir_subclase()`, `aplicar_subclase()`, `subclases_de_clase()`.
+- `features/subclasses/commands.py`: `CmdSubclase`, `SubclassCmdSet`.
+- `db.subclase` inicializado en `Character.at_object_creation`.
+- Suite de tests: 58 nuevos tests puros (975 tests puros en total).
+
 ## [0.29.0] — 2026-06-23
 
 ### Añadido

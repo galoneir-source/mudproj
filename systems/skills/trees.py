@@ -132,6 +132,138 @@ HABILIDADES: dict[str, dict] = {
         "tipo": "activa",
         "descripcion": "x1.5 daño y cura al atacante el 50% del daño infligido.",
     },
+    # -------------------------------------------------------------------
+    # SUBCLASE GUERRERO: Paladín
+    # -------------------------------------------------------------------
+    "escudo_divino": {
+        "nombre": "Escudo Divino",
+        "rama": "paladin",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +3 defensa permanente al aprenderla.",
+        "efecto_pasivo": {"defensa": 3},
+    },
+    "golpe_sagrado": {
+        "nombre": "Golpe Sagrado",
+        "rama": "paladin",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["escudo_divino"],
+        "tipo": "activa",
+        "descripcion": "x2 daño y restaura al atacante el 25% del daño infligido.",
+    },
+    # -------------------------------------------------------------------
+    # SUBCLASE GUERRERO: Berserker
+    # -------------------------------------------------------------------
+    "furia_berserker": {
+        "nombre": "Furia Berserker",
+        "rama": "berserker",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +3 fuerza permanente al aprenderla.",
+        "efecto_pasivo": {"fuerza": 3},
+    },
+    "golpe_demoledor": {
+        "nombre": "Golpe Demoledor",
+        "rama": "berserker",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["furia_berserker"],
+        "tipo": "activa",
+        "descripcion": "Golpe brutal: x3.5 daño. Sin contemplaciones.",
+    },
+    # -------------------------------------------------------------------
+    # SUBCLASE EXPLORADOR: Asesino
+    # -------------------------------------------------------------------
+    "golpe_certero": {
+        "nombre": "Golpe Certero",
+        "rama": "asesino",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +2 destreza permanente al aprenderla.",
+        "efecto_pasivo": {"destreza": 2},
+    },
+    "golpe_letal": {
+        "nombre": "Golpe Letal",
+        "rama": "asesino",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["golpe_certero"],
+        "tipo": "activa",
+        "descripcion": "x2.5 daño + aplica sangrado al objetivo.",
+    },
+    # -------------------------------------------------------------------
+    # SUBCLASE EXPLORADOR: Cazador
+    # -------------------------------------------------------------------
+    "instinto_cazador": {
+        "nombre": "Instinto Cazador",
+        "rama": "cazador",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +1 destreza y +1 constitución permanentes al aprenderla.",
+        "efecto_pasivo": {"destreza": 1, "constitucion": 1},
+    },
+    "trampa_mortal": {
+        "nombre": "Trampa Mortal",
+        "rama": "cazador",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["instinto_cazador"],
+        "tipo": "activa",
+        "descripcion": "x2 daño + envenena al objetivo.",
+    },
+    # -------------------------------------------------------------------
+    # SUBCLASE MAGO: Hechicero
+    # -------------------------------------------------------------------
+    "concentracion_arcana": {
+        "nombre": "Concentración Arcana",
+        "rama": "hechicero",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +2 inteligencia permanente al aprenderla.",
+        "efecto_pasivo": {"inteligencia": 2},
+    },
+    "nova_arcana": {
+        "nombre": "Nova Arcana",
+        "rama": "hechicero",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["concentracion_arcana"],
+        "tipo": "activa",
+        "descripcion": "x2.5 daño mágico usando Inteligencia como base.",
+    },
+    # -------------------------------------------------------------------
+    # SUBCLASE MAGO: Nigromante
+    # -------------------------------------------------------------------
+    "escudo_sombrio": {
+        "nombre": "Escudo Sombrío",
+        "rama": "nigromante",
+        "nivel_req": 5,
+        "coste": 2,
+        "requisitos": [],
+        "tipo": "pasiva",
+        "descripcion": "Pasiva: +2 constitución permanente al aprenderla.",
+        "efecto_pasivo": {"constitucion": 2},
+    },
+    "drenar_esencia": {
+        "nombre": "Drenar Esencia",
+        "rama": "nigromante",
+        "nivel_req": 7,
+        "coste": 2,
+        "requisitos": ["escudo_sombrio"],
+        "tipo": "activa",
+        "descripcion": "x2 daño y cura al atacante el 50% del daño infligido.",
+    },
 }
 
 HABILIDADES_INICIALES: list[str] = ["golpe_fuerte", "golpe_rapido"]

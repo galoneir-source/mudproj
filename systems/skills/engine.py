@@ -35,10 +35,11 @@ def puede_aprender(
     desbloqueadas: set,
     nivel: int,
     clase: Optional[str] = None,
+    subclase: Optional[str] = None,
 ) -> tuple[bool, str]:
     """
     Comprueba si se puede aprender la habilidad.
-    Si se indica clase, verifica que la habilidad pertenece a su rama.
+    Verifica restricciones de clase y subclase según corresponda.
     Devuelve (puede, mensaje_error).
     """
     if skill_id not in HABILIDADES:
@@ -46,13 +47,23 @@ def puede_aprender(
     if skill_id in desbloqueadas:
         return False, "Ya conoces esta habilidad."
 
-    if clase:
+    info = HABILIDADES[skill_id]
+    rama = info.get("rama", "")
+
+    from systems.subclasses.subclasses import SUBCLASES
+    if rama in SUBCLASES:
+        # Habilidad de subclase: requiere tener esa subclase
+        if not subclase:
+            nombre_sub = SUBCLASES[rama]["nombre"]
+            return False, f"Esta habilidad es exclusiva de la subclase {nombre_sub}."
+        if rama != subclase:
+            nombre_sub = SUBCLASES[rama]["nombre"]
+            return False, f"Esta habilidad es exclusiva de la subclase {nombre_sub}."
+    elif clase:
         from systems.classes.classes import puede_aprender_clase
         puede_clase, err_clase = puede_aprender_clase(skill_id, clase)
         if not puede_clase:
             return False, err_clase
-
-    info = HABILIDADES[skill_id]
 
     if nivel < info["nivel_req"]:
         return False, f"Necesitas nivel {info['nivel_req']} (tienes {nivel})."
@@ -76,12 +87,13 @@ def aprender(
     desbloqueadas: set,
     nivel: int,
     clase: Optional[str] = None,
+    subclase: Optional[str] = None,
 ) -> tuple[bool, set, str]:
     """
     Intenta desbloquear la habilidad.
     Devuelve (exito, nuevas_desbloqueadas, mensaje_error).
     """
-    puede, err = puede_aprender(skill_id, desbloqueadas, nivel, clase=clase)
+    puede, err = puede_aprender(skill_id, desbloqueadas, nivel, clase=clase, subclase=subclase)
     if not puede:
         return False, desbloqueadas, err
     return True, set(desbloqueadas) | {skill_id}, ""
