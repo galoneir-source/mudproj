@@ -40,6 +40,16 @@ _RAMAS: dict[str, frozenset[str]] = {
     "mago":       frozenset({"dardo_magico", "escudo_arcano", "bola_fuego", "drenar_vida"}),
 }
 
+# Conjuntos de habilidades por subclase
+_HABS_SUBCLASE: dict[str, frozenset[str]] = {
+    "paladin":    frozenset({"escudo_divino",       "golpe_sagrado"}),
+    "berserker":  frozenset({"furia_berserker",     "golpe_demoledor"}),
+    "asesino":    frozenset({"golpe_certero",       "golpe_letal"}),
+    "cazador":    frozenset({"instinto_cazador",    "trampa_mortal"}),
+    "hechicero":  frozenset({"concentracion_arcana","nova_arcana"}),
+    "nigromante": frozenset({"escudo_sombrio",      "drenar_esencia"}),
+}
+
 # Umbrales de reputación (en puntos) para "al menos X rango"
 _UMBRAL_AMISTOSO = 1000
 _UMBRAL_HONRADO  = 3000
@@ -182,6 +192,50 @@ LOGROS: dict[str, dict] = {
         "categoria":   "economia",
     },
 
+    # ── Subclase ─────────────────────────────────────────────────────────────
+    "especializacion_elegida": {
+        "nombre":      "Elegido",
+        "descripcion": "Elige tu especialización.",
+        "titulo":      None,
+        "categoria":   "subclase",
+    },
+    "maestro_paladin": {
+        "nombre":      "Escudo Sagrado",
+        "descripcion": "Como Paladín, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "el Paladín",
+        "categoria":   "subclase",
+    },
+    "maestro_berserker": {
+        "nombre":      "Furia Sin Fin",
+        "descripcion": "Como Berserker, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "el Berserker",
+        "categoria":   "subclase",
+    },
+    "maestro_asesino": {
+        "nombre":      "Golpe en las Sombras",
+        "descripcion": "Como Asesino, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "la Sombra Oscura",
+        "categoria":   "subclase",
+    },
+    "maestro_cazador": {
+        "nombre":      "Depredador",
+        "descripcion": "Como Cazador, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "el Depredador",
+        "categoria":   "subclase",
+    },
+    "maestro_hechicero": {
+        "nombre":      "Tormenta Arcana",
+        "descripcion": "Como Hechicero, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "la Tormenta",
+        "categoria":   "subclase",
+    },
+    "maestro_nigromante": {
+        "nombre":      "Drenador de Almas",
+        "descripcion": "Como Nigromante, aprende las 2 habilidades de tu subclase.",
+        "titulo":      "el Nigromante",
+        "categoria":   "subclase",
+    },
+
     # ── Clase ─────────────────────────────────────────────────────────────────
     "vocacion_elegida": {
         "nombre":      "Llamado",
@@ -253,6 +307,21 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "diez_crafteos":   return crafteados >= 10
 
     if logro_id == "primer_deposito": return bool(banco)
+
+    subclase = datos.get("subclase") or ""
+    if logro_id == "especializacion_elegida": return bool(subclase)
+    if logro_id == "maestro_paladin":
+        return subclase == "paladin" and _HABS_SUBCLASE["paladin"].issubset(habs)
+    if logro_id == "maestro_berserker":
+        return subclase == "berserker" and _HABS_SUBCLASE["berserker"].issubset(habs)
+    if logro_id == "maestro_asesino":
+        return subclase == "asesino" and _HABS_SUBCLASE["asesino"].issubset(habs)
+    if logro_id == "maestro_cazador":
+        return subclase == "cazador" and _HABS_SUBCLASE["cazador"].issubset(habs)
+    if logro_id == "maestro_hechicero":
+        return subclase == "hechicero" and _HABS_SUBCLASE["hechicero"].issubset(habs)
+    if logro_id == "maestro_nigromante":
+        return subclase == "nigromante" and _HABS_SUBCLASE["nigromante"].issubset(habs)
 
     clase = datos.get("clase") or ""
     if logro_id == "vocacion_elegida":  return bool(clase)

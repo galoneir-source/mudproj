@@ -158,6 +158,9 @@ class CmdSubclase(Command):
             exclude=caller,
         )
 
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+
 
 class SubclassCmdSet(CmdSet):
     key = "SubclassCmdSet"

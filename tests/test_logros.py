@@ -14,6 +14,7 @@ from systems.achievements.achievements import (
     JEFES,
     _INICIALES,
     _RAMAS,
+    _HABS_SUBCLASE,
     _cumple,
     verificar_todos,
     nuevos_logros,
@@ -35,6 +36,7 @@ def _datos(**kwargs) -> dict:
         "encantamiento_max": 0,
         "banco_usado":       False,
         "clase":             "",
+        "subclase":          "",
     }
     base.update(kwargs)
     return base
@@ -44,8 +46,8 @@ def _datos(**kwargs) -> dict:
 
 class TestCatalogo(unittest.TestCase):
 
-    def test_hay_24_logros(self):
-        self.assertEqual(len(LOGROS), 24)
+    def test_hay_31_logros(self):
+        self.assertEqual(len(LOGROS), 31)
 
     def test_todos_tienen_campos_obligatorios(self):
         for lid, logro in LOGROS.items():
@@ -55,7 +57,7 @@ class TestCatalogo(unittest.TestCase):
     def test_categorias_conocidas(self):
         cats_validas = {
             "progresion", "misiones", "combate", "habilidades",
-            "encantamiento", "reputacion", "crafteo", "economia", "clase",
+            "encantamiento", "reputacion", "crafteo", "economia", "subclase", "clase",
         }
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
@@ -287,12 +289,14 @@ class TestVerificarTodos(unittest.TestCase):
         self.assertIn("nivel_2", resultado)
         self.assertNotIn("nivel_5", resultado)
 
-    def test_personaje_guerrero_completo_obtiene_22_logros(self):
-        # Máximo posible con clase guerrero: 20 base + vocacion_elegida + maestro_guerrero = 22
+    def test_personaje_paladin_completo_obtiene_24_logros(self):
+        # Máximo posible con clase guerrero + subclase paladin: 20 base + 2 clase + 2 subclase = 24
         datos_maximos = _datos(
             nivel=10,
             quests_entregadas=10,
-            habilidades=list(_RAMAS["guerrero"] | _RAMAS["mago"]),
+            habilidades=list(
+                _RAMAS["guerrero"] | _RAMAS["mago"] | _HABS_SUBCLASE["paladin"]
+            ),
             reputacion={
                 "ciudadanos": 5000,
                 "gremio_aventureros": 2000,
@@ -304,13 +308,16 @@ class TestVerificarTodos(unittest.TestCase):
             encantamiento_max=3,
             banco_usado=True,
             clase="guerrero",
+            subclase="paladin",
         )
         resultado = verificar_todos(datos_maximos)
-        self.assertEqual(len(resultado), 22)
+        self.assertEqual(len(resultado), 24)
         self.assertIn("vocacion_elegida", resultado)
         self.assertIn("maestro_guerrero", resultado)
+        self.assertIn("especializacion_elegida", resultado)
+        self.assertIn("maestro_paladin", resultado)
         self.assertNotIn("maestro_explorador", resultado)
-        self.assertNotIn("maestro_mago", resultado)
+        self.assertNotIn("maestro_berserker", resultado)
 
 
 # ─── nuevos_logros ───────────────────────────────────────────────────────────
@@ -444,6 +451,160 @@ class TestLogrosClase(unittest.TestCase):
     def test_vocacion_elegida_sin_titulo(self):
         from systems.achievements.achievements import LOGROS
         self.assertIsNone(LOGROS["vocacion_elegida"]["titulo"])
+
+
+# ─── Subclase ────────────────────────────────────────────────────────────────
+
+class TestLogrosSubclase(unittest.TestCase):
+
+    # ── especializacion_elegida ───────────────────────────────────────────────
+
+    def test_especializacion_elegida_sin_subclase(self):
+        self.assertFalse(_cumple("especializacion_elegida", _datos(subclase="")))
+
+    def test_especializacion_elegida_cumple(self):
+        self.assertTrue(_cumple("especializacion_elegida", _datos(subclase="paladin")))
+
+    def test_especializacion_elegida_cualquier_subclase(self):
+        for s in ("paladin", "berserker", "asesino", "cazador", "hechicero", "nigromante"):
+            self.assertTrue(_cumple("especializacion_elegida", _datos(subclase=s)), s)
+
+    def test_especializacion_elegida_sin_titulo(self):
+        from systems.achievements.achievements import LOGROS
+        self.assertIsNone(LOGROS["especializacion_elegida"]["titulo"])
+
+    # ── maestro_paladin ───────────────────────────────────────────────────────
+
+    def test_maestro_paladin_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase=""
+        )))
+
+    def test_maestro_paladin_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase="berserker"
+        )))
+
+    def test_maestro_paladin_sin_habilidades_completas(self):
+        habs = ["escudo_divino"]  # falta golpe_sagrado
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=habs, subclase="paladin"
+        )))
+
+    def test_maestro_paladin_cumple(self):
+        self.assertTrue(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase="paladin"
+        )))
+
+    # ── maestro_berserker ─────────────────────────────────────────────────────
+
+    def test_maestro_berserker_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase=""
+        )))
+
+    def test_maestro_berserker_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase="paladin"
+        )))
+
+    def test_maestro_berserker_cumple(self):
+        self.assertTrue(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase="berserker"
+        )))
+
+    # ── maestro_asesino ───────────────────────────────────────────────────────
+
+    def test_maestro_asesino_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase=""
+        )))
+
+    def test_maestro_asesino_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase="cazador"
+        )))
+
+    def test_maestro_asesino_cumple(self):
+        self.assertTrue(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase="asesino"
+        )))
+
+    # ── maestro_cazador ───────────────────────────────────────────────────────
+
+    def test_maestro_cazador_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase=""
+        )))
+
+    def test_maestro_cazador_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase="asesino"
+        )))
+
+    def test_maestro_cazador_cumple(self):
+        self.assertTrue(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase="cazador"
+        )))
+
+    # ── maestro_hechicero ─────────────────────────────────────────────────────
+
+    def test_maestro_hechicero_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase=""
+        )))
+
+    def test_maestro_hechicero_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase="nigromante"
+        )))
+
+    def test_maestro_hechicero_cumple(self):
+        self.assertTrue(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase="hechicero"
+        )))
+
+    # ── maestro_nigromante ────────────────────────────────────────────────────
+
+    def test_maestro_nigromante_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase=""
+        )))
+
+    def test_maestro_nigromante_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase="hechicero"
+        )))
+
+    def test_maestro_nigromante_cumple(self):
+        self.assertTrue(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase="nigromante"
+        )))
+
+    # ── exclusividad ─────────────────────────────────────────────────────────
+
+    def test_solo_un_maestro_subclase_posible(self):
+        # Un paladín con todas las habilidades de berserker no obtiene maestro_berserker
+        habs = list(_HABS_SUBCLASE["paladin"] | _HABS_SUBCLASE["berserker"])
+        datos = _datos(habilidades=habs, subclase="paladin")
+        resultado = verificar_todos(datos)
+        self.assertIn("maestro_paladin", resultado)
+        self.assertNotIn("maestro_berserker", resultado)
+        self.assertNotIn("maestro_asesino", resultado)
+
+    # ── títulos ───────────────────────────────────────────────────────────────
+
+    def test_titulos_subclase_disponibles(self):
+        for lid, titulo_esperado in [
+            ("maestro_paladin",    "el Paladín"),
+            ("maestro_berserker",  "el Berserker"),
+            ("maestro_asesino",    "la Sombra Oscura"),
+            ("maestro_cazador",    "el Depredador"),
+            ("maestro_hechicero",  "la Tormenta"),
+            ("maestro_nigromante", "el Nigromante"),
+        ]:
+            tits = titulos_disponibles([lid])
+            self.assertIn(titulo_esperado, tits, f"falta título en {lid}")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.31.0] — 2026-06-25
+
+### Añadido
+- **Logros de subclase** — 7 nuevos logros en la categoría "Subclase":
+  - `Elegido` — elige cualquier especialización (sin título).
+  - `Escudo Sagrado` (Paladín) → aprende las 2 habilidades de Paladín → título **el Paladín**.
+  - `Furia Sin Fin` (Berserker) → aprende las 2 habilidades de Berserker → título **el Berserker**.
+  - `Golpe en las Sombras` (Asesino) → aprende las 2 habilidades de Asesino → título **la Sombra Oscura**.
+  - `Depredador` (Cazador) → aprende las 2 habilidades de Cazador → título **el Depredador**.
+  - `Tormenta Arcana` (Hechicero) → aprende las 2 habilidades de Hechicero → título **la Tormenta**.
+  - `Drenador de Almas` (Nigromante) → aprende las 2 habilidades de Nigromante → título **el Nigromante**.
+- `comprobar_y_notificar` se llama automáticamente al elegir subclase.
+- `_extraer_datos` incluye ahora `subclase` para evaluación de logros.
+- La pantalla `logros` muestra la sección **Subclase** (entre Economía y Clase) y acepta `logros subclase` como filtro.
+- Los 7 logros de subclase son mutuamente excluyentes entre sí: solo se puede completar la maestría de la propia subclase.
+- El máximo alcanzable pasa de 22 a 24 (un personaje puede obtener: 19 base + 1 económico + 1 vocación + 1 maestría clase + 1 especialización + 1 maestría subclase = 24).
+- Suite de tests: +24 tests puros (`TestLogrosSubclase`) + 16 tests de integración (`TestLogrosSubclaseIntegracion`). Total de tests puros: 102 en `test_logros.py`.
+
 ## [0.30.0] — 2026-06-25
 
 ### Añadido
