@@ -118,6 +118,7 @@ class CmdCrearGremio(Command):
         guild.db.nombre   = nombre
         guild.db.fundado  = time.time()
         guild.añadir_miembro(caller, RANGO_LIDER)
+        caller.db.gremios_fundados = (getattr(caller.db, "gremios_fundados", 0) or 0) + 1
 
         caller.msg(
             f"\n|Y🏰 ¡Gremio fundado!|n\n"
@@ -125,6 +126,8 @@ class CmdCrearGremio(Command):
             f"  Rango:  {simbolo_rango(RANGO_LIDER)} {RANGO_LIDER}\n"
             f"  Coste:  {COSTE_CREAR_GREMIO} monedas deducidas.\n"
         )
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
 
 
 # --------------------------------------------------------------------------- #
@@ -334,6 +337,11 @@ class CmdAceptarGremio(Command):
             f"|y{caller.key}|n se ha unido al gremio.",
             excluir=caller,
         )
+        from features.achievements.commands import comprobar_y_notificar
+        comprobar_y_notificar(caller)
+        lider = guild.get_lider()
+        if lider and lider != caller:
+            comprobar_y_notificar(lider)
 
 
 # --------------------------------------------------------------------------- #
@@ -639,11 +647,16 @@ class CmdBancoGremio(Command):
                 caller.msg("La cantidad debe ser positiva.")
                 return
             if guild.depositar(caller, cantidad):
+                caller.db.gremio_banco_depositado = (
+                    getattr(caller.db, "gremio_banco_depositado", 0) or 0
+                ) + cantidad
                 caller.msg(f"Has depositado |Y{cantidad} monedas|n en el banco del gremio.")
                 guild.notificar_miembros(
                     f"|y[Gremio]|n {caller.key} ha depositado {cantidad} monedas.",
                     excluir=caller,
                 )
+                from features.achievements.commands import comprobar_y_notificar
+                comprobar_y_notificar(caller)
             else:
                 caller.msg(
                     f"No tienes suficientes monedas "

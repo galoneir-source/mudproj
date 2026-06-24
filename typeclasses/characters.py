@@ -62,6 +62,9 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.objetos_crafteados = 0
         self.db.encantamiento_max = 0
         self.db.mascota_nivel_max = 1
+        # --- Gremio ---
+        self.db.gremios_fundados = 0
+        self.db.gremio_banco_depositado = 0
 
     def at_cmdset_get(self, **kwargs):
         """

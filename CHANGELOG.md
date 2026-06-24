@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.33.0] — 2026-06-25
+
+### Añadido
+- **Logros de gremio** — 5 nuevos logros en la categoría **Gremio**:
+  - `Fundador` — funda tu propio gremio (sin título).
+  - `Líder Unificador` — lidera un gremio con al menos 5 miembros (sin título).
+  - `Comandante` — lidera un gremio con el máximo de 20 miembros → título **el Comandante**.
+  - `Tesorero` — deposita un total acumulado de 500 monedas en el banco gremial (sin título).
+  - `Mecenas` — deposita un total acumulado de 2000 monedas en el banco gremial → título **el Mecenas**.
+- `db.gremios_fundados` y `db.gremio_banco_depositado` rastreados por personaje (acumulados).
+- `comprobar_y_notificar` se llama automáticamente al fundar un gremio, al aceptar una invitación y al depositar en el banco gremial. Al unirse un nuevo miembro también se comprueba en el Líder (si está conectado).
+- `GuildScript.get_lider()` — nuevo helper que devuelve el objeto Character del Líder actual.
+- `_extraer_datos_gremio()` en features/achievements: consulta el GuildScript en tiempo real para `es_lider_gremio` y `miembros_gremio`.
+- La pantalla `logros` muestra la sección **Gremio** y acepta `logros gremio` como filtro.
+- Total logros: 38 (33 anteriores + 5 gremio). Máximo alcanzable por personaje: 31.
+- Suite de tests: +20 tests puros (`TestLogrosGremio`) + 8 integración (`TestLogrosGremioIntegracion`).
+
 ## [0.32.0] — 2026-06-25
 
 ### Añadido

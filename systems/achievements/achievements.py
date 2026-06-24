@@ -3,20 +3,24 @@ systems/achievements/achievements.py
 
 Lógica pura del sistema de logros y títulos. Sin dependencias de Evennia.
 
-Catálogo de 33 logros distribuidos en 10 categorías. Cada logro puede otorgar
+Catálogo de 38 logros distribuidos en 11 categorías. Cada logro puede otorgar
 un título que el jugador puede activar en su perfil.
 
 datos (dict que reciben las funciones de verificación):
-  nivel             int   — nivel actual del personaje
-  quests_entregadas int   — misiones con estado "entregada"
-  habilidades       list  — IDs de habilidades desbloqueadas
-  reputacion        dict  — {faccion_id: puntos}
-  kills_totales     int   — NPCs derrotados en total
-  jefes_derrotados  list  — prototype_key de jefes eliminados
-  objetos_crafteados int  — objetos elaborados en total
-  encantamiento_max int   — nivel más alto alcanzado en cualquier encantamiento
-  banco_usado       bool  — ha depositado alguna vez en el banco
-  mascota_nivel_max int   — nivel más alto alcanzado por cualquier mascota (1-3)
+  nivel                  int   — nivel actual del personaje
+  quests_entregadas      int   — misiones con estado "entregada"
+  habilidades            list  — IDs de habilidades desbloqueadas
+  reputacion             dict  — {faccion_id: puntos}
+  kills_totales          int   — NPCs derrotados en total
+  jefes_derrotados       list  — prototype_key de jefes eliminados
+  objetos_crafteados     int   — objetos elaborados en total
+  encantamiento_max      int   — nivel más alto alcanzado en cualquier encantamiento
+  banco_usado            bool  — ha depositado alguna vez en el banco
+  mascota_nivel_max      int   — nivel más alto alcanzado por cualquier mascota (1-3)
+  gremios_fundados       int   — número de gremios fundados
+  es_lider_gremio        bool  — actualmente es Líder de un gremio
+  miembros_gremio        int   — número de miembros en el gremio actual
+  gremio_banco_depositado int  — total de monedas depositadas en banco gremial (acumulado)
 """
 from __future__ import annotations
 
@@ -193,6 +197,38 @@ LOGROS: dict[str, dict] = {
         "categoria":   "economia",
     },
 
+    # ── Gremio ───────────────────────────────────────────────────────────────
+    "gremio_fundado": {
+        "nombre":      "Fundador",
+        "descripcion": "Funda tu propio gremio.",
+        "titulo":      None,
+        "categoria":   "gremio",
+    },
+    "gremio_cinco_miembros": {
+        "nombre":      "Líder Unificador",
+        "descripcion": "Lidera un gremio con al menos 5 miembros.",
+        "titulo":      None,
+        "categoria":   "gremio",
+    },
+    "gremio_pleno": {
+        "nombre":      "Comandante",
+        "descripcion": f"Lidera un gremio con el máximo de miembros (20).",
+        "titulo":      "el Comandante",
+        "categoria":   "gremio",
+    },
+    "gremio_tesorero": {
+        "nombre":      "Tesorero",
+        "descripcion": "Deposita un total de 500 monedas en el banco del gremio.",
+        "titulo":      None,
+        "categoria":   "gremio",
+    },
+    "gremio_mecenas": {
+        "nombre":      "Mecenas",
+        "descripcion": "Deposita un total de 2000 monedas en el banco del gremio.",
+        "titulo":      "el Mecenas",
+        "categoria":   "gremio",
+    },
+
     # ── Mascotas ─────────────────────────────────────────────────────────────
     "mascota_nivel_2": {
         "nombre":      "Primer Compañero",
@@ -322,6 +358,16 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "diez_crafteos":   return crafteados >= 10
 
     if logro_id == "primer_deposito": return bool(banco)
+
+    gremios_fundados     = datos.get("gremios_fundados", 0)
+    es_lider             = datos.get("es_lider_gremio", False)
+    miembros_gremio      = datos.get("miembros_gremio", 0)
+    banco_gremio         = datos.get("gremio_banco_depositado", 0)
+    if logro_id == "gremio_fundado":        return gremios_fundados >= 1
+    if logro_id == "gremio_cinco_miembros": return es_lider and miembros_gremio >= 5
+    if logro_id == "gremio_pleno":          return es_lider and miembros_gremio >= 20
+    if logro_id == "gremio_tesorero":       return banco_gremio >= 500
+    if logro_id == "gremio_mecenas":        return banco_gremio >= 2000
 
     nivel_mascota = datos.get("mascota_nivel_max", 1)
     if logro_id == "mascota_nivel_2": return nivel_mascota >= 2

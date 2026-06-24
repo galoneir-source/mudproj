@@ -19,7 +19,7 @@ from systems.achievements.achievements import (
 _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
-    "mascotas", "subclase", "clase",
+    "gremio", "mascotas", "subclase", "clase",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -30,10 +30,27 @@ _NOMBRES_CATS = {
     "reputacion":   "Reputación",
     "crafteo":      "Crafteo",
     "economia":     "Economía",
+    "gremio":       "Gremio",
     "mascotas":     "Mascotas",
     "subclase":     "Subclase",
     "clase":        "Clase",
 }
+
+
+def _extraer_datos_gremio(caller) -> dict:
+    """Extrae el estado de gremio del personaje (requiere Evennia)."""
+    try:
+        from features.guilds.guild_script import obtener_gremio_de
+        from systems.guilds.guilds import RANGO_LIDER
+        guild = obtener_gremio_de(caller)
+        if guild:
+            return {
+                "es_lider_gremio": guild.get_rango(caller) == RANGO_LIDER,
+                "miembros_gremio": guild.contar_miembros(),
+            }
+    except Exception:
+        pass
+    return {"es_lider_gremio": False, "miembros_gremio": 0}
 
 
 def _extraer_datos(caller) -> dict:
@@ -55,6 +72,9 @@ def _extraer_datos(caller) -> dict:
         "clase":             getattr(caller.db, "clase", None) or "",
         "subclase":          getattr(caller.db, "subclase", None) or "",
         "mascota_nivel_max": int(getattr(caller.db, "mascota_nivel_max", 1) or 1),
+        "gremios_fundados":          int(getattr(caller.db, "gremios_fundados", 0) or 0),
+        "gremio_banco_depositado":   int(getattr(caller.db, "gremio_banco_depositado", 0) or 0),
+        **_extraer_datos_gremio(caller),
     }
 
 

@@ -44,6 +44,8 @@ def _init_char(char):
     char.db.clase = None
     char.db.subclase = None
     char.db.mascota_nivel_max = 1
+    char.db.gremios_fundados = 0
+    char.db.gremio_banco_depositado = 0
     if not hasattr(char.db, "quests") or char.db.quests is None:
         char.db.quests = {}
     if not hasattr(char.db, "habilidades_desbloqueadas") or char.db.habilidades_desbloqueadas is None:
@@ -241,7 +243,7 @@ class TestCmdLogros(EvenniaTest):
     def test_muestra_sin_logros(self):
         self.char1.db.logros = []
         self._run()
-        self.assertIn("0/33", self.cap.all())
+        self.assertIn("0/38", self.cap.all())
 
     def test_muestra_logros_desbloqueados(self):
         self.char1.db.logros = ["nivel_2", "primera_mision"]
@@ -249,7 +251,7 @@ class TestCmdLogros(EvenniaTest):
         texto = self.cap.all()
         self.assertIn("Primer Paso", texto)
         self.assertIn("Aventurero", texto)
-        self.assertIn("2/33", texto)
+        self.assertIn("2/38", texto)
 
     def test_filtra_por_categoria(self):
         self.char1.db.logros = ["nivel_2"]
@@ -274,7 +276,7 @@ class TestCmdLogros(EvenniaTest):
     def test_contador_correcto_con_varios(self):
         self.char1.db.logros = list(LOGROS.keys())[:7]
         self._run()
-        self.assertIn("7/33", self.cap.all())
+        self.assertIn("7/38", self.cap.all())
 
 
 # ─── CmdTitulo ───────────────────────────────────────────────────────────────
@@ -554,3 +556,59 @@ class TestLogrosMascotasIntegracion(EvenniaTest):
         output = self.cap.all()
         self.assertIn("Primer Compañero", output)
         self.assertIn("Domador", output)
+
+
+# ─── Logros de gremio ────────────────────────────────────────────────────────
+
+class TestLogrosGremioIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_sin_gremio_fundado_no_logro(self):
+        self.char1.db.gremios_fundados = 0
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("gremio_fundado", list(self.char1.db.logros))
+
+    def test_gremio_fundado_desbloquea_logro(self):
+        self.char1.db.gremios_fundados = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("gremio_fundado", list(self.char1.db.logros))
+
+    def test_depositar_500_desbloquea_tesorero(self):
+        self.char1.db.gremio_banco_depositado = 500
+        comprobar_y_notificar(self.char1)
+        self.assertIn("gremio_tesorero", list(self.char1.db.logros))
+
+    def test_depositar_499_no_desbloquea_tesorero(self):
+        self.char1.db.gremio_banco_depositado = 499
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("gremio_tesorero", list(self.char1.db.logros))
+
+    def test_depositar_2000_desbloquea_mecenas_y_tesorero(self):
+        self.char1.db.gremio_banco_depositado = 2000
+        comprobar_y_notificar(self.char1)
+        logros = list(self.char1.db.logros)
+        self.assertIn("gremio_tesorero", logros)
+        self.assertIn("gremio_mecenas", logros)
+
+    def test_mecenas_da_titulo(self):
+        self.char1.db.gremio_banco_depositado = 2000
+        comprobar_y_notificar(self.char1)
+        self.assertIn("el Mecenas", self.cap.all())
+
+    def test_logros_muestra_categoria_gremio(self):
+        cmd = _make_cmd(CmdLogros, self.char1)
+        cmd.func()
+        self.assertIn("Gremio", self.cap.all())
+
+    def test_logros_filtra_por_gremio(self):
+        cmd = _make_cmd(CmdLogros, self.char1, "gremio")
+        cmd.func()
+        output = self.cap.all()
+        self.assertIn("Fundador", output)
+        self.assertIn("Tesorero", output)
+        self.assertIn("Mecenas", output)

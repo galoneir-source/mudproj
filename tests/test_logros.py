@@ -38,6 +38,10 @@ def _datos(**kwargs) -> dict:
         "clase":             "",
         "subclase":          "",
         "mascota_nivel_max": 1,
+        "gremios_fundados":          0,
+        "es_lider_gremio":           False,
+        "miembros_gremio":           0,
+        "gremio_banco_depositado":   0,
     }
     base.update(kwargs)
     return base
@@ -47,8 +51,8 @@ def _datos(**kwargs) -> dict:
 
 class TestCatalogo(unittest.TestCase):
 
-    def test_hay_33_logros(self):
-        self.assertEqual(len(LOGROS), 33)
+    def test_hay_38_logros(self):
+        self.assertEqual(len(LOGROS), 38)
 
     def test_todos_tienen_campos_obligatorios(self):
         for lid, logro in LOGROS.items():
@@ -59,7 +63,7 @@ class TestCatalogo(unittest.TestCase):
         cats_validas = {
             "progresion", "misiones", "combate", "habilidades",
             "encantamiento", "reputacion", "crafteo", "economia",
-            "mascotas", "subclase", "clase",
+            "gremio", "mascotas", "subclase", "clase",
         }
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
@@ -291,8 +295,8 @@ class TestVerificarTodos(unittest.TestCase):
         self.assertIn("nivel_2", resultado)
         self.assertNotIn("nivel_5", resultado)
 
-    def test_personaje_paladin_completo_obtiene_26_logros(self):
-        # Máximo posible: 20 base + 2 clase + 2 subclase + 2 mascotas = 26
+    def test_personaje_paladin_completo_obtiene_31_logros(self):
+        # Máximo posible: 20 base + 2 clase + 2 subclase + 2 mascotas + 5 gremio = 31
         datos_maximos = _datos(
             nivel=10,
             quests_entregadas=10,
@@ -312,15 +316,22 @@ class TestVerificarTodos(unittest.TestCase):
             clase="guerrero",
             subclase="paladin",
             mascota_nivel_max=3,
+            gremios_fundados=1,
+            es_lider_gremio=True,
+            miembros_gremio=20,
+            gremio_banco_depositado=2000,
         )
         resultado = verificar_todos(datos_maximos)
-        self.assertEqual(len(resultado), 26)
+        self.assertEqual(len(resultado), 31)
         self.assertIn("vocacion_elegida", resultado)
         self.assertIn("maestro_guerrero", resultado)
         self.assertIn("especializacion_elegida", resultado)
         self.assertIn("maestro_paladin", resultado)
         self.assertIn("mascota_nivel_2", resultado)
         self.assertIn("mascota_nivel_3", resultado)
+        self.assertIn("gremio_fundado", resultado)
+        self.assertIn("gremio_pleno", resultado)
+        self.assertIn("gremio_mecenas", resultado)
         self.assertNotIn("maestro_explorador", resultado)
         self.assertNotIn("maestro_berserker", resultado)
 
@@ -642,6 +653,95 @@ class TestLogrosMascotas(unittest.TestCase):
         datos = _datos(mascota_nivel_max=0)
         self.assertFalse(_cumple("mascota_nivel_2", datos))
         self.assertFalse(_cumple("mascota_nivel_3", datos))
+
+
+# ─── Gremio ──────────────────────────────────────────────────────────────────
+
+class TestLogrosGremio(unittest.TestCase):
+
+    # ── gremio_fundado ────────────────────────────────────────────────────────
+
+    def test_gremio_fundado_sin_gremio(self):
+        self.assertFalse(_cumple("gremio_fundado", _datos(gremios_fundados=0)))
+
+    def test_gremio_fundado_cumple(self):
+        self.assertTrue(_cumple("gremio_fundado", _datos(gremios_fundados=1)))
+
+    def test_gremio_fundado_sin_titulo(self):
+        self.assertIsNone(LOGROS["gremio_fundado"]["titulo"])
+
+    # ── gremio_cinco_miembros ─────────────────────────────────────────────────
+
+    def test_gremio_cinco_miembros_sin_ser_lider(self):
+        self.assertFalse(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=False, miembros_gremio=10
+        )))
+
+    def test_gremio_cinco_miembros_con_pocos(self):
+        self.assertFalse(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=4
+        )))
+
+    def test_gremio_cinco_miembros_cumple(self):
+        self.assertTrue(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=5
+        )))
+
+    def test_gremio_cinco_miembros_cumple_con_mas(self):
+        self.assertTrue(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=15
+        )))
+
+    # ── gremio_pleno ──────────────────────────────────────────────────────────
+
+    def test_gremio_pleno_sin_ser_lider(self):
+        self.assertFalse(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=False, miembros_gremio=20
+        )))
+
+    def test_gremio_pleno_no_cumple_con_19(self):
+        self.assertFalse(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=True, miembros_gremio=19
+        )))
+
+    def test_gremio_pleno_cumple(self):
+        self.assertTrue(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=True, miembros_gremio=20
+        )))
+
+    def test_gremio_pleno_titulo_comandante(self):
+        tits = titulos_disponibles(["gremio_pleno"])
+        self.assertIn("el Comandante", tits)
+
+    # ── gremio_tesorero ───────────────────────────────────────────────────────
+
+    def test_gremio_tesorero_no_cumple_con_499(self):
+        self.assertFalse(_cumple("gremio_tesorero", _datos(gremio_banco_depositado=499)))
+
+    def test_gremio_tesorero_cumple(self):
+        self.assertTrue(_cumple("gremio_tesorero", _datos(gremio_banco_depositado=500)))
+
+    def test_gremio_tesorero_sin_titulo(self):
+        self.assertIsNone(LOGROS["gremio_tesorero"]["titulo"])
+
+    # ── gremio_mecenas ────────────────────────────────────────────────────────
+
+    def test_gremio_mecenas_no_cumple_con_1999(self):
+        self.assertFalse(_cumple("gremio_mecenas", _datos(gremio_banco_depositado=1999)))
+
+    def test_gremio_mecenas_cumple(self):
+        self.assertTrue(_cumple("gremio_mecenas", _datos(gremio_banco_depositado=2000)))
+
+    def test_gremio_mecenas_titulo_mecenas(self):
+        tits = titulos_disponibles(["gremio_mecenas"])
+        self.assertIn("el Mecenas", tits)
+
+    # ── tesorero implica mecenas no cumplido ──────────────────────────────────
+
+    def test_tesorero_no_implica_mecenas(self):
+        datos = _datos(gremio_banco_depositado=500)
+        self.assertTrue(_cumple("gremio_tesorero", datos))
+        self.assertFalse(_cumple("gremio_mecenas", datos))
 
 
 if __name__ == "__main__":

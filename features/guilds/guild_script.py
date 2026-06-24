@@ -47,6 +47,15 @@ class GuildScript(DefaultScript):
                 return dbref
         return None
 
+    def get_lider(self):
+        """Devuelve el objeto Character del Líder si está conectado, o None."""
+        dbref = self.get_lider_dbref()
+        if not dbref:
+            return None
+        from evennia import search_object
+        results = search_object(dbref, use_dbref=True)
+        return results[0] if results else None
+
     # ------------------------------------------------------------------ #
     #  Modificaciones de roster
     # ------------------------------------------------------------------ #
