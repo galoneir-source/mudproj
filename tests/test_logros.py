@@ -34,6 +34,7 @@ def _datos(**kwargs) -> dict:
         "objetos_crafteados":0,
         "encantamiento_max": 0,
         "banco_usado":       False,
+        "clase":             "",
     }
     base.update(kwargs)
     return base
@@ -43,8 +44,8 @@ def _datos(**kwargs) -> dict:
 
 class TestCatalogo(unittest.TestCase):
 
-    def test_hay_20_logros(self):
-        self.assertEqual(len(LOGROS), 20)
+    def test_hay_24_logros(self):
+        self.assertEqual(len(LOGROS), 24)
 
     def test_todos_tienen_campos_obligatorios(self):
         for lid, logro in LOGROS.items():
@@ -54,7 +55,7 @@ class TestCatalogo(unittest.TestCase):
     def test_categorias_conocidas(self):
         cats_validas = {
             "progresion", "misiones", "combate", "habilidades",
-            "encantamiento", "reputacion", "crafteo", "economia",
+            "encantamiento", "reputacion", "crafteo", "economia", "clase",
         }
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
@@ -286,7 +287,8 @@ class TestVerificarTodos(unittest.TestCase):
         self.assertIn("nivel_2", resultado)
         self.assertNotIn("nivel_5", resultado)
 
-    def test_personaje_completo_todos_los_logros(self):
+    def test_personaje_guerrero_completo_obtiene_22_logros(self):
+        # Máximo posible con clase guerrero: 20 base + vocacion_elegida + maestro_guerrero = 22
         datos_maximos = _datos(
             nivel=10,
             quests_entregadas=10,
@@ -301,9 +303,14 @@ class TestVerificarTodos(unittest.TestCase):
             objetos_crafteados=10,
             encantamiento_max=3,
             banco_usado=True,
+            clase="guerrero",
         )
         resultado = verificar_todos(datos_maximos)
-        self.assertEqual(len(resultado), len(LOGROS))
+        self.assertEqual(len(resultado), 22)
+        self.assertIn("vocacion_elegida", resultado)
+        self.assertIn("maestro_guerrero", resultado)
+        self.assertNotIn("maestro_explorador", resultado)
+        self.assertNotIn("maestro_mago", resultado)
 
 
 # ─── nuevos_logros ───────────────────────────────────────────────────────────
@@ -351,6 +358,92 @@ class TestTitulosDisponibles(unittest.TestCase):
     def test_orden_preservado(self):
         tits = titulos_disponibles(["nivel_5", "nivel_2"])
         self.assertEqual(tits, ["el Veterano", "el Novato"])
+
+
+# ─── Clase ───────────────────────────────────────────────────────────────────
+
+class TestLogrosClase(unittest.TestCase):
+
+    def test_vocacion_elegida_sin_clase(self):
+        self.assertFalse(_cumple("vocacion_elegida", _datos(clase="")))
+
+    def test_vocacion_elegida_cumple(self):
+        self.assertTrue(_cumple("vocacion_elegida", _datos(clase="guerrero")))
+
+    def test_vocacion_elegida_cualquier_clase(self):
+        for c in ("guerrero", "explorador", "mago"):
+            self.assertTrue(_cumple("vocacion_elegida", _datos(clase=c)), c)
+
+    def test_maestro_guerrero_sin_clase(self):
+        self.assertFalse(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase=""
+        )))
+
+    def test_maestro_guerrero_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase="explorador"
+        )))
+
+    def test_maestro_guerrero_sin_habilidades_completas(self):
+        habs = list(_RAMAS["guerrero"])[:3]  # faltan una
+        self.assertFalse(_cumple("maestro_guerrero", _datos(habilidades=habs, clase="guerrero")))
+
+    def test_maestro_guerrero_cumple(self):
+        self.assertTrue(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase="guerrero"
+        )))
+
+    def test_maestro_explorador_sin_clase(self):
+        self.assertFalse(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase=""
+        )))
+
+    def test_maestro_explorador_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase="mago"
+        )))
+
+    def test_maestro_explorador_cumple(self):
+        self.assertTrue(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase="explorador"
+        )))
+
+    def test_maestro_mago_sin_clase(self):
+        self.assertFalse(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase=""
+        )))
+
+    def test_maestro_mago_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase="guerrero"
+        )))
+
+    def test_maestro_mago_cumple(self):
+        self.assertTrue(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase="mago"
+        )))
+
+    def test_solo_una_maestria_posible_a_la_vez(self):
+        # Un guerrero con todas las habilidades de mago no obtiene maestro_mago
+        habs = list(_RAMAS["guerrero"] | _RAMAS["mago"])
+        datos = _datos(habilidades=habs, clase="guerrero")
+        resultado = verificar_todos(datos)
+        self.assertIn("maestro_guerrero", resultado)
+        self.assertNotIn("maestro_mago", resultado)
+        self.assertNotIn("maestro_explorador", resultado)
+
+    def test_titulos_clase_disponibles(self):
+        for lid, titulo_esperado in [
+            ("maestro_guerrero",   "el Caballero"),
+            ("maestro_explorador", "la Sombra"),
+            ("maestro_mago",       "el Archimago"),
+        ]:
+            tits = titulos_disponibles([lid])
+            self.assertIn(titulo_esperado, tits, f"falta título en {lid}")
+
+    def test_vocacion_elegida_sin_titulo(self):
+        from systems.achievements.achievements import LOGROS
+        self.assertIsNone(LOGROS["vocacion_elegida"]["titulo"])
 
 
 if __name__ == "__main__":

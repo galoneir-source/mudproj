@@ -41,6 +41,7 @@ def _init_char(char):
     char.db.objetos_crafteados = 0
     char.db.encantamiento_max = 0
     char.db.banco_usado = False
+    char.db.clase = None
     if not hasattr(char.db, "quests") or char.db.quests is None:
         char.db.quests = {}
     if not hasattr(char.db, "habilidades_desbloqueadas") or char.db.habilidades_desbloqueadas is None:
@@ -238,7 +239,7 @@ class TestCmdLogros(EvenniaTest):
     def test_muestra_sin_logros(self):
         self.char1.db.logros = []
         self._run()
-        self.assertIn("0/20", self.cap.all())
+        self.assertIn("0/24", self.cap.all())
 
     def test_muestra_logros_desbloqueados(self):
         self.char1.db.logros = ["nivel_2", "primera_mision"]
@@ -246,7 +247,7 @@ class TestCmdLogros(EvenniaTest):
         texto = self.cap.all()
         self.assertIn("Primer Paso", texto)
         self.assertIn("Aventurero", texto)
-        self.assertIn("2/20", texto)
+        self.assertIn("2/24", texto)
 
     def test_filtra_por_categoria(self):
         self.char1.db.logros = ["nivel_2"]
@@ -271,7 +272,7 @@ class TestCmdLogros(EvenniaTest):
     def test_contador_correcto_con_varios(self):
         self.char1.db.logros = list(LOGROS.keys())[:7]
         self._run()
-        self.assertIn("7/20", self.cap.all())
+        self.assertIn("7/24", self.cap.all())
 
 
 # ─── CmdTitulo ───────────────────────────────────────────────────────────────
@@ -318,3 +319,92 @@ class TestCmdTitulo(EvenniaTest):
         self.char1.db.logros = ["nivel_5"]
         self._run("titulo inexistente")
         self.assertIn("el Veterano", self.cap.all())
+
+
+# ─── Logros de clase ────────────────────────────────────────────────────────
+
+class TestLogrosClaseIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_elegir_clase_desbloquea_vocacion_elegida(self):
+        self.char1.db.clase = "guerrero"
+        comprobar_y_notificar(self.char1)
+        self.assertIn("vocacion_elegida", list(self.char1.db.logros))
+
+    def test_sin_clase_no_desbloquea_vocacion(self):
+        self.char1.db.clase = None
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("vocacion_elegida", list(self.char1.db.logros))
+
+    def test_guerrero_rama_completa_desbloquea_maestro(self):
+        self.char1.db.clase = "guerrero"
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("maestro_guerrero", list(self.char1.db.logros))
+
+    def test_guerrero_rama_incompleta_no_desbloquea_maestro(self):
+        self.char1.db.clase = "guerrero"
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_fuerte", "embestida", "escudo_fe"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("maestro_guerrero", list(self.char1.db.logros))
+
+    def test_explorador_rama_completa_desbloquea_maestro(self):
+        self.char1.db.clase = "explorador"
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_rapido", "corte", "veneno", "ejecutar"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("maestro_explorador", list(self.char1.db.logros))
+
+    def test_mago_rama_completa_desbloquea_maestro(self):
+        self.char1.db.clase = "mago"
+        self.char1.db.habilidades_desbloqueadas = [
+            "dardo_magico", "escudo_arcano", "bola_fuego", "drenar_vida"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("maestro_mago", list(self.char1.db.logros))
+
+    def test_maestro_clase_incorrecta_no_desbloquea(self):
+        self.char1.db.clase = "mago"
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("maestro_guerrero", list(self.char1.db.logros))
+
+    def test_maestro_guerrero_da_titulo_caballero(self):
+        self.char1.db.clase = "guerrero"
+        self.char1.db.habilidades_desbloqueadas = [
+            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("el Caballero", self.cap.all())
+
+    def test_maestro_mago_da_titulo_archimago(self):
+        self.char1.db.clase = "mago"
+        self.char1.db.habilidades_desbloqueadas = [
+            "dardo_magico", "escudo_arcano", "bola_fuego", "drenar_vida"
+        ]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("el Archimago", self.cap.all())
+
+    def test_logros_muestra_categoria_clase(self):
+        cmd = _make_cmd(CmdLogros, self.char1)
+        cmd.func()
+        self.assertIn("Clase", self.cap.all())
+
+    def test_logros_filtra_por_clase(self):
+        cmd = _make_cmd(CmdLogros, self.char1, "clase")
+        cmd.func()
+        output = self.cap.all()
+        self.assertIn("Llamado", output)
+        self.assertIn("Caballero de Hierro", output)

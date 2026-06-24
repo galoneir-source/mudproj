@@ -5,6 +5,58 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.29.0] — 2026-06-23
+
+### Añadido
+- **Logros de clase** — 4 nuevos logros en la categoría "Clase":
+  - `Llamado` — elige cualquier vocación (sin título).
+  - `Caballero de Hierro` — completa el árbol Guerrero siendo Guerrero → título **el Caballero**.
+  - `Sombra Veloz` — completa el árbol Explorador siendo Explorador → título **la Sombra**.
+  - `Archimago` — completa el árbol Mago siendo Mago → título **el Archimago**.
+- `comprobar_y_notificar` se llama automáticamente al elegir clase.
+- `_extraer_datos` incluye ahora `clase` para que el motor de logros pueda evaluarlo.
+- La pantalla `logros` muestra la sección **Clase** y acepta `logros clase` como filtro.
+- El máximo de logros alcanzables por personaje pasa de 20 a 22 (20 base + vocación + una maestría de clase). Los 4 logros de clase son mutuamente excluyentes entre sí.
+- Suite de tests: ~2.156 tests (124 nuevos: 42 puros + 82 integración acumulados desde v0.28).
+
+## [0.28.0] — 2026-06-23
+
+### Añadido
+- **Sistema de clases de personaje**: tres vocaciones que definen el árbol de habilidades accesible.
+  - `clase` — muestra tu clase actual y las disponibles con sus bonificaciones.
+  - `clase <guerrero|explorador|mago>` — elige una clase. Solo a nivel 1 y solo una vez.
+  - **Guerrero**: +3 FUE, +2 CON, +1 DEF, +20 HP máx. Rama restringida: Guerrero.
+  - **Explorador**: +4 DES, +1 CON. Rama restringida: Explorador.
+  - **Mago**: +5 INT. Rama restringida: Mago.
+- Las habilidades de otras ramas muestran `|m[C]|n` en el árbol (bloqueadas por clase).
+- Las habilidades iniciales (`golpe_fuerte`, `golpe_rapido`) siguen siendo gratuitas y no están sujetas a la restricción de clase.
+- Sin clase asignada, el sistema funciona exactamente igual que antes (compatible con personajes existentes).
+- El comando `perfil` muestra la clase activa con el color de la vocación.
+- `db.clase` inicializado en `Character.at_object_creation`.
+- `systems/classes/classes.py`: lógica pura — `CLASES`, `clase_valida()`, `puede_aprender_clase()`, `aplicar_clase()`.
+- `features/classes/commands.py`: `CmdClase`, `ClassCmdSet`.
+- Suite de tests: ~2.032 tests (77 nuevos: 35 puros + 42 integración).
+
+## [0.27.0] — 2026-06-22
+
+### Añadido
+- **Tablón de contratos**: misiones procedurales con 5 contratos renovables cada hora, iguales para todos los jugadores en el mismo período.
+  - `tablón` — muestra los 5 contratos disponibles con número, dificultad (★☆☆/★★☆/★★★), descripción y recompensa.
+  - `tablón aceptar <#>` — acepta el contrato número #. Solo puedes tener uno activo a la vez.
+  - `tablón estado` — muestra el progreso de tu contrato activo (kills hechas o materiales disponibles vs. objetivo).
+  - `tablón entregar` — entrega el contrato si se ha cumplido el objetivo. Los materiales de entrega se consumen del inventario.
+  - `tablón cancelar` — abandona el contrato activo sin penalización.
+- **Dos tipos de contratos**:
+  - `kill`: elimina N enemigos desde que aceptaste el contrato (tracking por `kills_totales`).
+  - `entrega`: lleva N unidades de un material específico al tablón (se consumen al entregar).
+- **Dificultad escalada**: nivel 1 (3–6 kills / 2–4 materiales), nivel 2 (8–15 / 4–7), nivel 3 (15–25 / 7–12). Recompensas proporcionales en monedas y XP.
+- **Tablón determinista por hora**: todos los jugadores ven el mismo tablón usando `seed = unix_time // 3600`. Se renueva solo al cambiar la hora.
+- **Integración completa con XP y subida de nivel**: entregar un contrato otorga XP y puede disparar un nivel al igual que el combate.
+- `systems/contracts/contracts.py`: lógica pura — `generar_contrato()`, `generar_tablón()`, `puede_completar_kill()`, `puede_completar_entrega()`, `formatear_contrato()`, `formatear_progreso()`.
+- `features/contracts/contract_script.py`: `ContractScript` (interval=3600), `obtener_tablón_script()`.
+- `features/contracts/commands.py`: `CmdTablon`, `ContractCmdSet`.
+- Suite de tests: ~1.955 tests (~100 nuevos: 59 puros + 41 integración).
+
 ## [0.26.0] — 2026-06-22
 
 ### Añadido

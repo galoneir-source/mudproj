@@ -181,6 +181,32 @@ LOGROS: dict[str, dict] = {
         "titulo":      None,
         "categoria":   "economia",
     },
+
+    # ── Clase ─────────────────────────────────────────────────────────────────
+    "vocacion_elegida": {
+        "nombre":      "Llamado",
+        "descripcion": "Elige tu vocación.",
+        "titulo":      None,
+        "categoria":   "clase",
+    },
+    "maestro_guerrero": {
+        "nombre":      "Caballero de Hierro",
+        "descripcion": "Como Guerrero, aprende las 4 habilidades de tu rama.",
+        "titulo":      "el Caballero",
+        "categoria":   "clase",
+    },
+    "maestro_explorador": {
+        "nombre":      "Sombra Veloz",
+        "descripcion": "Como Explorador, aprende las 4 habilidades de tu rama.",
+        "titulo":      "la Sombra",
+        "categoria":   "clase",
+    },
+    "maestro_mago": {
+        "nombre":      "Archimago",
+        "descripcion": "Como Mago, aprende las 4 habilidades de tu rama.",
+        "titulo":      "el Archimago",
+        "categoria":   "clase",
+    },
 }
 
 
@@ -227,6 +253,15 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "diez_crafteos":   return crafteados >= 10
 
     if logro_id == "primer_deposito": return bool(banco)
+
+    clase = datos.get("clase") or ""
+    if logro_id == "vocacion_elegida":  return bool(clase)
+    if logro_id == "maestro_guerrero":
+        return clase == "guerrero" and _RAMAS["guerrero"].issubset(habs)
+    if logro_id == "maestro_explorador":
+        return clase == "explorador" and _RAMAS["explorador"].issubset(habs)
+    if logro_id == "maestro_mago":
+        return clase == "mago" and _RAMAS["mago"].issubset(habs)
 
     return False
 
