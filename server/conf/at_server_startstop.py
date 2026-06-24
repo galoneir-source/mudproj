@@ -55,6 +55,11 @@ def at_server_start():
         obtener_mercado_script()
     except Exception:
         pass
+    try:
+        from features.contracts.contract_script import obtener_tablón_script
+        obtener_tablón_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():
