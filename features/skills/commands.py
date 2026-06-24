@@ -29,6 +29,10 @@ def _get_nivel(caller) -> int:
     return getattr(caller.db, "nivel", 1) or 1
 
 
+def _get_clase(caller) -> str | None:
+    return getattr(caller.db, "clase", None)
+
+
 class CmdHabilidades(Command):
     """
     Ver el árbol de habilidades y puntos disponibles.
@@ -53,11 +57,12 @@ class CmdHabilidades(Command):
         args = self.args.strip().lower()
         desbloqueadas = _get_desbloqueadas(caller)
         nivel = _get_nivel(caller)
+        clase = _get_clase(caller)
         gastados = puntos_gastados(desbloqueadas)
         puntos = puntos_disponibles(nivel, gastados)
 
         if args in RAMAS:
-            self._mostrar_rama(caller, args, desbloqueadas, nivel, puntos)
+            self._mostrar_rama(caller, args, desbloqueadas, nivel, puntos, clase)
             return
 
         if args:
@@ -65,35 +70,52 @@ class CmdHabilidades(Command):
             if not info:
                 caller.msg(f"No se encontró la habilidad '|w{args}|n'.")
                 return
-            self._mostrar_detalle(caller, hid, info, desbloqueadas, nivel, puntos)
+            self._mostrar_detalle(caller, hid, info, desbloqueadas, nivel, puntos, clase)
             return
+
+        from systems.classes.classes import CLASES
+        clase_txt = ""
+        if clase and clase in CLASES:
+            info_clase = CLASES[clase]
+            color = info_clase.get("color", "|n")
+            clase_txt = f"  Clase: {color}{info_clase['nombre']}|n"
 
         lineas = [
             f"\n|w{'='*48}|n",
             f"  |cÁrbol de Habilidades — {caller.key}|n",
             f"  Nivel: {nivel}   |gPuntos disponibles: {puntos}|n",
-            f"|w{'='*48}|n",
         ]
+        if clase_txt:
+            lineas.append(clase_txt)
+        lineas.append(f"|w{'='*48}|n")
+
         for rama in RAMAS:
             lineas.append(f"\n  |Y[{rama.upper()}]|n")
             for hid, info in habilidades_por_rama(rama):
-                estado = self._estado(hid, desbloqueadas, nivel)
+                estado = self._estado(hid, desbloqueadas, nivel, clase)
                 tipo_tag = "|y(P)|n" if info["tipo"] == "pasiva" else "   "
                 lineas.append(
                     f"    {tipo_tag} {estado} |w{info['nombre']}|n "
                     f"(nv.{info['nivel_req']}, {info['coste']}pt) — {info['descripcion']}"
                 )
+        clase_leyenda = "  |m[C]|n=clase" if clase else ""
         lineas += [
             f"\n|w{'='*48}|n",
-            f"  |y(P)|n=pasiva  |g[✓]|n=aprendida  |w[ ]|n=disponible  |r[✗]|n=bloqueada",
+            f"  |y(P)|n=pasiva  |g[✓]|n=aprendida  |w[ ]|n=disponible"
+            f"  |r[✗]|n=bloqueada{clase_leyenda}",
             f"  Usa |waprender <habilidad>|n para desbloquear.",
             f"|w{'='*48}|n\n",
         ]
         caller.msg("\n".join(lineas))
 
-    def _estado(self, hid, desbloqueadas, nivel) -> str:
+    def _estado(self, hid, desbloqueadas, nivel, clase=None) -> str:
         if hid in desbloqueadas:
             return "|g[✓]|n"
+        if clase:
+            from systems.classes.classes import puede_aprender_clase
+            puede_clase, _ = puede_aprender_clase(hid, clase)
+            if not puede_clase:
+                return "|m[C]|n"
         info = HABILIDADES[hid]
         if nivel < info["nivel_req"]:
             return "|r[✗]|n"
@@ -102,10 +124,10 @@ class CmdHabilidades(Command):
                 return "|r[✗]|n"
         return "|w[ ]|n"
 
-    def _mostrar_rama(self, caller, rama, desbloqueadas, nivel, puntos):
+    def _mostrar_rama(self, caller, rama, desbloqueadas, nivel, puntos, clase=None):
         lineas = [f"\n  |Y[{rama.upper()}]|n  —  Puntos disponibles: |g{puntos}|n\n"]
         for hid, info in habilidades_por_rama(rama):
-            estado = self._estado(hid, desbloqueadas, nivel)
+            estado = self._estado(hid, desbloqueadas, nivel, clase)
             tipo_tag = "|y(Pasiva)|n" if info["tipo"] == "pasiva" else "|c(Activa)|n"
             reqs = ", ".join(
                 HABILIDADES.get(r, {}).get("nombre", r) for r in info["requisitos"]
@@ -118,9 +140,9 @@ class CmdHabilidades(Command):
             ]
         caller.msg("\n".join(lineas))
 
-    def _mostrar_detalle(self, caller, hid, info, desbloqueadas, nivel, puntos):
-        estado = self._estado(hid, desbloqueadas, nivel)
-        puede, err = puede_aprender(hid, desbloqueadas, nivel)
+    def _mostrar_detalle(self, caller, hid, info, desbloqueadas, nivel, puntos, clase=None):
+        estado = self._estado(hid, desbloqueadas, nivel, clase)
+        puede, err = puede_aprender(hid, desbloqueadas, nivel, clase=clase)
         reqs = ", ".join(
             HABILIDADES.get(r, {}).get("nombre", r) for r in info["requisitos"]
         ) or "Ninguno"
@@ -181,8 +203,9 @@ class CmdAprender(Command):
 
         desbloqueadas = _get_desbloqueadas(caller)
         nivel = _get_nivel(caller)
+        clase = _get_clase(caller)
 
-        exito, nuevas, err = aprender(hid, desbloqueadas, nivel)
+        exito, nuevas, err = aprender(hid, desbloqueadas, nivel, clase=clase)
         if not exito:
             caller.msg(f"|rNo puedes aprender {info['nombre']}:|n {err}")
             return

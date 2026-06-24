@@ -51,6 +51,8 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Banco ---
         self.db.banco = []
         self.db.banco_usado = False
+        # --- Clase de personaje ---
+        self.db.clase = None
         # --- Logros y títulos ---
         self.db.logros = []
         self.db.titulo_activo = None

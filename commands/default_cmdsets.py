@@ -35,6 +35,8 @@ from features.guilds.commands import GuildCmdSet
 from features.records.commands import RecordsCmdSet
 from features.market.commands import MarketCmdSet
 from features.pets.commands import PetsCmdSet
+from features.contracts.commands import ContractCmdSet
+from features.classes.commands import ClassCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -94,6 +96,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(MarketCmdSet)
         # --- Mascotas ---
         self.add(PetsCmdSet)
+        # --- Contratos ---
+        self.add(ContractCmdSet)
+        # --- Clases ---
+        self.add(ClassCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

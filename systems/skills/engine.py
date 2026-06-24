@@ -34,15 +34,23 @@ def puede_aprender(
     skill_id: str,
     desbloqueadas: set,
     nivel: int,
+    clase: Optional[str] = None,
 ) -> tuple[bool, str]:
     """
     Comprueba si se puede aprender la habilidad.
+    Si se indica clase, verifica que la habilidad pertenece a su rama.
     Devuelve (puede, mensaje_error).
     """
     if skill_id not in HABILIDADES:
         return False, f"La habilidad '{skill_id}' no existe."
     if skill_id in desbloqueadas:
         return False, "Ya conoces esta habilidad."
+
+    if clase:
+        from systems.classes.classes import puede_aprender_clase
+        puede_clase, err_clase = puede_aprender_clase(skill_id, clase)
+        if not puede_clase:
+            return False, err_clase
 
     info = HABILIDADES[skill_id]
 
@@ -67,12 +75,13 @@ def aprender(
     skill_id: str,
     desbloqueadas: set,
     nivel: int,
+    clase: Optional[str] = None,
 ) -> tuple[bool, set, str]:
     """
     Intenta desbloquear la habilidad.
     Devuelve (exito, nuevas_desbloqueadas, mensaje_error).
     """
-    puede, err = puede_aprender(skill_id, desbloqueadas, nivel)
+    puede, err = puede_aprender(skill_id, desbloqueadas, nivel, clase=clase)
     if not puede:
         return False, desbloqueadas, err
     return True, set(desbloqueadas) | {skill_id}, ""

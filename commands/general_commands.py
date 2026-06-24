@@ -315,11 +315,18 @@ class CmdPerfil(Command):
         nombre_con_titulo = (
             f"{objetivo.key}  |Y{titulo_activo}|n" if titulo_activo else objetivo.key
         )
+        clase_id = getattr(objetivo.db, "clase", None)
 
         lineas = [
             f"\n|w{'─'*44}|n",
             f"  |cNombre:|n  {nombre_con_titulo}",
         ]
+        if clase_id:
+            from systems.classes.classes import CLASES
+            info_clase = CLASES.get(clase_id, {})
+            color_clase = info_clase.get("color", "|n")
+            nombre_clase = info_clase.get("nombre", clase_id.capitalize())
+            lineas.append(f"  |cClase:|n   {color_clase}{nombre_clase}|n")
         if faction:
             lineas.append(f"  |cFacción:|n  {faction}")
         if temperamento and objetivo != caller:
