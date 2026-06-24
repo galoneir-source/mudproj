@@ -61,6 +61,7 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.jefes_derrotados = []
         self.db.objetos_crafteados = 0
         self.db.encantamiento_max = 0
+        self.db.mascota_nivel_max = 1
 
     def at_cmdset_get(self, **kwargs):
         """

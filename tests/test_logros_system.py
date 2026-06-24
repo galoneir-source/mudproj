@@ -43,6 +43,7 @@ def _init_char(char):
     char.db.banco_usado = False
     char.db.clase = None
     char.db.subclase = None
+    char.db.mascota_nivel_max = 1
     if not hasattr(char.db, "quests") or char.db.quests is None:
         char.db.quests = {}
     if not hasattr(char.db, "habilidades_desbloqueadas") or char.db.habilidades_desbloqueadas is None:
@@ -240,7 +241,7 @@ class TestCmdLogros(EvenniaTest):
     def test_muestra_sin_logros(self):
         self.char1.db.logros = []
         self._run()
-        self.assertIn("0/31", self.cap.all())
+        self.assertIn("0/33", self.cap.all())
 
     def test_muestra_logros_desbloqueados(self):
         self.char1.db.logros = ["nivel_2", "primera_mision"]
@@ -248,7 +249,7 @@ class TestCmdLogros(EvenniaTest):
         texto = self.cap.all()
         self.assertIn("Primer Paso", texto)
         self.assertIn("Aventurero", texto)
-        self.assertIn("2/31", texto)
+        self.assertIn("2/33", texto)
 
     def test_filtra_por_categoria(self):
         self.char1.db.logros = ["nivel_2"]
@@ -273,7 +274,7 @@ class TestCmdLogros(EvenniaTest):
     def test_contador_correcto_con_varios(self):
         self.char1.db.logros = list(LOGROS.keys())[:7]
         self._run()
-        self.assertIn("7/31", self.cap.all())
+        self.assertIn("7/33", self.cap.all())
 
 
 # ─── CmdTitulo ───────────────────────────────────────────────────────────────
@@ -503,3 +504,53 @@ class TestLogrosSubclaseIntegracion(EvenniaTest):
         output = self.cap.all()
         self.assertIn("Elegido", output)
         self.assertIn("Escudo Sagrado", output)
+
+
+# ─── Logros de mascotas ──────────────────────────────────────────────────────
+
+class TestLogrosMascotasIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_mascota_nivel_1_no_desbloquea_logro(self):
+        self.char1.db.mascota_nivel_max = 1
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("mascota_nivel_2", list(self.char1.db.logros))
+
+    def test_mascota_nivel_2_desbloquea_logro(self):
+        self.char1.db.mascota_nivel_max = 2
+        comprobar_y_notificar(self.char1)
+        self.assertIn("mascota_nivel_2", list(self.char1.db.logros))
+
+    def test_mascota_nivel_2_no_desbloquea_nivel_3(self):
+        self.char1.db.mascota_nivel_max = 2
+        comprobar_y_notificar(self.char1)
+        self.assertNotIn("mascota_nivel_3", list(self.char1.db.logros))
+
+    def test_mascota_nivel_3_desbloquea_ambos_logros(self):
+        self.char1.db.mascota_nivel_max = 3
+        comprobar_y_notificar(self.char1)
+        logros = list(self.char1.db.logros)
+        self.assertIn("mascota_nivel_2", logros)
+        self.assertIn("mascota_nivel_3", logros)
+
+    def test_mascota_nivel_3_da_titulo_domador(self):
+        self.char1.db.mascota_nivel_max = 3
+        comprobar_y_notificar(self.char1)
+        self.assertIn("el Domador", self.cap.all())
+
+    def test_logros_muestra_categoria_mascotas(self):
+        cmd = _make_cmd(CmdLogros, self.char1)
+        cmd.func()
+        self.assertIn("Mascotas", self.cap.all())
+
+    def test_logros_filtra_por_mascotas(self):
+        cmd = _make_cmd(CmdLogros, self.char1, "mascotas")
+        cmd.func()
+        output = self.cap.all()
+        self.assertIn("Primer Compañero", output)
+        self.assertIn("Domador", output)

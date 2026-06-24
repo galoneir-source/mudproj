@@ -3,7 +3,7 @@ systems/achievements/achievements.py
 
 Lógica pura del sistema de logros y títulos. Sin dependencias de Evennia.
 
-Catálogo de 20 logros distribuidos en 7 categorías. Cada logro puede otorgar
+Catálogo de 33 logros distribuidos en 10 categorías. Cada logro puede otorgar
 un título que el jugador puede activar en su perfil.
 
 datos (dict que reciben las funciones de verificación):
@@ -16,6 +16,7 @@ datos (dict que reciben las funciones de verificación):
   objetos_crafteados int  — objetos elaborados en total
   encantamiento_max int   — nivel más alto alcanzado en cualquier encantamiento
   banco_usado       bool  — ha depositado alguna vez en el banco
+  mascota_nivel_max int   — nivel más alto alcanzado por cualquier mascota (1-3)
 """
 from __future__ import annotations
 
@@ -192,6 +193,20 @@ LOGROS: dict[str, dict] = {
         "categoria":   "economia",
     },
 
+    # ── Mascotas ─────────────────────────────────────────────────────────────
+    "mascota_nivel_2": {
+        "nombre":      "Primer Compañero",
+        "descripcion": "Lleva tu mascota al nivel 2 (Mayor).",
+        "titulo":      None,
+        "categoria":   "mascotas",
+    },
+    "mascota_nivel_3": {
+        "nombre":      "Domador",
+        "descripcion": "Lleva tu mascota al nivel 3 (Élite).",
+        "titulo":      "el Domador",
+        "categoria":   "mascotas",
+    },
+
     # ── Subclase ─────────────────────────────────────────────────────────────
     "especializacion_elegida": {
         "nombre":      "Elegido",
@@ -307,6 +322,10 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "diez_crafteos":   return crafteados >= 10
 
     if logro_id == "primer_deposito": return bool(banco)
+
+    nivel_mascota = datos.get("mascota_nivel_max", 1)
+    if logro_id == "mascota_nivel_2": return nivel_mascota >= 2
+    if logro_id == "mascota_nivel_3": return nivel_mascota >= 3
 
     subclase = datos.get("subclase") or ""
     if logro_id == "especializacion_elegida": return bool(subclase)

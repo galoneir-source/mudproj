@@ -37,6 +37,7 @@ def _datos(**kwargs) -> dict:
         "banco_usado":       False,
         "clase":             "",
         "subclase":          "",
+        "mascota_nivel_max": 1,
     }
     base.update(kwargs)
     return base
@@ -46,8 +47,8 @@ def _datos(**kwargs) -> dict:
 
 class TestCatalogo(unittest.TestCase):
 
-    def test_hay_31_logros(self):
-        self.assertEqual(len(LOGROS), 31)
+    def test_hay_33_logros(self):
+        self.assertEqual(len(LOGROS), 33)
 
     def test_todos_tienen_campos_obligatorios(self):
         for lid, logro in LOGROS.items():
@@ -57,7 +58,8 @@ class TestCatalogo(unittest.TestCase):
     def test_categorias_conocidas(self):
         cats_validas = {
             "progresion", "misiones", "combate", "habilidades",
-            "encantamiento", "reputacion", "crafteo", "economia", "subclase", "clase",
+            "encantamiento", "reputacion", "crafteo", "economia",
+            "mascotas", "subclase", "clase",
         }
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
@@ -289,8 +291,8 @@ class TestVerificarTodos(unittest.TestCase):
         self.assertIn("nivel_2", resultado)
         self.assertNotIn("nivel_5", resultado)
 
-    def test_personaje_paladin_completo_obtiene_24_logros(self):
-        # Máximo posible con clase guerrero + subclase paladin: 20 base + 2 clase + 2 subclase = 24
+    def test_personaje_paladin_completo_obtiene_26_logros(self):
+        # Máximo posible: 20 base + 2 clase + 2 subclase + 2 mascotas = 26
         datos_maximos = _datos(
             nivel=10,
             quests_entregadas=10,
@@ -309,13 +311,16 @@ class TestVerificarTodos(unittest.TestCase):
             banco_usado=True,
             clase="guerrero",
             subclase="paladin",
+            mascota_nivel_max=3,
         )
         resultado = verificar_todos(datos_maximos)
-        self.assertEqual(len(resultado), 24)
+        self.assertEqual(len(resultado), 26)
         self.assertIn("vocacion_elegida", resultado)
         self.assertIn("maestro_guerrero", resultado)
         self.assertIn("especializacion_elegida", resultado)
         self.assertIn("maestro_paladin", resultado)
+        self.assertIn("mascota_nivel_2", resultado)
+        self.assertIn("mascota_nivel_3", resultado)
         self.assertNotIn("maestro_explorador", resultado)
         self.assertNotIn("maestro_berserker", resultado)
 
@@ -605,6 +610,38 @@ class TestLogrosSubclase(unittest.TestCase):
         ]:
             tits = titulos_disponibles([lid])
             self.assertIn(titulo_esperado, tits, f"falta título en {lid}")
+
+
+# ─── Mascotas ────────────────────────────────────────────────────────────────
+
+class TestLogrosMascotas(unittest.TestCase):
+
+    def test_mascota_nivel_2_no_cumple_con_nivel_1(self):
+        self.assertFalse(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=1)))
+
+    def test_mascota_nivel_2_cumple(self):
+        self.assertTrue(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=2)))
+
+    def test_mascota_nivel_2_cumple_con_nivel_3(self):
+        self.assertTrue(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=3)))
+
+    def test_mascota_nivel_3_no_cumple_con_nivel_2(self):
+        self.assertFalse(_cumple("mascota_nivel_3", _datos(mascota_nivel_max=2)))
+
+    def test_mascota_nivel_3_cumple(self):
+        self.assertTrue(_cumple("mascota_nivel_3", _datos(mascota_nivel_max=3)))
+
+    def test_mascota_nivel_2_sin_titulo(self):
+        self.assertIsNone(LOGROS["mascota_nivel_2"]["titulo"])
+
+    def test_mascota_nivel_3_titulo_domador(self):
+        tits = titulos_disponibles(["mascota_nivel_3"])
+        self.assertIn("el Domador", tits)
+
+    def test_mascota_nivel_max_0_no_cumple_ninguno(self):
+        datos = _datos(mascota_nivel_max=0)
+        self.assertFalse(_cumple("mascota_nivel_2", datos))
+        self.assertFalse(_cumple("mascota_nivel_3", datos))
 
 
 if __name__ == "__main__":

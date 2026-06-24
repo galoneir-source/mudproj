@@ -18,7 +18,8 @@ from systems.achievements.achievements import (
 
 _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
-    "encantamiento", "reputacion", "crafteo", "economia", "subclase", "clase",
+    "encantamiento", "reputacion", "crafteo", "economia",
+    "mascotas", "subclase", "clase",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -29,6 +30,7 @@ _NOMBRES_CATS = {
     "reputacion":   "Reputación",
     "crafteo":      "Crafteo",
     "economia":     "Economía",
+    "mascotas":     "Mascotas",
     "subclase":     "Subclase",
     "clase":        "Clase",
 }
@@ -52,6 +54,7 @@ def _extraer_datos(caller) -> dict:
         "banco_usado":       bool(getattr(caller.db, "banco_usado", False)),
         "clase":             getattr(caller.db, "clase", None) or "",
         "subclase":          getattr(caller.db, "subclase", None) or "",
+        "mascota_nivel_max": int(getattr(caller.db, "mascota_nivel_max", 1) or 1),
     }
 
 

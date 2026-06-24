@@ -54,6 +54,29 @@ def _subir_vinculo_mascota(char, delta: int):
     char.db.mascota = mascota
 
 
+def _dar_xp_mascota(char, xp: int):
+    """Otorga XP a la mascota del personaje y gestiona la evolución."""
+    mascota = dict(getattr(char.db, "mascota", None) or {})
+    if not mascota:
+        return
+    from systems.pets.pets import calcular_evolucion, NIVEL_MAX_MASCOTA
+    nueva, evoluciono = calcular_evolucion(mascota, xp)
+    char.db.mascota = nueva
+    if evoluciono:
+        nivel = nueva.get("nivel", 1)
+        especie = nueva.get("especie", "?")
+        nombre = nueva.get("nombre", "tu mascota")
+        char.msg(
+            f"\n|Y✦ ¡{nombre} ha evolucionado!|n  "
+            f"|w{especie}|n  (Nivel {nivel}"
+            + (f"/{NIVEL_MAX_MASCOTA}" if nivel < NIVEL_MAX_MASCOTA else " — ¡MÁXIMO!")
+            + ")\n"
+        )
+        nivel_max_actual = int(getattr(char.db, "mascota_nivel_max", 1) or 1)
+        if nivel > nivel_max_actual:
+            char.db.mascota_nivel_max = nivel
+
+
 def _generar_loot(muerto, sala) -> list:
     """
     Lee db.loot del NPC muerto y genera los items en la sala.
@@ -464,6 +487,7 @@ class CombatHandler(DefaultScript):
                         jefes_list.append(proto)
                         j.db.jefes_derrotados = jefes_list
                 _subir_vinculo_mascota(j, 5)
+                _dar_xp_mascota(j, getattr(muerto.db, "nivel", 1) or 1)
                 comprobar_y_notificar(j)
 
         # Loot: generar items desde la tabla db.loot

@@ -16,6 +16,15 @@ VINCULO_SUBE_VICTORIA = 5   # vínculo ganado por cada kill con mascota presente
 COSTE_ALIMENTAR = 10        # monedas para alimentar a la mascota
 VINCULO_SUBE_ALIMENTAR = 10 # vínculo ganado al alimentar
 
+# Evolución
+XP_NIVEL_2 = 50        # XP acumulada para evolucionar a nivel 2
+XP_NIVEL_3 = 150       # XP acumulada total para evolucionar a nivel 3
+NIVEL_MAX_MASCOTA = 3
+
+_XP_UMBRAL: dict[int, int] = {1: XP_NIVEL_2, 2: XP_NIVEL_3}
+_MULT_NIVEL: dict[int, float] = {1: 1.0, 2: 1.5, 3: 2.5}
+_PREFIJO_NIVEL: dict[int, str] = {2: "Mayor", 3: "Élite"}
+
 
 # --------------------------------------------------------------------------- #
 #  Funciones puras
@@ -55,6 +64,47 @@ def vinculo_descripcion(vinculo: int) -> str:
     return "Devoto"
 
 
+def xp_para_siguiente_nivel(nivel: int) -> int | None:
+    """XP acumulada necesaria para el siguiente nivel. None si ya es nivel máximo."""
+    return _XP_UMBRAL.get(nivel)
+
+
+def _especie_evolucionada(especie_base: str, nivel: int) -> str:
+    """Nombre de especie según el nivel de evolución."""
+    prefijo = _PREFIJO_NIVEL.get(nivel, "")
+    return f"{especie_base} {prefijo}".strip() if prefijo else especie_base
+
+
+def calcular_evolucion(mascota: dict, xp_ganada: int) -> tuple[dict, bool]:
+    """
+    Añade xp_ganada al mascota y aplica evoluciones si se alcanzan los umbrales.
+    Devuelve (nuevo_dict, evolucionó).
+    """
+    m = dict(mascota)
+    m["xp"] = int(m.get("xp", 0)) + xp_ganada
+    evolucionado = False
+
+    while True:
+        nivel = int(m.get("nivel", 1))
+        umbral = _XP_UMBRAL.get(nivel)
+        if umbral is None or m["xp"] < umbral:
+            break
+        nuevo_nivel = nivel + 1
+        ratio = _MULT_NIVEL[nuevo_nivel] / _MULT_NIVEL[nivel]
+        m["ataque"] = max(1, int(m.get("ataque", 1) * ratio))
+        m["defensa"] = max(0, int(m.get("defensa", 0) * ratio))
+        nuevo_hp_max = max(1, int(m.get("hp_max", 1) * ratio))
+        m["hp_max"] = nuevo_hp_max
+        m["hp"] = nuevo_hp_max
+        m["nivel"] = nuevo_nivel
+        m["especie"] = _especie_evolucionada(
+            m.get("especie_base", m.get("especie", "?")), nuevo_nivel
+        )
+        evolucionado = True
+
+    return m, evolucionado
+
+
 def datos_mascota_desde_criatura(
     nombre: str,
     especie: str,
@@ -67,6 +117,9 @@ def datos_mascota_desde_criatura(
     return {
         "nombre": nombre,
         "especie": especie,
+        "especie_base": especie,
+        "nivel": 1,
+        "xp": 0,
         "vinculo": max(VINCULO_MIN, min(VINCULO_MAX, vinculo_inicial)),
         "hp": int(hp_max),
         "hp_max": int(hp_max),
@@ -84,11 +137,20 @@ def formatear_mascota(mascota: dict) -> str:
     hp_max = mascota.get("hp_max", 1)
     ataque = mascota.get("ataque", 0)
     defensa = mascota.get("defensa", 0)
+    nivel = int(mascota.get("nivel", 1))
+    xp = int(mascota.get("xp", 0))
     desc_vinculo = vinculo_descripcion(vinculo)
+
+    umbral = xp_para_siguiente_nivel(nivel)
+    if umbral is not None:
+        xp_txt = f"{xp}/{umbral} XP"
+    else:
+        xp_txt = f"{xp} XP (MAX)"
 
     lineas = [
         f"\n|w── Mascota: {nombre} ──|n",
         f"  Especie  : {especie}",
+        f"  Nivel    : {nivel}  ({xp_txt})",
         f"  HP       : {hp}/{hp_max}",
         f"  Ataque   : {ataque}",
         f"  Defensa  : {defensa}",

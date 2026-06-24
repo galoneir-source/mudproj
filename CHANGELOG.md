@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.32.0] — 2026-06-25
+
+### Añadido
+- **Evolución de mascotas**: las mascotas ahora ganan XP con cada enemigo derrotado (XP = nivel del NPC) y evolucionan al acumular suficiente experiencia.
+  - **Nivel 1** → base; **Nivel 2** (Mayor, 50 XP): ×1.5 stats; **Nivel 3** (Élite, 150 XP): ×2.5 stats.
+  - Al evolucionar: ataque, defensa y HP máx escalan; HP se restaura al máximo; la especie añade el sufijo "Mayor" o "Élite".
+  - Notificación inmediata al jugador con el nuevo nombre de especie y nivel.
+  - El comando `mascota` muestra ahora **Nivel** y barra de **XP** hacia la siguiente evolución.
+- **2 nuevos logros** en categoría **Mascotas**:
+  - `Primer Compañero` — lleva tu mascota al nivel 2 (sin título).
+  - `Domador` — lleva tu mascota al nivel 3 (Élite) → título **el Domador**.
+- `db.mascota_nivel_max` rastreado en el personaje (nivel más alto alcanzado por cualquier mascota).
+- `systems/pets/pets.py`: nuevas funciones `xp_para_siguiente_nivel()`, `calcular_evolucion()` y constantes `XP_NIVEL_2`, `XP_NIVEL_3`, `NIVEL_MAX_MASCOTA`.
+- `datos_mascota_desde_criatura()` añade campos `nivel`, `xp` y `especie_base` al capturar.
+- Suite de tests: +32 tests puros (`TestEvolucion`, `TestXpParaSiguienteNivel`, actualizaciones), +7 integración.
+
 ## [0.31.0] — 2026-06-25
 
 ### Añadido
