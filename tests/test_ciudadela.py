@@ -158,8 +158,8 @@ class TestNuevasRecetas(unittest.TestCase):
         self.assertEqual(RECETAS["tónico de las sombras"]["cantidad"], 2)
 
     def test_total_recetas_aumentado(self):
-        # 10 previas + 2 nuevas = 12
-        self.assertEqual(len(RECETAS), 12)
+        # 12 previas + 8 equipo (v0.24) = 20
+        self.assertEqual(len(RECETAS), 20)
 
     def test_buscar_elixir_sombrio(self):
         nombre, receta = buscar_receta("elixir sombrío")
