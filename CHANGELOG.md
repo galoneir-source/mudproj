@@ -5,6 +5,27 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.40.0] — 2026-06-29
+
+### Añadido
+- **Sistema de correo entre jugadores** — envía cartas a cualquier jugador (en línea u offline) con adjuntos opcionales.
+  - `carta <jugador> = <mensaje>` — carta simple.
+  - `carta <jugador> adjuntar <objeto> = <mensaje>` — adjunta un objeto del inventario.
+  - `carta <jugador> monedas <N> = <mensaje>` — adjunta monedas.
+  - `carta <jugador> adjuntar <objeto> monedas <N> = <mensaje>` — adjunta ambos.
+  - `correo` — lista el buzón con indicador de no leídas y adjuntos pendientes.
+  - `correo leer <N>` — lee y marca como leída la carta N.
+  - `correo reclamar <N>` — mueve el adjunto (objetos/monedas) al inventario.
+  - `correo borrar <N>` — borra la carta; si tiene adjunto no reclamado, lo devuelve al remitente.
+  - `correo responder <N> = <texto>` — responde directamente a la carta N.
+  - Notificación automática al hacer login si hay cartas no leídas.
+  - Máximo 20 cartas en el buzón. Los objetos adjuntos viajan sin ubicación (`location=None`) hasta ser reclamados.
+- `db.correo = []` inicializado en `Character.at_object_creation`.
+- Hook `at_post_puppet` en `Character` para notificación de correo al conectarse.
+- `systems/mail/mail.py`: lógica pura — `nueva_carta`, `puede_recibir`, `tiene_adjunto`, `adjunto_pendiente`, `contar_no_leidas`, formateo.
+- `features/mail/commands.py`: `CmdCarta`, `CmdCorreo`, `MailCmdSet`.
+- 33 tests puros pasando (`tests/test_correo_system.py`).
+
 ## [0.39.0] — 2026-06-29
 
 ### Añadido

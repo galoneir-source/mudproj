@@ -74,6 +74,20 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Mazmorras instanciadas ---
         self.db.mazmorras_completadas = {}
         self.db.mazmorra_legendario = False
+        # --- Correo ---
+        self.db.correo = []
+
+    def at_post_puppet(self, **kwargs):
+        """Llamado cuando una cuenta puppetea este personaje (login incluido)."""
+        super().at_post_puppet(**kwargs)
+        try:
+            from systems.mail.mail import contar_no_leidas, formatear_notificacion
+            bandeja = list(self.db.correo or [])
+            no_leidas = contar_no_leidas(bandeja)
+            if no_leidas > 0:
+                self.msg(formatear_notificacion(no_leidas))
+        except Exception:
+            pass
 
     def at_cmdset_get(self, **kwargs):
         """
