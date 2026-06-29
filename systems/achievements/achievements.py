@@ -312,6 +312,38 @@ LOGROS: dict[str, dict] = {
         "titulo":      "el Archimago",
         "categoria":   "clase",
     },
+
+    # ── Mazmorra ──────────────────────────────────────────────────────────────
+    "cripta_completada": {
+        "nombre":      "Conquistador de la Cripta",
+        "descripcion": "Completa la Cripta de Ceniza.",
+        "titulo":      None,
+        "categoria":   "mazmorra",
+    },
+    "forja_completada": {
+        "nombre":      "Templado en Fuego",
+        "descripcion": "Completa la Forja Maldita.",
+        "titulo":      None,
+        "categoria":   "mazmorra",
+    },
+    "abismo_completado": {
+        "nombre":      "Conquistador del Abismo",
+        "descripcion": "Completa el Abismo Sin Fondo.",
+        "titulo":      "el Conquistador",
+        "categoria":   "mazmorra",
+    },
+    "todas_mazmorras": {
+        "nombre":      "Explorador de lo Profundo",
+        "descripcion": "Completa las tres mazmorras al menos una vez.",
+        "titulo":      None,
+        "categoria":   "mazmorra",
+    },
+    "mazmorra_legendario": {
+        "nombre":      "Leyenda Viva",
+        "descripcion": "Completa cualquier mazmorra en dificultad legendario.",
+        "titulo":      "el Legendario",
+        "categoria":   "mazmorra",
+    },
 }
 
 
@@ -396,6 +428,18 @@ def _cumple(logro_id: str, datos: dict) -> bool:
         return clase == "explorador" and _RAMAS["explorador"].issubset(habs)
     if logro_id == "maestro_mago":
         return clase == "mago" and _RAMAS["mago"].issubset(habs)
+
+    mazmorras = datos.get("mazmorras_completadas", {})
+    if logro_id == "cripta_completada":
+        return bool(mazmorras.get("cripta_ceniza", 0))
+    if logro_id == "forja_completada":
+        return bool(mazmorras.get("forja_maldita", 0))
+    if logro_id == "abismo_completado":
+        return bool(mazmorras.get("abismo_sin_fondo", 0))
+    if logro_id == "todas_mazmorras":
+        return all(mazmorras.get(k, 0) for k in ("cripta_ceniza", "forja_maldita", "abismo_sin_fondo"))
+    if logro_id == "mazmorra_legendario":
+        return bool(datos.get("mazmorra_legendario", False))
 
     return False
 

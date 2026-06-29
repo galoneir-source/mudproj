@@ -1529,6 +1529,221 @@ AMULETO_BOSQUE = {
     ],
 }
 
+# --------------------------------------------------------------------------- #
+#  Ítems de botín de mazmorra (drops de jefes)
+# --------------------------------------------------------------------------- #
+
+RELIQUIA_CENIZA = {
+    "prototype_key": "RELIQUIA_CENIZA",
+    "key": "reliquia de ceniza",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un amuleto tallado en hueso negro con runas de no-muerte. "
+        "Emite un frío sutil y parece absorber la poca luz que lo rodea."
+    ),
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"inteligencia": 4, "constitucion": 3, "hp_max": 25}),
+        ("valor", 120),
+    ],
+}
+
+MARTILLO_MALDITO = {
+    "prototype_key": "MARTILLO_MALDITO",
+    "key": "martillo maldito",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un mazo de forja oscura que vibra al tacto. "
+        "Su metal fue templado con la sangre del último maestro forjador. "
+        "Cada golpe parece resonar con un eco de otro plano."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 7, "constitucion": 4, "destreza": -1}),
+        ("valor", 150),
+    ],
+}
+
+ESPADA_ABISMO = {
+    "prototype_key": "ESPADA_ABISMO",
+    "key": "espada del abismo",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Una espada larga forjada con oscuridad condensada. "
+        "Su hoja no refleja ninguna luz. "
+        "Los que la empuñan dicen oír susurros en la oscuridad."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 6, "destreza": 5, "inteligencia": 3}),
+        ("valor", 200),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs de mazmorra
+# --------------------------------------------------------------------------- #
+
+MINERO_MALDITO = {
+    "prototype_key": "MINERO_MALDITO",
+    "key": "minero maldito",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un hombre que ya no es del todo humano. "
+        "Su piel es gris como la piedra y sus ojos brillan con una luz naranja enfermiza. "
+        "Lleva un pico oxidado que maneja con destreza sobrenatural."
+    ),
+    "attrs": [
+        ("nivel", 5),
+        ("hp", 90), ("hp_max", 90),
+        ("fuerza", 16), ("destreza", 10), ("constitucion", 15),
+        ("inteligencia", 5), ("defensa", 8),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida"]),
+        ("loot", [
+            {"key": "mena maldita", "cantidad": 1, "chance": 0.60,
+             "desc": "Un trozo de mineral corrompido por magia oscura. Desprende calor."},
+        ]),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", "MINERO_MALDITO"),
+        ("respawn_tiempo", 180),
+    ],
+}
+
+SENOR_CENIZAS = {
+    "prototype_key": "SENOR_CENIZAS",
+    "key": "Señor de las Cenizas",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura envuelta en harapos y ceniza que levita sobre el suelo. "
+        "Donde debería haber piel solo hay hueso negro y llamas azules que nunca se apagan. "
+        "Dirige a los muertos desde esta cripta con una voluntad de hierro."
+    ),
+    "attrs": [
+        ("nivel", 7),
+        ("hp", 300), ("hp_max", 300),
+        ("fuerza", 16), ("destreza", 13), ("constitucion", 18),
+        ("inteligencia", 20), ("defensa", 14),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "drenar vida", "bola fuego"]),
+        ("loot", [
+            {"key": "ceniza del señor", "cantidad": 1,
+             "desc": "Ceniza sagrada que sigue ardiendo aunque ya no tenga dueño."},
+            {"prototype_key": "RELIQUIA_CENIZA", "cantidad": 1, "chance": 0.50},
+            {"key": "monedas de oro", "cantidad": 15},
+        ]),
+        ("dialogo", {
+            "hola": "¿Más mortales? La cripta os consumirá como a todos los anteriores.",
+            "ceniza": "La ceniza es el destino de todo. Vosotros no seréis la excepción.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+
+MAESTRO_FORJADOR = {
+    "prototype_key": "MAESTRO_FORJADOR",
+    "key": "Maestro Forjador",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un gigante de metal y carne corrompida. "
+        "La mitad de su cuerpo ha sido reemplazada por metal oscuro fundido. "
+        "Empuña un mazo que brilla con calor infernal. "
+        "Cada pisada hace temblar el suelo."
+    ),
+    "attrs": [
+        ("nivel", 9),
+        ("hp", 420), ("hp_max", 420),
+        ("fuerza", 22), ("destreza", 8), ("constitucion", 20),
+        ("inteligencia", 12), ("defensa", 18),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro"]),
+        ("loot", [
+            {"key": "núcleo de forja", "cantidad": 1,
+             "desc": "El corazón de metal fundido del maestro. Aún irradia calor intenso."},
+            {"prototype_key": "MARTILLO_MALDITO", "cantidad": 1, "chance": 0.50},
+            {"key": "monedas de oro", "cantidad": 25},
+        ]),
+        ("dialogo", {
+            "hola": "¡INTRUSO! La forja necesita más combustible... ¡tú servirás!",
+            "forja": "Llevo siglos templando almas en esta forja. La tuya será la siguiente.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+
+SENOR_ABISMO = {
+    "prototype_key": "SENOR_ABISMO",
+    "key": "Señor del Abismo",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "No es exactamente un ser: es una presencia de oscuridad que ha tomado forma humanoide. "
+        "Su contorno es borroso, como si la realidad se negara a reconocer su existencia. "
+        "Habla directamente en tu mente con una voz que no tiene sonido."
+    ),
+    "attrs": [
+        ("nivel", 12),
+        ("hp", 600), ("hp_max", 600),
+        ("fuerza", 20), ("destreza", 18), ("constitucion", 22),
+        ("inteligencia", 28), ("defensa", 20),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe maestro", "drenar vida", "bola fuego", "ejecutar"]),
+        ("loot", [
+            {"key": "esencia del abismo", "cantidad": 1,
+             "desc": "Un fragmento de la nada. Los alquimistas lo buscan desesperadamente."},
+            {"prototype_key": "ESPADA_ABISMO", "cantidad": 1, "chance": 0.50},
+            {"key": "monedas de oro", "cantidad": 40},
+        ]),
+        ("dialogo", {
+            "hola": "...has venido. Bien. Tu desesperación alimentará mi regreso.",
+            "abismo": "El abismo no es un lugar. Soy yo. Y ahora te reclamaré.",
+        }),
+        ("faccion", "legion_oscura"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+
+GUARDIAN_PORTAL = {
+    "prototype_key": "GUARDIAN_PORTAL",
+    "key": "Guardián del Portal",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una figura encapuchada de talla imponente que permanece inmóvil junto al portal. "
+        "No porta armas visibles pero su aura de poder detendría a cualquier imprudente. "
+        "Con voz grave y deliberada informa a los aventureros sobre las mazmorras."
+    ),
+    "attrs": [
+        ("nivel", 15),
+        ("hp", 500), ("hp_max", 500),
+        ("fuerza", 18), ("destreza", 15), ("constitucion", 20),
+        ("inteligencia", 18), ("defensa", 15),
+        ("experiencia", 0),
+        ("temperamento", "neutral"),
+        ("habilidades", []),
+        ("dialogo", {
+            "hola": "Bienvenido al Vestíbulo del Portal. Las mazmorras te esperan.",
+            "mazmorra": "Usa el comando 'mazmorra' para ver las mazmorras disponibles y entrar.",
+            "peligro": "No te engañes: estas mazmorras han consumido a héroes mucho más experimentados que tú.",
+            "recompensa": "A mayor dificultad, mayor es el botín. Pero también el riesgo.",
+            "cripta": "La Cripta de Ceniza es la más accesible. Ideal para iniciados nivel 3 o superior.",
+            "forja": "La Forja Maldita requiere experiencia real. Nivel 5 mínimo recomendado.",
+            "abismo": "El Abismo Sin Fondo... solo los más poderosos regresan de allí. Nivel 7.",
+            "legendario": "La dificultad legendaria multiplica las recompensas pero los enemigos son el doble de letales.",
+        }),
+        ("faccion", "neutral"),
+        ("npc_prototipo", "GUARDIAN_PORTAL"),
+        ("respawn_tiempo", 300),
+    ],
+}
+
 SACERDOTE = {
     "prototype_key": "SACERDOTE",
     "key": "Hermano Aldric el sacerdote",

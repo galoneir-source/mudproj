@@ -773,6 +773,44 @@ def construir_expansion(caller=None):
             msg("|gHermano Aldric el sacerdote añadido a la Plaza de la Ciudad.|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 8: VESTÍBULO DEL PORTAL (acceso a mazmorras instanciadas)
+    # -----------------------------------------------------------------------
+
+    if _find_room("Vestíbulo del Portal"):
+        msg("|yVestíbulo del Portal ya existe. Omitido.|n")
+    else:
+        plaza = _find_room("Plaza de la Ciudad")
+        if not plaza:
+            msg("|rError: no se encontró la Plaza de la Ciudad. Omitiendo Vestíbulo del Portal.|n")
+        else:
+            vestibulo = _room(
+                "Vestíbulo del Portal",
+                (
+                    "Una sala circular de piedra antigua con tres arcos de piedra negra en las paredes. "
+                    "Cada arco emana una energía inquietante: frío mortal desde uno, calor abrasador desde otro, "
+                    "y una oscuridad absoluta desde el tercero. "
+                    "Un guardián encapuchado custodia el centro de la sala. "
+                    "Al |csur|n está la Plaza de la Ciudad."
+                ),
+            )
+            vestibulo.db.zona = "vestibulo_portal"
+            vestibulo.db.exterior = False
+
+            _link("norte", "n", "sur", "s", plaza, vestibulo)
+
+            guardian_existe = any(
+                getattr(o.db, "npc_prototipo", None) == "GUARDIAN_PORTAL"
+                for o in vestibulo.contents
+                if hasattr(o, "db")
+            )
+            if not guardian_existe:
+                _spawn("GUARDIAN_PORTAL", vestibulo)
+                npcs_creados += 1
+
+            salas_creadas += 1
+            msg("|gZona 'Vestíbulo del Portal' creada (1 sala, guardián).|n")
+
+    # -----------------------------------------------------------------------
     # Resumen
     # -----------------------------------------------------------------------
 

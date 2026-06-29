@@ -71,6 +71,9 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.rango = "aprendiz"
         # --- Profesiones de recolección ---
         self.db.profesiones = {}
+        # --- Mazmorras instanciadas ---
+        self.db.mazmorras_completadas = {}
+        self.db.mazmorra_legendario = False
 
     def at_cmdset_get(self, **kwargs):
         """

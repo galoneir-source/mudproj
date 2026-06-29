@@ -5,6 +5,30 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.38.0] — 2026-06-29
+
+### Añadido
+- **Sistema de mazmorras instanciadas** — tres mazmorras de 3 salas cada una (2 normales + 1 jefe), sala por sala, con dificultad configurable.
+  - `cripta_ceniza` (nv.mín 3): Entrada de la Cripta → Nave Funeraria → Capilla del Señor de las Cenizas.
+  - `forja_maldita` (nv.mín 5): Taller Corrompido → Cámara de la Fundición → Trono del Maestro Forjador.
+  - `abismo_sin_fondo` (nv.mín 7): Umbral del Abismo → Corredor de las Almas → Cámara del Señor del Abismo.
+  - **3 dificultades**: normal (×1 HP/XP), difícil (×1.5), legendario (×2 HP, ×2.5 XP).
+  - Salas temporales creadas al entrar y destruidas al completar o a los 60 min (timeout).
+  - NPCs spawneados de forma perezosa sala a sala; HP escalado por dificultad; sin respawn en salas temporales.
+- **7 nuevos prototipos NPC**: MINERO_MALDITO, SENOR_CENIZAS, MAESTRO_FORJADOR, SENOR_ABISMO, GUARDIAN_PORTAL + uso de ESQUELETO/LICHE_MENOR/CABALLERO_MUERTE/HECHICERO_SOMBRIO/GOLEM_PIEDRA/ARANA_CUEVA ya existentes.
+- **3 nuevos ítems de botín** (drops de jefes): RELIQUIA_CENIZA (accesorio), MARTILLO_MALDITO (arma), ESPADA_ABISMO (arma).
+- **Zona nueva**: Vestíbulo del Portal (1 sala, conectada al norte de la Plaza, GUARDIAN_PORTAL presente).
+- **Comandos**:
+  - `mazmorra` / `mazmorras` / `maz` — lista mazmorras, info, entrar, estado, salir.
+  - `avanzar` — avanza a la siguiente sala (requiere sala despejada).
+- **5 nuevos logros** (categoría "mazmorra"):
+  - `cripta_completada`, `forja_completada`, `abismo_completado` (título "el Conquistador"), `todas_mazmorras`, `mazmorra_legendario` (título "el Legendario").
+- `db.mazmorras_completadas = {}` y `db.mazmorra_legendario = False` en `Character.at_object_creation`.
+- Limpieza de salas de mazmorra huérfanas en `at_server_cold_start`.
+- `systems/dungeons/dungeons.py`: catálogo puro + funciones de lógica (41 tests pasando).
+- `features/dungeons/dungeon_script.py`: `MazmorraScript` (DefaultScript persistente, timeout 3600s).
+- `features/dungeons/commands.py`: `CmdMazmorra`, `CmdAvanzar`, `DungeonCmdSet`.
+
 ## [0.37.0] — 2026-06-29
 
 ### Añadido

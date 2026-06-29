@@ -89,7 +89,21 @@ def at_server_cold_start():
     This is called only when the server starts "cold", i.e. after a
     shutdown or a reset.
     """
-    pass
+    try:
+        from evennia import search_object
+        from evennia.utils import logger
+        salas_temp = search_object(
+            typeclass="typeclasses.rooms.Room", attribute_name="es_mazmorra", attribute_value=True
+        )
+        for sala in salas_temp:
+            try:
+                sala.delete()
+            except Exception:
+                pass
+        if salas_temp:
+            logger.log_info(f"Cold start: eliminadas {len(salas_temp)} salas de mazmorra huérfanas.")
+    except Exception:
+        pass
 
 
 def at_server_cold_stop():
