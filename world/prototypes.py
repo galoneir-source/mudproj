@@ -1786,3 +1786,147 @@ SACERDOTE = {
         ("respawn_tiempo", 300),
     ],
 }
+
+# --------------------------------------------------------------------------- #
+#  Ítems de loot únicos de Jefes de Mundo
+# --------------------------------------------------------------------------- #
+
+ESCAMA_TITAN = {
+    "prototype_key": "ESCAMA_TITAN",
+    "key": "escama del titán",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Una escama del tamaño de un escudo extraída del Titán del Pantano. "
+        "Su superficie verde oscura es extraordinariamente dura y repele el agua. "
+        "Los herreros la transforman en un accesorio de protección sin igual."
+    ),
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"defensa": 6, "constitucion": 5, "hp_max": 40}),
+        ("valor", 200),
+    ],
+}
+
+NUCLEO_GUARDIAN = {
+    "prototype_key": "NUCLEO_GUARDIAN",
+    "key": "núcleo del guardián",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "El corazón de piedra y fuego del Guardián de la Forja, "
+        "arrancado de su pecho tras la batalla. Vibra con calor residual y "
+        "convierte en arma cualquier mango que se le engaste."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 8, "constitucion": 4, "defensa": 2}),
+        ("valor", 280),
+    ],
+}
+
+GARRA_DRAGON = {
+    "prototype_key": "GARRA_DRAGON",
+    "key": "garra del dragón",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Una garra del Dragón de Ceniza engarzada en un puño de acero negro. "
+        "Su filo no se embota nunca y cada golpe lleva consigo ceniza ardiente. "
+        "Es el trofeo de caza más preciado del mundo conocido."
+    ),
+    "attrs": [
+        ("slot", "arma"),
+        ("bonuses", {"fuerza": 10, "destreza": 6, "inteligencia": 4}),
+        ("valor", 400),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  NPCs: Jefes de Mundo
+# --------------------------------------------------------------------------- #
+
+TITAN_PANTANO = {
+    "prototype_key": "TITAN_PANTANO",
+    "key": "Titán del Pantano",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Una criatura colosal que emerge del fango con un rugido que hace temblar "
+        "los árboles. Su cuerpo está recubierto de barro endurecido y escamas "
+        "verde oscuro del tamaño de escudos. Sus ojos amarillos brillan con odio "
+        "primordial. Requiere varios guerreros para ser derrotado."
+    ),
+    "attrs": [
+        ("nivel", 8),
+        ("hp", 2000), ("hp_max", 2000),
+        ("fuerza", 24), ("destreza", 8), ("constitucion", 22),
+        ("inteligencia", 6), ("defensa", 16),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro"]),
+        ("loot", [
+            {"key": "fango titánico", "cantidad": 3,
+             "desc": "Barro endurecido del cuerpo del titán. Tiene propiedades alquímicas."},
+            {"key": "monedas de oro", "cantidad": 30},
+        ]),
+        ("faccion", "bestias"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+
+GUARDIAN_FORJA = {
+    "prototype_key": "GUARDIAN_FORJA",
+    "key": "Guardián de la Forja",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un coloso de piedra volcánica con venas de lava fundida visible bajo su piel. "
+        "Cada pisada deja marcas permanentes en el suelo de roca. "
+        "Sus puños del tamaño de carros aplanan montículos de piedra de un solo golpe. "
+        "Un rugido suyo apaga todas las antorchas en la caverna."
+    ),
+    "attrs": [
+        ("nivel", 10),
+        ("hp", 3000), ("hp_max", 3000),
+        ("fuerza", 26), ("destreza", 6), ("constitucion", 25),
+        ("inteligencia", 8), ("defensa", 20),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe fuerte", "embestida", "golpe maestro", "bola fuego"]),
+        ("loot", [
+            {"key": "lava cristalizada", "cantidad": 3,
+             "desc": "Lava del Guardián solidificada en segundos. Emite calor residual."},
+            {"key": "monedas de oro", "cantidad": 50},
+        ]),
+        ("faccion", "bestias"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+
+DRAGON_CENIZA = {
+    "prototype_key": "DRAGON_CENIZA",
+    "key": "Dragón de Ceniza",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un dragón de escamas grises como la ceniza que parece hecho del humo "
+        "de mil incendios. Sus alas oscurecen el cielo y su aliento convierte "
+        "la vegetación en ceniza en segundos. Sus ojos color ámbar evalúan a "
+        "sus rivales con desprecio milenario. El mayor depredador del mundo conocido."
+    ),
+    "attrs": [
+        ("nivel", 13),
+        ("hp", 5000), ("hp_max", 5000),
+        ("fuerza", 28), ("destreza", 16), ("constitucion", 28),
+        ("inteligencia", 18), ("defensa", 22),
+        ("experiencia", 0),
+        ("temperamento", "agresivo"),
+        ("habilidades", ["golpe maestro", "embestida", "bola fuego", "ejecutar"]),
+        ("loot", [
+            {"key": "ceniza del dragón", "cantidad": 5,
+             "desc": "Ceniza mágica del Dragón de Ceniza. Invaluable para alquimistas y encantadores."},
+            {"key": "monedas de oro", "cantidad": 80},
+        ]),
+        ("faccion", "bestias"),
+        ("npc_prototipo", None),
+        ("respawn_tiempo", 0),
+    ],
+}
+

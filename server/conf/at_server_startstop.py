@@ -60,6 +60,11 @@ def at_server_start():
         obtener_tablón_script()
     except Exception:
         pass
+    try:
+        from features.world_bosses.world_boss_script import obtener_world_boss_script
+        obtener_world_boss_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

@@ -361,6 +361,13 @@ class CombatHandler(DefaultScript):
                             self._fin_duelo(ganador=actor, perdedor=objetivo)
                             return
                     _set_stat(objetivo, "hp", resultado.hp_restante)
+                    # Tracking de daño en Jefe de Mundo
+                    if (getattr(objetivo.db, "es_jefe_mundo", False)
+                            and getattr(actor, "has_account", False)
+                            and (resultado.dano or 0) > 0):
+                        tracker = dict(getattr(objetivo.ndb, "dano_por_jugador", None) or {})
+                        tracker[actor.dbref] = tracker.get(actor.dbref, 0) + resultado.dano
+                        objetivo.ndb.dano_por_jugador = tracker
 
                 # Efectos de curación post-ataque (drenar vida / sagrado / esencia)
                 if (tipo == "habilidad" and habilidad and resultado.exito
@@ -543,6 +550,18 @@ class CombatHandler(DefaultScript):
         if not muerto.has_account:
             muerto.db.hp = 0
             self._limpiar_estado_combate(muerto)
+
+            # Jefe de Mundo: distribuir recompensas a participantes
+            if getattr(muerto.db, "es_jefe_mundo", False):
+                try:
+                    from features.world_bosses.world_boss_script import (
+                        distribuir_recompensas_jefe_mundo,
+                    )
+                    tracker = dict(getattr(muerto.ndb, "dano_por_jugador", None) or {})
+                    boss_id = getattr(muerto.db, "world_boss_id", None)
+                    distribuir_recompensas_jefe_mundo(muerto, tracker, sala, boss_id)
+                except Exception as _wb_err:
+                    logger.log_err(f"World boss rewards error: {_wb_err}")
 
             # Programar respawn ANTES de delete (necesitamos leer atributos del NPC)
             from features.respawn.respawn import programar_respawn

@@ -74,6 +74,8 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Mazmorras instanciadas ---
         self.db.mazmorras_completadas = {}
         self.db.mazmorra_legendario = False
+        # --- Jefes de Mundo ---
+        self.db.jefes_mundo_derrotados = {}
         # --- Correo ---
         self.db.correo = []
 

@@ -313,6 +313,32 @@ LOGROS: dict[str, dict] = {
         "categoria":   "clase",
     },
 
+    # ── Jefes de Mundo ────────────────────────────────────────────────────────
+    "titan_derrotado": {
+        "nombre":      "Cazador de Titanes",
+        "descripcion": "Participa en la derrota del Titán del Pantano.",
+        "titulo":      None,
+        "categoria":   "jefe_mundo",
+    },
+    "guardian_derrotado": {
+        "nombre":      "Forjado en Lava",
+        "descripcion": "Participa en la derrota del Guardián de la Forja.",
+        "titulo":      None,
+        "categoria":   "jefe_mundo",
+    },
+    "dragon_derrotado": {
+        "nombre":      "Cazadragones",
+        "descripcion": "Participa en la derrota del Dragón de Ceniza.",
+        "titulo":      "Cazadragones",
+        "categoria":   "jefe_mundo",
+    },
+    "todos_jefes_mundo": {
+        "nombre":      "Azote del Mundo",
+        "descripcion": "Participa en la derrota de los tres jefes de mundo.",
+        "titulo":      "el Azote",
+        "categoria":   "jefe_mundo",
+    },
+
     # ── Mazmorra ──────────────────────────────────────────────────────────────
     "cripta_completada": {
         "nombre":      "Conquistador de la Cripta",
@@ -428,6 +454,16 @@ def _cumple(logro_id: str, datos: dict) -> bool:
         return clase == "explorador" and _RAMAS["explorador"].issubset(habs)
     if logro_id == "maestro_mago":
         return clase == "mago" and _RAMAS["mago"].issubset(habs)
+
+    jefes_mundo = datos.get("jefes_mundo_derrotados", {})
+    if logro_id == "titan_derrotado":
+        return bool(jefes_mundo.get("TITAN_PANTANO", 0))
+    if logro_id == "guardian_derrotado":
+        return bool(jefes_mundo.get("GUARDIAN_FORJA", 0))
+    if logro_id == "dragon_derrotado":
+        return bool(jefes_mundo.get("DRAGON_CENIZA", 0))
+    if logro_id == "todos_jefes_mundo":
+        return all(jefes_mundo.get(k, 0) for k in ("TITAN_PANTANO", "GUARDIAN_FORJA", "DRAGON_CENIZA"))
 
     mazmorras = datos.get("mazmorras_completadas", {})
     if logro_id == "cripta_completada":

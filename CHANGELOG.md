@@ -5,6 +5,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.41.0] — 2026-06-29
+
+### Añadido
+- **Sistema de jefes de mundo** — tres world bosses que aparecen en zonas fijas del mapa tras un cooldown real, con anuncio global y recompensas proporcionales al daño.
+  - **Titán del Pantano** (`pantano_cenagoso`, nv.req 4, 6h cooldown, 2000 HP): loot único ESCAMA_TITAN.
+  - **Guardián de la Forja** (`caverna_coloso`, nv.req 6, 7h cooldown, 3000 HP): loot único NUCLEO_GUARDIAN.
+  - **Dragón de Ceniza** (`claro_bosque`, nv.req 8, 8h cooldown, 5000 HP): loot único GARRA_DRAGON.
+  - Tracking de daño por jugador en `npc.ndb.dano_por_jugador`. Todos los participantes reciben XP y monedas proporcionales (mínimo 10%). El mayor dañador se lleva el loot único.
+  - Anuncio global al aparecer y al morir, con lista de participantes.
+  - `WorldBossScript` (global, tick 5 min): detecta muerte y respawnea tras cooldown.
+  - `jefes` — muestra estado de cada jefe (vivo / tiempo hasta próximo spawn).
+- **4 nuevos logros** (categoría "jefe_mundo"): `titan_derrotado`, `guardian_derrotado`, `dragon_derrotado` (título "Cazadragones"), `todos_jefes_mundo` (título "el Azote").
+- **3 ítems únicos**: ESCAMA_TITAN (accesorio), NUCLEO_GUARDIAN (arma), GARRA_DRAGON (arma — el mejor ítem del juego).
+- `db.jefes_mundo_derrotados = {}` en `Character.at_object_creation`.
+- Modificaciones mínimas en `features/combat/handler.py`: tracking de daño en `_resolver_turno` y hook en `_procesar_muerte` para distribución de rewards.
+- `systems/world_bosses/world_bosses.py`: catálogo puro + lógica (27 tests pasando).
+- `features/world_bosses/world_boss_script.py`: `WorldBossScript` + `distribuir_recompensas_jefe_mundo`.
+- `features/world_bosses/commands.py`: `CmdJefesMundo`, `WorldBossCmdSet`.
+
 ## [0.40.0] — 2026-06-29
 
 ### Añadido
