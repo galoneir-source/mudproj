@@ -811,6 +811,44 @@ def construir_expansion(caller=None):
             msg("|gZona 'Vestíbulo del Portal' creada (1 sala, guardián).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 9: ARENA DE LA CIUDAD (torneos PvP)
+    # -----------------------------------------------------------------------
+
+    if _find_room("Arena de la Ciudad"):
+        msg("|yArena de la Ciudad ya existe. Omitida.|n")
+    else:
+        plaza = _find_room("Plaza de la Ciudad")
+        if not plaza:
+            msg("|rError: no se encontró la Plaza de la Ciudad. Omitiendo Arena.|n")
+        else:
+            arena = _room(
+                "Arena de la Ciudad",
+                (
+                    "Una arena circular de arena dorada, rodeada por gradas de piedra tallada. "
+                    "Las paredes están grabadas con los nombres de los campeones pasados. "
+                    "El suelo muestra las marcas de incontables batallas. "
+                    "Aquí los guerreros demuestran su valía ante los dioses y el pueblo. "
+                    "Al |coeste|n está la Plaza de la Ciudad."
+                ),
+            )
+            arena.db.zona      = "arena_ciudad"
+            arena.db.exterior  = False
+
+            _link("este", "e", "oeste", "o", plaza, arena)
+
+            maestro_existe = any(
+                getattr(o.db, "npc_prototipo", None) == "MAESTRO_ARENA"
+                for o in arena.contents
+                if hasattr(o, "db")
+            )
+            if not maestro_existe:
+                _spawn("MAESTRO_ARENA", arena)
+                npcs_creados += 1
+
+            salas_creadas += 1
+            msg("|gZona 'Arena de la Ciudad' creada (1 sala, maestro de arena).|n")
+
+    # -----------------------------------------------------------------------
     # Resumen
     # -----------------------------------------------------------------------
 

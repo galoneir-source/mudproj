@@ -78,6 +78,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.jefes_mundo_derrotados = {}
         # --- Runas de equipamiento ---
         self.db.runas_equipadas = {"arma": None, "armadura": None, "accesorio": None}
+        # --- Arena y torneos ---
+        self.db.torneos_ganados = 0
         # --- Correo ---
         self.db.correo = []
 

@@ -615,6 +615,16 @@ class CombatHandler(DefaultScript):
             self._limpiar_estado_combate(p)
         self.db.activo = False
         sala.msg_contents("|gEl combate ha terminado.|n\n")
+
+        # Notificar al torneo si este duelo forma parte de uno
+        torneo_id = getattr(self.db, "torneo_script_id", None)
+        if torneo_id:
+            try:
+                from features.arena.tournament_script import notificar_resultado_torneo
+                notificar_resultado_torneo(torneo_id, ganador, perdedor)
+            except Exception as _te:
+                logger.log_err(f"Tournament hook: {_te}")
+
         self.delete()
 
     def _procesar_muerte(self, muerto, asesino=None):

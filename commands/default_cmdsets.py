@@ -46,6 +46,7 @@ from features.trade.commands import TradeCmdSet
 from features.mail.commands import MailCmdSet
 from features.world_bosses.commands import WorldBossCmdSet
 from features.runes.commands import RunasCmdSet
+from features.arena.commands import ArenaCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -127,6 +128,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(WorldBossCmdSet)
         # --- Runas ---
         self.add(RunasCmdSet)
+        # --- Arena y Torneos ---
+        self.add(ArenaCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

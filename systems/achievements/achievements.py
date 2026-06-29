@@ -371,6 +371,20 @@ LOGROS: dict[str, dict] = {
         "categoria":   "mazmorra",
     },
 
+    # ── Arena ─────────────────────────────────────────────────────────────────
+    "campeon_arena": {
+        "nombre":      "Campeón de la Arena",
+        "descripcion": "Gana un torneo de la Arena.",
+        "titulo":      "el Campeón de la Arena",
+        "categoria":   "arena",
+    },
+    "maestro_arena": {
+        "nombre":      "Imbatible",
+        "descripcion": "Gana 3 torneos de la Arena.",
+        "titulo":      "el Imbatible",
+        "categoria":   "arena",
+    },
+
     # ── Runas ─────────────────────────────────────────────────────────────────
     "primera_runa": {
         "nombre":      "Grabador de Runas",
@@ -496,6 +510,10 @@ def _cumple(logro_id: str, datos: dict) -> bool:
         return all(mazmorras.get(k, 0) for k in ("cripta_ceniza", "forja_maldita", "abismo_sin_fondo"))
     if logro_id == "mazmorra_legendario":
         return bool(datos.get("mazmorra_legendario", False))
+
+    torneos = datos.get("torneos_ganados", 0)
+    if logro_id == "campeon_arena":  return torneos >= 1
+    if logro_id == "maestro_arena":  return torneos >= 3
 
     runas = datos.get("runas_equipadas", {})
     runas_activas = sum(1 for v in runas.values() if v)

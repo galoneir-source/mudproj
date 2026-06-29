@@ -1930,3 +1930,38 @@ DRAGON_CENIZA = {
     ],
 }
 
+
+# --------------------------------------------------------------------------- #
+#  NPC: Maestro de Arena (gestor de torneos)
+# --------------------------------------------------------------------------- #
+
+MAESTRO_ARENA = {
+    "prototype_key": "MAESTRO_ARENA",
+    "key": "Gareth el Maestro de Arena",
+    "typeclass": "typeclasses.npc.NPC",
+    "desc": (
+        "Un hombre fornido con cicatrices en el rostro y una armadura ceremonial dorada. "
+        "Su presencia llena la arena de autoridad. "
+        "Supervisa los combates con ojos experimentados y lleva un registro de cada victoria."
+    ),
+    "attrs": [
+        ("nivel", 1),
+        ("hp", 80), ("hp_max", 80),
+        ("fuerza", 15), ("destreza", 12), ("constitucion", 14),
+        ("inteligencia", 11), ("defensa", 5),
+        ("experiencia", 0),
+        ("temperamento", "neutral"),
+        ("habilidades", []),
+        ("faccion", "ciudadanos"),
+        ("dialogo", {
+            "hola": "¡Bienvenido a la Arena! Aquí los guerreros demuestran su verdadero valor.",
+            "torneo": "Los torneos se inician cuando hay suficientes participantes. Usa 'arena inscribir' para unirte.",
+            "inscribir": "La inscripción cuesta 100 monedas. El campeón se lleva el pot completo.",
+            "campeón": "El campeón recibe todo el pot de inscripciones y un título de honor.",
+            "reglas": "Combate a primer golpe: el rival cede cuando cae al 10% de HP. Sin muerte, solo gloria.",
+            "historia": "Esta arena fue construida hace cien años por el Rey Aldaron. Los mejores guerreros han combatido aquí.",
+        }),
+        ("npc_prototipo", "MAESTRO_ARENA"),
+        ("respawn_tiempo", 300),
+    ],
+}
