@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.39.0] — 2026-06-29
+
+### Añadido
+- **Sistema de intercambio entre jugadores** — dos jugadores en la misma sala pueden intercambiar objetos y monedas con confirmación mutua.
+  - `intercambiar <jugador>` — propone el intercambio; el destinatario acepta con `intercambiar aceptar` o lo cancela.
+  - `ofrecer <objeto>` / `ofrecer <N> monedas` — añade objetos o monedas a tu oferta.
+  - `retirar oferta <objeto>` — quita un objeto de tu oferta.
+  - `confirmar` — cuando ambos confirman, el intercambio se ejecuta de forma atómica.
+  - `cancelar` / `intercambiar cancelar` — aborta la sesión.
+  - Timeout automático de 2 minutos; se cancela también en server reload.
+  - Validaciones: el objeto debe estar en el inventario del ofertante, las monedas ofrecidas no pueden superar el saldo disponible; ambas comprobaciones se repiten en el momento de ejecución.
+- `systems/trade/trade.py`: lógica pura — `nuevo_lado`, `agregar_objeto`, `retirar_objeto`, `establecer_monedas`, `confirmar`, `desconfirmar_ambos`, `ambos_confirmados`, `validar_monedas`, `formatear_intercambio`, `formatear_oferta_simple`, `tiene_oferta`.
+- `features/trade/trade_session.py`: `TradeSession` (DefaultScript, persistent=False, interval=120 = timeout).
+- `features/trade/commands.py`: `CmdIntercambiar`, `CmdOfrecer`, `CmdRetirarOferta`, `CmdConfirmarIntercambio`, `TradeCmdSet`.
+- 36 tests puros pasando (`tests/test_intercambio_system.py`).
+
 ## [0.38.0] — 2026-06-29
 
 ### Añadido

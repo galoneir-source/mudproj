@@ -42,6 +42,7 @@ from features.buffs.commands import BuffsCmdSet
 from features.ranks.commands import RankCmdSet
 from features.professions.commands import ProfessionCmdSet
 from features.dungeons.commands import DungeonCmdSet
+from features.trade.commands import TradeCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -115,6 +116,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(ProfessionCmdSet)
         # --- Mazmorras ---
         self.add(DungeonCmdSet)
+        # --- Intercambio ---
+        self.add(TradeCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
