@@ -40,6 +40,7 @@ from features.classes.commands import ClassCmdSet
 from features.subclasses.commands import SubclassCmdSet
 from features.buffs.commands import BuffsCmdSet
 from features.ranks.commands import RankCmdSet
+from features.professions.commands import ProfessionCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -109,6 +110,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(BuffsCmdSet)
         # --- Rangos ---
         self.add(RankCmdSet)
+        # --- Profesiones ---
+        self.add(ProfessionCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

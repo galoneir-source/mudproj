@@ -1343,6 +1343,192 @@ LICHE_INMORTAL = {
     ],
 }
 
+# --------------------------------------------------------------------------- #
+#  Materiales de profesión: Minería
+# --------------------------------------------------------------------------- #
+
+MINERAL_HIERRO = {
+    "prototype_key": "MINERAL_HIERRO",
+    "key": "mineral de hierro",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un trozo de mineral de hierro en bruto. Denso y rojizo, de buena calidad.",
+    "attrs": [("valor", 5)],
+}
+
+PIEDRA_AFILADA = {
+    "prototype_key": "PIEDRA_AFILADA",
+    "key": "piedra afilada",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una piedra de sílex con un filo natural afilado como una cuchilla.",
+    "attrs": [("valor", 8)],
+}
+
+MINERAL_PLATA = {
+    "prototype_key": "MINERAL_PLATA",
+    "key": "mineral de plata",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un trozo de mineral de plata reluciente, frío al tacto.",
+    "attrs": [("valor", 12)],
+}
+
+GEMA_BRUTA = {
+    "prototype_key": "GEMA_BRUTA",
+    "key": "gema en bruto",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una gema sin tallar de color violáceo. Los joyeros la pagarían bien.",
+    "attrs": [("valor", 18)],
+}
+
+GEMA_ARCANA = {
+    "prototype_key": "GEMA_ARCANA",
+    "key": "gema arcana",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": (
+        "Una gema oscura que pulsa con una tenue luz interior. "
+        "Solo aparece en las venas más profundas de la mina."
+    ),
+    "attrs": [("valor", 35)],
+}
+
+# --------------------------------------------------------------------------- #
+#  Materiales de profesión: Herboristería
+# --------------------------------------------------------------------------- #
+
+HIERBA_MEDICINAL = {
+    "prototype_key": "HIERBA_MEDICINAL",
+    "key": "hierba medicinal",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un manojo de hierbas verdes con propiedades curativas. Huele a monte.",
+    "attrs": [("valor", 5)],
+}
+
+RAIZ_PANTANO = {
+    "prototype_key": "RAIZ_PANTANO",
+    "key": "raíz de pantano",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una raíz viscosa extraída del pantano. Los alquimistas la usan como base.",
+    "attrs": [("valor", 8)],
+}
+
+FLOR_SILVESTRE = {
+    "prototype_key": "FLOR_SILVESTRE",
+    "key": "flor silvestre",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una flor de pétalos blancos y amarillos con aroma intenso. Rara en estas latitudes.",
+    "attrs": [("valor", 12)],
+}
+
+ESENCIA_VEGETAL = {
+    "prototype_key": "ESENCIA_VEGETAL",
+    "key": "esencia vegetal",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un vial con extracto concentrado de plantas raras. De color verde esmeralda.",
+    "attrs": [("valor", 18)],
+}
+
+EXTRACTO_RARO = {
+    "prototype_key": "EXTRACTO_RARO",
+    "key": "extracto raro",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un extracto de una planta desconocida que crece solo en los rincones más oscuros del pantano.",
+    "attrs": [("valor", 40)],
+}
+
+# --------------------------------------------------------------------------- #
+#  Materiales de profesión: Pesca
+# --------------------------------------------------------------------------- #
+
+PEZ_COMUN = {
+    "prototype_key": "PEZ_COMUN",
+    "key": "pez común",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un pez de río pequeño y escurridizo. No tiene nada especial, pero alimenta.",
+    "attrs": [("valor", 3)],
+}
+
+PEZ_PLATEADO = {
+    "prototype_key": "PEZ_PLATEADO",
+    "key": "pez plateado",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un pez de escamas plateadas que brilla al sol. Los cocineros lo aprecian.",
+    "attrs": [("valor", 8)],
+}
+
+PEZ_DORADO = {
+    "prototype_key": "PEZ_DORADO",
+    "key": "pez dorado",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Un pez de escamas doradas, raro en el río local. Tiene propiedades reconstituyentes.",
+    "attrs": [("valor", 15)],
+}
+
+PERLA_RIO = {
+    "prototype_key": "PERLA_RIO",
+    "key": "perla de río",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una perla perlada encontrada en el lecho del río. Los joyeros la buscan.",
+    "attrs": [("valor", 20)],
+}
+
+ESCAMA_MAGICA = {
+    "prototype_key": "ESCAMA_MAGICA",
+    "key": "escama mágica",
+    "typeclass": "typeclasses.objects.Object",
+    "desc": "Una escama iridiscente que parece cambiar de color. Tiene propiedades arcanas.",
+    "attrs": [("valor", 40)],
+}
+
+# --------------------------------------------------------------------------- #
+#  Consumibles crafteables con materiales de profesión
+# --------------------------------------------------------------------------- #
+
+CATAPLASMA = {
+    "prototype_key": "CATAPLASMA",
+    "key": "cataplasma curativa",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": "Un vendaje impregnado de hierbas medicinales. Cura heridas menores.",
+    "attrs": [
+        ("efecto", "curar_hp"),
+        ("potencia", 20),
+        ("usos", 1),
+        ("valor", 10),
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+#  Equipo crafteable con materiales de profesión
+# --------------------------------------------------------------------------- #
+
+ANILLO_PLATA = {
+    "prototype_key": "ANILLO_PLATA",
+    "key": "anillo de plata",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un anillo forjado con mineral de plata puro. "
+        "Su brillo frío transmite agilidad y fuerza a quien lo porta."
+    ),
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"fuerza": 2, "destreza": 2, "constitucion": 1}),
+        ("valor", 60),
+    ],
+}
+
+AMULETO_BOSQUE = {
+    "prototype_key": "AMULETO_BOSQUE",
+    "key": "amuleto del bosque",
+    "typeclass": "typeclasses.objects.Equipo",
+    "desc": (
+        "Un amuleto tejido con flores silvestres y esencia vegetal concentrada. "
+        "Canaliza la magia natural hacia quien lo lleva."
+    ),
+    "attrs": [
+        ("slot", "accesorio"),
+        ("bonuses", {"inteligencia": 3, "destreza": 2}),
+        ("valor", 65),
+    ],
+}
+
 SACERDOTE = {
     "prototype_key": "SACERDOTE",
     "key": "Hermano Aldric el sacerdote",

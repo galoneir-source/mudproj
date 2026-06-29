@@ -140,6 +140,46 @@ RECETAS: dict[str, dict] = {
         "cantidad": 1,
         "desc_receta": "Anillo impregnado de oscuridad que agudiza los sentidos y amplifica la magia de las sombras.",
     },
+    # --- Profesiones: consumibles ---
+    "cataplasma": {
+        "ingredientes": {"hierba medicinal": 2},
+        "resultado_prototipo": "CATAPLASMA",
+        "cantidad": 1,
+        "desc_receta": "Dos manojos de hierbas medicinales aplastadas y envueltas en tela forman un apósito curativo.",
+    },
+    "antídoto silvestre": {
+        "ingredientes": {"flor silvestre": 2},
+        "resultado_prototipo": "ANTIDOTO",
+        "cantidad": 2,
+        "desc_receta": "Las propiedades antiveneno de la flor silvestre, concentradas en dos antídotos.",
+    },
+    "sopa del pescador": {
+        "ingredientes": {"pez dorado": 1, "hierba medicinal": 1},
+        "resultado_prototipo": "POCION_VIDA_MAYOR",
+        "cantidad": 1,
+        "desc_receta": "El pez dorado cocinado con hierbas medicinales produce un caldo con gran poder restaurador.",
+    },
+    "elixir de esencia": {
+        "ingredientes": {"esencia vegetal": 1, "flor silvestre": 1},
+        "resultado_prototipo": "ELIXIR_RESTAURACION",
+        "cantidad": 1,
+        "desc_receta": "La esencia vegetal pura combinada con la flor silvestre libera un restaurador completo.",
+    },
+    # --- Profesiones: equipo ---
+    "anillo de plata": {
+        "tipo": "equipo",
+        "ingredientes": {"mineral de plata": 2, "piedra afilada": 1},
+        "resultado_prototipo": "ANILLO_PLATA",
+        "cantidad": 1,
+        "desc_receta": "Dos venas de plata forjadas con una piedra de sílex natural. Equilibra agilidad y fuerza.",
+    },
+    "amuleto del bosque": {
+        "tipo": "equipo",
+        "ingredientes": {"flor silvestre": 2, "esencia vegetal": 1},
+        "resultado_prototipo": "AMULETO_BOSQUE",
+        "cantidad": 1,
+        "desc_receta": "Flores silvestres impregnadas con esencia vegetal pura, trenzadas en un amuleto de magia natural.",
+    },
 }
 
 

@@ -5,6 +5,31 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.37.0] — 2026-06-29
+
+### Añadido
+- **Sistema de profesiones de recolección** — tres profesiones con 5 niveles cada una.
+  - **Minería** — extraer minerales en las Minas de Hierro Viejo (`boca_mina` nv.1, `galeria_principal` nv.2, `caverna_coloso` nv.3).
+  - **Herboristería** — recolectar plantas en bosque y pantano (`bosque_norte`/`claro_bosque`/`senda_fangosa` nv.1, `pantano_cenagoso` nv.2, `guarida_troll` nv.3).
+  - **Pesca** — pescar en la nueva Orilla del Río (`orilla_rio` nv.1).
+  - **5 niveles** por profesión: Aprendiz → Novato → Artesano → Experto → Maestro. XP acumulada: 0/30/80/160/300.
+  - Materiales de nivel superior son más raros (sistema de pesos).
+  - Cooldown de 60 s por profesión entre recolecciones.
+  - Materiales de minería (mineral de hierro, gema en bruto) compatibles con las recetas de crafteo existentes.
+- **15 nuevos prototipos de material**: 5 de minería (mineral de hierro, piedra afilada, mineral de plata, gema en bruto, gema arcana), 5 de herboristería (hierba medicinal, raíz de pantano, flor silvestre, esencia vegetal, extracto raro), 5 de pesca (pez común, pez plateado, pez dorado, perla de río, escama mágica).
+- **6 nuevas recetas** que usan materiales de profesión:
+  - `cataplasma` (hierba medicinal ×2 → cataplasma curativa, cura 20 HP).
+  - `antídoto silvestre` (flor silvestre ×2 → antídoto ×2).
+  - `sopa del pescador` (pez dorado + hierba medicinal → poción de vida mayor).
+  - `elixir de esencia` (esencia vegetal + flor silvestre → elixir de restauración).
+  - `anillo de plata` (mineral de plata ×2 + piedra afilada → accesorio: +2 FUE, +2 DES, +1 CON).
+  - `amuleto del bosque` (flor silvestre ×2 + esencia vegetal → accesorio: +3 INT, +2 DES).
+- **Zona nueva**: Orilla del Río (1 sala, exterior, conectada al oeste de la Plaza).
+- `db.profesiones = {}` inicializado en `Character.at_object_creation`.
+- `systems/professions/professions.py`: lógica pura — `PROFESIONES`, `ZONAS_RECURSO`, `nivel_desde_xp`, `xp_para_siguiente`, `elegir_material`, `aprender_profesion`, `ganar_xp`, `zona_a_profesion`, formateo.
+- `features/professions/commands.py`: `CmdProfesion` (`profesion`/`profesiones`/`prof`) y `CmdRecolectar` (`recolectar`/`minar`/`cosechar`/`pescar`), `ProfessionCmdSet`.
+- 60 tests puros en `tests/test_profesiones_system.py`.
+
 ## [0.36.0] — 2026-06-28
 
 ### Añadido

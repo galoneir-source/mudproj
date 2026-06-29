@@ -702,6 +702,45 @@ def construir_expansion(caller=None):
             msg("|gZona 'Ciudadela Oscura' creada (3 salas, 6 NPCs).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 7: ORILLA DEL RÍO (zona de pesca)
+    # -----------------------------------------------------------------------
+
+    if _find_room("Orilla del Río"):
+        msg("|yZona 'Orilla del Río' ya existe. Omitida.|n")
+    else:
+        plaza = _find_room("Plaza de la Ciudad")
+        if not plaza:
+            msg("|rError: no se encontró la Plaza de la Ciudad. Omitiendo zona del Río.|n")
+        else:
+            orilla = _room(
+                "Orilla del Río",
+                (
+                    "El río que bordea la ciudad fluye lento y cristalino aquí. "
+                    "Los juncos crecen en las orillas y el sonido del agua invita a la calma. "
+                    "Ocasionalmente una sombra plateada cruza bajo la superficie. "
+                    "Al |ceste|n está la Plaza de la Ciudad."
+                ),
+            )
+            orilla.db.zona = "orilla_rio"
+            orilla.db.exterior = True
+
+            orilla.db.detalles_ocultos = [
+                {
+                    "texto": "Bajo el agua hay una corriente más profunda. Los peces grandes descansan ahí.",
+                    "req_percepcion": 10,
+                },
+                {
+                    "texto": "En el barro de la orilla hay rastros de un animal acuático de gran tamaño. Quizás no solo peces viven aquí.",
+                    "req_percepcion": 14,
+                },
+            ]
+
+            _link("oeste", "o", "este", "e", plaza, orilla)
+
+            salas_creadas += 1
+            msg("|gZona 'Orilla del Río' creada (1 sala, zona de pesca).|n")
+
+    # -----------------------------------------------------------------------
     # BUSCADOR DE TESOROS EN EL MERCADO
     # -----------------------------------------------------------------------
 

@@ -69,6 +69,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.buffs_activos = []
         # --- Rango de aventurero ---
         self.db.rango = "aprendiz"
+        # --- Profesiones de recolección ---
+        self.db.profesiones = {}
 
     def at_cmdset_get(self, **kwargs):
         """
