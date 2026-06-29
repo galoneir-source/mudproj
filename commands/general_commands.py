@@ -327,6 +327,9 @@ class CmdPerfil(Command):
             color_clase = info_clase.get("color", "|n")
             nombre_clase = info_clase.get("nombre", clase_id.capitalize())
             lineas.append(f"  |cClase:|n   {color_clase}{nombre_clase}|n")
+        rango_id = getattr(objetivo.db, "rango", "aprendiz") or "aprendiz"
+        from systems.ranks.ranks import formatear_rango
+        lineas.append(f"  |cRango:|n   {formatear_rango(rango_id)}")
         if faction:
             lineas.append(f"  |cFacción:|n  {faction}")
         if temperamento and objetivo != caller:

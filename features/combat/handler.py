@@ -37,6 +37,16 @@ def _get_stats(obj) -> dict:
                     stats["inteligencia"] = (stats.get("inteligencia") or 10) + bonus
         except Exception:
             pass
+        # Buffs de taberna
+        try:
+            from systems.buffs.buffs import bonus_stat
+            buffs = list(getattr(obj.db, "buffs_activos", None) or [])
+            for stat in ("fuerza", "destreza", "inteligencia"):
+                b = bonus_stat(buffs, stat)
+                if b:
+                    stats[stat] = (stats.get(stat) or 0) + b
+        except Exception:
+            pass
     return stats
 
 
@@ -125,6 +135,22 @@ def _generar_loot(muerto, sala) -> list:
                     obj = _create_object(typeclass, key=item_key, location=sala)
                     if desc:
                         obj.db.desc = desc
+
+                # Aplicar rareza sólo a ítems de equipo spawneados desde prototipo
+                if prototype_key and obj.is_typeclass("typeclasses.objects.Equipo", exact=False):
+                    try:
+                        from systems.loot.rarity import (
+                            tirar_rareza, aplicar_rareza_bonuses, nombre_con_rareza
+                        )
+                        rareza = tirar_rareza()
+                        obj.db.rareza = rareza
+                        if rareza != "comun":
+                            bonuses = dict(getattr(obj.db, "bonuses", {}) or {})
+                            obj.db.bonuses = aplicar_rareza_bonuses(bonuses, rareza)
+                            obj.key = nombre_con_rareza(obj.key, rareza)
+                    except Exception:
+                        pass
+
                 creados.append(obj)
             except Exception as err:
                 from evennia.utils import logger
@@ -493,8 +519,25 @@ class CombatHandler(DefaultScript):
         # Loot: generar items desde la tabla db.loot
         items_generados = _generar_loot(muerto, sala)
         if items_generados:
-            nombres = ", ".join(f"|y{o.key}|n" for o in items_generados)
+            try:
+                from systems.loot.rarity import color_rareza, es_notable
+                partes = []
+                epicos = []
+                for o in items_generados:
+                    rareza = getattr(o.db, "rareza", "comun") or "comun"
+                    partes.append(f"{color_rareza(rareza)}{o.key}|n")
+                    if rareza == "epico":
+                        epicos.append(o.key)
+                nombres = ", ".join(partes)
+            except Exception:
+                nombres = ", ".join(f"|y{o.key}|n" for o in items_generados)
+                epicos = []
             sala.msg_contents(f"{muerto.key} ha dejado caer: {nombres}.")
+            for nombre_epico in epicos:
+                sala.msg_contents(
+                    f"|m✦ ¡OBJETO ÉPICO! |w{nombre_epico}|m — "
+                    f"un hallazgo extraordinariamente poderoso.|n"
+                )
 
         # Si es NPC → programar respawn y eliminarlo del mundo
         if not muerto.has_account:
@@ -689,12 +732,29 @@ class CombatHandler(DefaultScript):
         xp_ind = xp_por_miembro(xp_base, n)
 
         for m in receptores:
+            # Aplicar buff de XP individual
+            try:
+                from systems.buffs.buffs import factor_xp, buffs_vigentes
+                buffs = list(getattr(m.db, "buffs_activos", None) or [])
+                f = factor_xp(buffs_vigentes(buffs))
+                xp_real = int(xp_ind * f)
+            except Exception:
+                xp_real = xp_ind
+                f = 1.0
+
             xp_actual = getattr(m.db, "experiencia", 0) or 0
-            m.db.experiencia = xp_actual + xp_ind
+            m.db.experiencia = xp_actual + xp_real
             if n > 1:
-                m.msg(f"|g+{xp_ind} XP|n (grupo ×{n}; total: {m.db.experiencia})")
+                xp_txt = f"|g+{xp_real} XP|n (grupo ×{n}"
+                if f > 1.0:
+                    xp_txt += f", buff ×{f:.2f}"
+                xp_txt += f"; total: {m.db.experiencia})"
             else:
-                m.msg(f"|g+{xp_ind} XP|n (Total: {m.db.experiencia})")
+                xp_txt = f"|g+{xp_real} XP|n"
+                if f > 1.0:
+                    xp_txt += f" |Y(×{f:.2f} buff)|n"
+                xp_txt += f" (Total: {m.db.experiencia})"
+            m.msg(xp_txt)
 
             stats = _get_stats(m)
             subio, nuevos_stats = procesar_subida_de_nivel(stats)

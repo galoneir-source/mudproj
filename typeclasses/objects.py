@@ -232,17 +232,27 @@ class Equipo(DefaultObject):
         super().at_object_creation()
         self.db.slot = "accesorio"
         self.db.bonuses = {}
+        self.db.rareza = "comun"
 
     def return_appearance(self, looker, **kwargs):
         desc = self.db.desc or "Un objeto sin descripción especial."
         slot = self.db.slot or "accesorio"
         bonuses = self.db.bonuses or {}
+        rareza = self.db.rareza or "comun"
+
         if bonuses:
             bonus_txt = ", ".join(f"|w{k}|n +{v}" for k, v in sorted(bonuses.items()))
         else:
             bonus_txt = "ninguna"
+
+        rareza_txt = ""
+        if rareza == "raro":
+            rareza_txt = " |c[Raro]|n"
+        elif rareza == "epico":
+            rareza_txt = " |m[Épico]|n"
+
         return (
-            f"|w{self.key}|n |c[{slot}]|n\n"
+            f"|w{self.key}|n |c[{slot}]|n{rareza_txt}\n"
             f"{desc}\n"
             f"Bonificaciones: {bonus_txt}"
         )
@@ -259,7 +269,8 @@ class Consumible(DefaultObject):
       db.valor    — precio base de venta al 50%
     """
 
-    EFECTOS_VALIDOS = ("curar_hp", "curar_maximo", "curar_veneno")
+    EFECTOS_VALIDOS = ("curar_hp", "curar_maximo", "curar_veneno",
+                        "buff_stat", "buff_xp")
 
     def at_object_creation(self):
         super().at_object_creation()
@@ -267,6 +278,8 @@ class Consumible(DefaultObject):
         self.db.potencia = 30
         self.db.usos = 1
         self.db.valor = 15
+        self.db.stat_buff = ""    # estadística afectada (sólo en buff_stat)
+        self.db.duracion = 1200   # segundos que dura el buff
 
     def aplicar(self, caller) -> str:
         efecto = self.db.efecto or "curar_hp"
@@ -306,6 +319,19 @@ class Consumible(DefaultObject):
             caller.db.estados = limpiar_estado(estados, "veneno")
             return "|gSientes cómo el veneno se disuelve en tu sangre.|n"
 
+        if efecto in ("buff_stat", "buff_xp"):
+            from systems.buffs.buffs import aplicar_buff
+            buffs = list(getattr(caller.db, "buffs_activos", None) or [])
+            stat = self.db.stat_buff or ""
+            duracion = int(self.db.duracion or 1200)
+            caller.db.buffs_activos = aplicar_buff(
+                buffs, efecto, potencia, self.key, duracion, stat
+            )
+            if efecto == "buff_stat":
+                return f"|Y¡{self.key}! Ganas +{potencia} {stat} durante {duracion // 60} minutos.|n"
+            pct = int(potencia * 100)
+            return f"|Y¡{self.key}! Ganas +{pct}% XP durante {duracion // 60} minutos.|n"
+
         return "No tiene ningún efecto aparente."
 
     def consumir(self, caller) -> bool:
@@ -327,11 +353,20 @@ class Consumible(DefaultObject):
         potencia = self.db.potencia or 0
         usos = self.db.usos
 
-        efecto_txt = {
-            "curar_hp": f"Restaura {potencia} HP",
-            "curar_maximo": "Restaura HP al máximo",
-            "curar_veneno": "Cura el envenenamiento",
-        }.get(efecto, efecto)
+        if efecto == "buff_stat":
+            stat = self.db.stat_buff or "?"
+            dur = int(self.db.duracion or 0) // 60
+            efecto_txt = f"+{potencia} {stat} durante {dur} min"
+        elif efecto == "buff_xp":
+            pct = int(potencia * 100)
+            dur = int(self.db.duracion or 0) // 60
+            efecto_txt = f"+{pct}% XP durante {dur} min"
+        else:
+            efecto_txt = {
+                "curar_hp": f"Restaura {potencia} HP",
+                "curar_maximo": "Restaura HP al máximo",
+                "curar_veneno": "Cura el envenenamiento",
+            }.get(efecto, efecto)
 
         usos_txt = "ilimitados" if usos == -1 else f"{usos} uso{'s' if usos != 1 else ''}"
 

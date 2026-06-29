@@ -5,6 +5,52 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.36.0] — 2026-06-28
+
+### Añadido
+- **Sistema de rangos de aventurero**: progresión transversal basada en la actividad acumulada del personaje.
+  - `rango` (alias `rank`, `aventurero`) — muestra tu rango actual, puntuación total, barra de progreso al siguiente rango y desglose detallado por fuente.
+  - **6 rangos**: Aprendiz (0 pts) → Novicio (50) → Veterano (300) → Héroe (700) → Campeón (1.400) → Leyenda (2.500).
+  - **Fórmula de puntuación**: 15 pts × (nivel − 1) + 10 pts × quests entregadas + 20 pts × logros desbloqueados + 1 pt × kills totales.
+  - El rango se muestra en el comando `perfil` junto a la clase.
+  - Al subir de rango se recibe una notificación inmediata y la sala lo anuncia.
+  - El rango nunca baja: si se calcula un rango inferior al almacenado, se mantiene el mayor.
+  - Las subidas de rango se comprueban automáticamente cada vez que se llama a `comprobar_y_notificar` (tras kills, quests, logros, crafteo, encantamiento, etc.).
+  - `db.rango` inicializado a `"aprendiz"` en `Character.at_object_creation`.
+- `systems/ranks/ranks.py`: lógica pura — `RANGOS`, `calcular_puntuacion`, `rango_actual`, `siguiente_rango`, `puntos_para_siguiente`, `formatear_rango`, `desglose_puntuacion`.
+- `features/ranks/commands.py`: `CmdRango`, `RankCmdSet`, `verificar_subida_rango()`.
+- 44 tests puros en `tests/test_rangos_system.py` + 19 tests de integración en `tests/test_rangos.py`.
+
+## [0.35.0] — 2026-06-25
+
+### Añadido
+- **Rareza de loot** — los ítems de equipo que sueltan los NPCs ahora tienen rareza aleatoria:
+  - **Común** (70%) — sin modificador, nombre en amarillo.
+  - **Raro** (25%) — ×1.2 en todos los bonuses positivos, nombre en cian con sufijo `(Raro)`.
+  - **Épico** (5%) — ×1.5 en todos los bonuses positivos, nombre en magenta con sufijo `(Épico)`.
+- Los ítems de equipamiento no-prototipo (monedas, materiales, consumibles) nunca tienen rareza.
+- `db.rareza` se inicializa a `"comun"` en `Equipo.at_object_creation`.
+- El mensaje de loot colorea cada ítem según su rareza; los ítems épicos disparan un anuncio adicional en la sala.
+- `look` sobre un ítem de equipo muestra `[Raro]` o `[Épico]` junto al slot.
+- `systems/loot/rarity.py` — módulo puro: `tirar_rareza`, `aplicar_rareza_bonuses`, `nombre_con_rareza`, `color_rareza`, `es_notable`, `formatear_drop`.
+- 32 tests puros en `tests/test_rarity.py`.
+
+## [0.34.0] — 2026-06-25
+
+### Añadido
+- **Buffs de taberna** — 4 ítems consumibles de un solo uso vendidos por el mesonero Gareth:
+  - `Cerveza de combate` (30m) — +3 Fuerza durante 20 minutos.
+  - `Vino del explorador` (30m) — +3 Destreza durante 20 minutos.
+  - `Té arcano` (30m) — +3 Inteligencia durante 20 minutos.
+  - `Estofado vigorizante` (35m) — +15 % XP durante 30 minutos.
+- `systems/buffs/buffs.py` — módulo puro: `buffs_vigentes`, `aplicar_buff`, `bonus_stat`, `factor_xp`, `hay_buffs`, `formatear_buffs`.
+- `db.buffs_activos` (lista) inicializado en `Character.at_object_creation`.
+- `Consumible` amplía `EFECTOS_VALIDOS` con `"buff_stat"` y `"buff_xp"`; nuevos atributos `db.stat_buff` y `db.duracion`.
+- Los bonuses de stat se aplican en `_get_stats()` del handler de combate (mismo patrón que el evento de Tormenta Mágica).
+- El bonus de XP multiplica `xp_real` en `_dar_xp_a_grupo()`; el mensaje al jugador indica el multiplicador cuando está activo.
+- Comando `buffs` — lista buffs vigentes con tiempo restante; limpia expirados silenciosamente.
+- 25 tests puros en `tests/test_buffs.py`.
+
 ## [0.33.0] — 2026-06-25
 
 ### Añadido

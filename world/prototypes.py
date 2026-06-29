@@ -265,6 +265,77 @@ ANTIDOTO = {
     ],
 }
 
+CERVEZA_COMBATE = {
+    "prototype_key": "CERVEZA_COMBATE",
+    "key": "cerveza de combate",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": (
+        "Una jarra de cerveza oscura especiada con raíz de hierro. "
+        "Los guerreros la llaman 'la fuerza del tabernero'."
+    ),
+    "attrs": [
+        ("efecto", "buff_stat"),
+        ("stat_buff", "fuerza"),
+        ("potencia", 3),
+        ("duracion", 1200),
+        ("usos", 1),
+        ("valor", 30),
+    ],
+}
+
+VINO_EXPLORADOR = {
+    "prototype_key": "VINO_EXPLORADOR",
+    "key": "vino del explorador",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": (
+        "Un vino ligero infusionado con menta silvestre. "
+        "Agudiza los reflejos y alivia la fatiga del viaje."
+    ),
+    "attrs": [
+        ("efecto", "buff_stat"),
+        ("stat_buff", "destreza"),
+        ("potencia", 3),
+        ("duracion", 1200),
+        ("usos", 1),
+        ("valor", 30),
+    ],
+}
+
+TE_ARCANO = {
+    "prototype_key": "TE_ARCANO",
+    "key": "té arcano",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": (
+        "Una infusión de hojas de salvia encantada y cristal molido. "
+        "Aclara la mente y potencia el foco mágico."
+    ),
+    "attrs": [
+        ("efecto", "buff_stat"),
+        ("stat_buff", "inteligencia"),
+        ("potencia", 3),
+        ("duracion", 1200),
+        ("usos", 1),
+        ("valor", 30),
+    ],
+}
+
+ESTOFADO_VIGORIZANTE = {
+    "prototype_key": "ESTOFADO_VIGORIZANTE",
+    "key": "estofado vigorizante",
+    "typeclass": "typeclasses.objects.Consumible",
+    "desc": (
+        "Un cuenco generoso de estofado de jabalí con hierbas del bosque. "
+        "Gareth lo llama su receta secreta; los aventureros lo llaman suerte líquida."
+    ),
+    "attrs": [
+        ("efecto", "buff_xp"),
+        ("potencia", 0.15),
+        ("duracion", 1800),
+        ("usos", 1),
+        ("valor", 35),
+    ],
+}
+
 # --------------------------------------------------------------------------- #
 #  NPCs de combate
 # --------------------------------------------------------------------------- #
@@ -483,6 +554,14 @@ MESONERO = {
              "precio": 15, "cantidad": -1},
             {"key": "antídoto",          "prototype_key": "ANTIDOTO",
              "precio": 20, "cantidad": -1},
+            {"key": "cerveza de combate",    "prototype_key": "CERVEZA_COMBATE",
+             "precio": 30, "cantidad": -1},
+            {"key": "vino del explorador",   "prototype_key": "VINO_EXPLORADOR",
+             "precio": 30, "cantidad": -1},
+            {"key": "té arcano",             "prototype_key": "TE_ARCANO",
+             "precio": 30, "cantidad": -1},
+            {"key": "estofado vigorizante",  "prototype_key": "ESTOFADO_VIGORIZANTE",
+             "precio": 35, "cantidad": -1},
         ]),
         ("npc_prototipo", "MESONERO"),
         ("respawn_tiempo", 300),

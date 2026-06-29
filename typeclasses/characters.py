@@ -65,6 +65,10 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Gremio ---
         self.db.gremios_fundados = 0
         self.db.gremio_banco_depositado = 0
+        # --- Buffs temporales ---
+        self.db.buffs_activos = []
+        # --- Rango de aventurero ---
+        self.db.rango = "aprendiz"
 
     def at_cmdset_get(self, **kwargs):
         """

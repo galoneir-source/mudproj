@@ -102,6 +102,8 @@ def comprobar_y_notificar(caller):
                 f"  (usa: |wtitulo {logro['titulo']}|n)"
             )
         caller.msg("\n".join(lineas) + "\n")
+    from features.ranks.commands import verificar_subida_rango
+    verificar_subida_rango(caller)
 
 
 class CmdLogros(Command):

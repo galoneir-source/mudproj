@@ -38,6 +38,8 @@ from features.pets.commands import PetsCmdSet
 from features.contracts.commands import ContractCmdSet
 from features.classes.commands import ClassCmdSet
 from features.subclasses.commands import SubclassCmdSet
+from features.buffs.commands import BuffsCmdSet
+from features.ranks.commands import RankCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -103,6 +105,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(ClassCmdSet)
         # --- Subclases ---
         self.add(SubclassCmdSet)
+        # --- Buffs ---
+        self.add(BuffsCmdSet)
+        # --- Rangos ---
+        self.add(RankCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
