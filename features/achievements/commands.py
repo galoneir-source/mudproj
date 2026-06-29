@@ -19,7 +19,7 @@ from systems.achievements.achievements import (
 _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
-    "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
+    "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra", "runas",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -36,6 +36,7 @@ _NOMBRES_CATS = {
     "clase":        "Clase",
     "jefe_mundo":   "Jefes de Mundo",
     "mazmorra":     "Mazmorras",
+    "runas":        "Runas",
 }
 
 
@@ -79,6 +80,7 @@ def _extraer_datos(caller) -> dict:
         "mazmorras_completadas":     dict(getattr(caller.db, "mazmorras_completadas", {}) or {}),
         "mazmorra_legendario":       bool(getattr(caller.db, "mazmorra_legendario", False)),
         "jefes_mundo_derrotados":    dict(getattr(caller.db, "jefes_mundo_derrotados", {}) or {}),
+        "runas_equipadas":           dict(getattr(caller.db, "runas_equipadas", {}) or {}),
         **_extraer_datos_gremio(caller),
     }
 

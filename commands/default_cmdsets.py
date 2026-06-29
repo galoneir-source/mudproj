@@ -45,6 +45,7 @@ from features.dungeons.commands import DungeonCmdSet
 from features.trade.commands import TradeCmdSet
 from features.mail.commands import MailCmdSet
 from features.world_bosses.commands import WorldBossCmdSet
+from features.runes.commands import RunasCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -124,6 +125,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(MailCmdSet)
         # --- Jefes de Mundo ---
         self.add(WorldBossCmdSet)
+        # --- Runas ---
+        self.add(RunasCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

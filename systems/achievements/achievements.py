@@ -370,6 +370,26 @@ LOGROS: dict[str, dict] = {
         "titulo":      "el Legendario",
         "categoria":   "mazmorra",
     },
+
+    # ── Runas ─────────────────────────────────────────────────────────────────
+    "primera_runa": {
+        "nombre":      "Grabador de Runas",
+        "descripcion": "Graba tu primera runa en algún equipo.",
+        "titulo":      None,
+        "categoria":   "runas",
+    },
+    "runas_completas": {
+        "nombre":      "Tríada Rúnica",
+        "descripcion": "Graba runas en los tres slots de equipamiento a la vez.",
+        "titulo":      "el Tallador",
+        "categoria":   "runas",
+    },
+    "runa_arcana": {
+        "nombre":      "Maestro Rúnico",
+        "descripcion": "Graba la poderosa Runa Arcana (requiere nivel 9).",
+        "titulo":      "el Maestro Rúnico",
+        "categoria":   "runas",
+    },
 }
 
 
@@ -476,6 +496,15 @@ def _cumple(logro_id: str, datos: dict) -> bool:
         return all(mazmorras.get(k, 0) for k in ("cripta_ceniza", "forja_maldita", "abismo_sin_fondo"))
     if logro_id == "mazmorra_legendario":
         return bool(datos.get("mazmorra_legendario", False))
+
+    runas = datos.get("runas_equipadas", {})
+    runas_activas = sum(1 for v in runas.values() if v)
+    if logro_id == "primera_runa":
+        return runas_activas >= 1
+    if logro_id == "runas_completas":
+        return runas_activas >= 3
+    if logro_id == "runa_arcana":
+        return "RUNA_ARCANA" in runas.values()
 
     return False
 

@@ -47,6 +47,17 @@ def _get_stats(obj) -> dict:
                     stats[stat] = (stats.get(stat) or 0) + b
         except Exception:
             pass
+        # Bonuses de runas (bonus_fuerza, bonus_inteligencia)
+        try:
+            from systems.runes.runes import obtener_efectos
+            runas = dict(getattr(obj.db, "runas_equipadas", {}) or {})
+            ef = obtener_efectos(runas)
+            if ef.get("bonus_fuerza"):
+                stats["fuerza"] = (stats.get("fuerza") or 10) + ef["bonus_fuerza"]
+            if ef.get("bonus_inteligencia"):
+                stats["inteligencia"] = (stats.get("inteligencia") or 10) + ef["bonus_inteligencia"]
+        except Exception:
+            pass
     return stats
 
 
@@ -280,6 +291,24 @@ class CombatHandler(DefaultScript):
         if self._aplicar_ticks_estado(actor):
             return
 
+        # Runa de Vigor: regeneración de HP al inicio del turno
+        if getattr(actor, "has_account", False):
+            try:
+                from systems.runes.runes import obtener_efectos
+                runas = dict(getattr(actor.db, "runas_equipadas", {}) or {})
+                regen = obtener_efectos(runas).get("regen_hp", 0)
+                if regen:
+                    hp = int(getattr(actor.db, "hp", 1) or 1)
+                    hp_max = int(getattr(actor.db, "hp_max", 100) or 100)
+                    nuevo_hp = min(hp_max, hp + regen)
+                    if nuevo_hp > hp:
+                        actor.db.hp = nuevo_hp
+                        actor.msg(
+                            f"|gRuna de Vigor:|n +{regen} HP. (HP: {nuevo_hp}/{hp_max})"
+                        )
+            except Exception:
+                pass
+
         sala = self.obj
         sala.msg_contents(f"\n|w▶ Turno de: {actor.key}|n")
         # Mostrar opciones al jugador (si tiene sesión)
@@ -343,6 +372,36 @@ class CombatHandler(DefaultScript):
                     actor.key, objetivo.key,
                     habilidad if tipo == "habilidad" else None,
                 )
+
+                # Runa de Evasión: esquivar extra del defensor
+                if resultado.exito:
+                    import random as _rnd
+                    try:
+                        from systems.runes.runes import obtener_efectos
+                        runas_def = dict(
+                            getattr(objetivo.db, "runas_equipadas", {}) or {}
+                        )
+                        evasion = obtener_efectos(runas_def).get("evasion", 0)
+                        if evasion and _rnd.random() * 100 < evasion:
+                            resultado.exito = False
+                            resultado.dano = 0
+                            resultado.muerto = False
+                            resultado.hp_restante = int(
+                                getattr(objetivo.db, "hp", 1) or 1
+                            )
+                            resultado.mensaje_atacante = (
+                                f"|y{objetivo.key} esquiva tu golpe con una runa!|n"
+                            )
+                            resultado.mensaje_defensor = (
+                                "|g¡Tu Runa de Evasión esquiva el ataque!|n"
+                            )
+                            resultado.mensaje_sala = (
+                                f"{objetivo.key} esquiva ágilmente el ataque de "
+                                f"{actor.key}."
+                            )
+                    except Exception:
+                        pass
+
                 actor.msg(resultado.mensaje_atacante)
                 objetivo.msg(resultado.mensaje_defensor)
                 # Mensaje a la sala (excluyendo atacante y defensor)
@@ -360,6 +419,29 @@ class CombatHandler(DefaultScript):
                             objetivo.db.hp = umbral
                             self._fin_duelo(ganador=actor, perdedor=objetivo)
                             return
+                    # Runa de Escudo: reducir daño recibido
+                    if resultado.dano and not resultado.muerto:
+                        try:
+                            from systems.runes.runes import obtener_efectos
+                            runas_def = dict(
+                                getattr(objetivo.db, "runas_equipadas", {}) or {}
+                            )
+                            reduccion = obtener_efectos(runas_def).get(
+                                "reduccion_dano", 0
+                            )
+                            if reduccion and resultado.dano > 1:
+                                red_real = min(resultado.dano - 1, reduccion)
+                                resultado.dano -= red_real
+                                resultado.hp_restante = max(
+                                    0, resultado.hp_restante + red_real
+                                )
+                                resultado.muerto = resultado.hp_restante <= 0
+                                objetivo.msg(
+                                    f"|gRuna de Escudo:|n -{red_real} daño bloqueado."
+                                )
+                        except Exception:
+                            pass
+
                     _set_stat(objetivo, "hp", resultado.hp_restante)
                     # Tracking de daño en Jefe de Mundo
                     if (getattr(objetivo.db, "es_jefe_mundo", False)
@@ -368,6 +450,27 @@ class CombatHandler(DefaultScript):
                         tracker = dict(getattr(objetivo.ndb, "dano_por_jugador", None) or {})
                         tracker[actor.dbref] = tracker.get(actor.dbref, 0) + resultado.dano
                         objetivo.ndb.dano_por_jugador = tracker
+
+                # Runa de Drenaje: robo de vida al golpear
+                if resultado.exito and resultado.dano and not resultado.muerto:
+                    try:
+                        from systems.runes.runes import obtener_efectos
+                        runas_at = dict(
+                            getattr(actor.db, "runas_equipadas", {}) or {}
+                        )
+                        robo = obtener_efectos(runas_at).get("robo_vida", 0)
+                        if robo:
+                            hp_a = int(getattr(actor.db, "hp", 1) or 1)
+                            hp_max_a = int(getattr(actor.db, "hp_max", 100) or 100)
+                            nuevo = min(hp_max_a, hp_a + robo)
+                            if nuevo > hp_a:
+                                actor.db.hp = nuevo
+                                actor.msg(
+                                    f"|gRuna de Drenaje:|n +{robo} HP drenados. "
+                                    f"(HP: {nuevo}/{hp_max_a})"
+                                )
+                    except Exception:
+                        pass
 
                 # Efectos de curación post-ataque (drenar vida / sagrado / esencia)
                 if (tipo == "habilidad" and habilidad and resultado.exito
@@ -394,12 +497,64 @@ class CombatHandler(DefaultScript):
                 # Aplicar estado si la habilidad lo produce (solo en golpe exitoso y no letal)
                 if resultado.exito and not resultado.muerto and resultado.estado_aplicado:
                     from systems.combat.states import aplicar_estado
+                    import random as _rnd2
                     nombre_estado = resultado.estado_aplicado
-                    estados = dict(getattr(objetivo.db, "estados", {}) or {})
-                    objetivo.db.estados = aplicar_estado(estados, nombre_estado)
-                    display = {"veneno": "veneno", "sangrado": "sangrado"}.get(nombre_estado, nombre_estado)
-                    objetivo.msg(f"|r¡Has sido afectado por {display}!|n")
-                    actor.msg(f"|y{objetivo.key} ha sido afectado por {display}.|n")
+                    # Runa de Firmeza: resistencia a estados negativos
+                    estado_bloqueado = False
+                    try:
+                        from systems.runes.runes import obtener_efectos
+                        runas_def = dict(
+                            getattr(objetivo.db, "runas_equipadas", {}) or {}
+                        )
+                        resist = obtener_efectos(runas_def).get(
+                            "resistencia_estados", 0
+                        )
+                        if resist and _rnd2.random() * 100 < resist:
+                            estado_bloqueado = True
+                            objetivo.msg(
+                                "|gRuna de Firmeza:|n resistes el estado negativo."
+                            )
+                    except Exception:
+                        pass
+                    if not estado_bloqueado:
+                        estados = dict(getattr(objetivo.db, "estados", {}) or {})
+                        objetivo.db.estados = aplicar_estado(estados, nombre_estado)
+                        display = {"veneno": "veneno", "sangrado": "sangrado"}.get(
+                            nombre_estado, nombre_estado
+                        )
+                        objetivo.msg(f"|r¡Has sido afectado por {display}!|n")
+                        actor.msg(f"|y{objetivo.key} ha sido afectado por {display}.|n")
+
+                # Runa de Filo: sangrado aleatorio al golpear
+                if resultado.exito and not resultado.muerto:
+                    import random as _rnd3
+                    try:
+                        from systems.runes.runes import obtener_efectos
+                        from systems.combat.states import aplicar_estado
+                        runas_at = dict(
+                            getattr(actor.db, "runas_equipadas", {}) or {}
+                        )
+                        sangrado_ch = obtener_efectos(runas_at).get(
+                            "sangrado_chance", 0
+                        )
+                        if sangrado_ch and _rnd3.random() * 100 < sangrado_ch:
+                            # No aplicar si el objetivo ya tiene sangrado
+                            estados_obj = dict(
+                                getattr(objetivo.db, "estados", {}) or {}
+                            )
+                            if "sangrado" not in estados_obj:
+                                objetivo.db.estados = aplicar_estado(
+                                    estados_obj, "sangrado"
+                                )
+                                objetivo.msg(
+                                    "|rRuna de Filo:|n ¡Tu herida comienza a sangrar!|n"
+                                )
+                                actor.msg(
+                                    f"|yRuna de Filo:|n {objetivo.key} comienza a "
+                                    f"sangrar.|n"
+                                )
+                    except Exception:
+                        pass
 
                 # Ataque de mascota: si el jugador tiene mascota y el enemigo sobrevivió
                 if (resultado.exito

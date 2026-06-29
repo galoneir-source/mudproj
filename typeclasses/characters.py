@@ -76,6 +76,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.mazmorra_legendario = False
         # --- Jefes de Mundo ---
         self.db.jefes_mundo_derrotados = {}
+        # --- Runas de equipamiento ---
+        self.db.runas_equipadas = {"arma": None, "armadura": None, "accesorio": None}
         # --- Correo ---
         self.db.correo = []
 
