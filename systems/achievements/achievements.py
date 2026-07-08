@@ -385,6 +385,20 @@ LOGROS: dict[str, dict] = {
         "categoria":   "arena",
     },
 
+    # ── Vivienda ───────────────────────────────────────────────────────────────
+    "primera_vivienda": {
+        "nombre":      "Propietario",
+        "descripcion": "Compra tu primera vivienda.",
+        "titulo":      None,
+        "categoria":   "vivienda",
+    },
+    "hogar_decorado": {
+        "nombre":      "Toque Personal",
+        "descripcion": "Decora tu vivienda con una descripción propia.",
+        "titulo":      "el Anfitrión",
+        "categoria":   "vivienda",
+    },
+
     # ── Runas ─────────────────────────────────────────────────────────────────
     "primera_runa": {
         "nombre":      "Grabador de Runas",
@@ -523,6 +537,9 @@ def _cumple(logro_id: str, datos: dict) -> bool:
         return runas_activas >= 3
     if logro_id == "runa_arcana":
         return "RUNA_ARCANA" in runas.values()
+
+    if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
+    if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
 
     return False
 

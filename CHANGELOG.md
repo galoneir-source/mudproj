@@ -5,6 +5,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.44.0] — 2026-06-30
+
+### Añadido
+- **Sistema de vivienda personal** — los jugadores pueden comprar una sala privada permanente.
+  - `vivienda` — muestra el estado de tu vivienda (descripción, propietario, lista de acceso).
+  - `vivienda comprar` — adquiere una vivienda por **500 monedas** (pago único, sin alquiler periódico). Solo se puede tener una.
+  - `vivienda abandonar` — devuelve la vivienda de forma permanente (sin reembolso); los objetos se trasladan al Barrio Residencial. Pide confirmación doble.
+  - `vivienda acceso dar <jugador>` / `vivienda acceso quitar <jugador>` — gestiona quién puede entrar (máximo 10 invitados).
+  - `casa` / `hogar` — teletransporte instantáneo a tu vivienda desde cualquier lugar.
+  - `visitar <jugador>` — visita la vivienda de otro jugador si te ha dado acceso.
+  - `decorar <texto>` — cambia la descripción de la sala (máx. 500 caracteres); debes estar dentro.
+- **Zona nueva**: Barrio Residencial (1 sala, al noreste de la Plaza de la Ciudad). Las salas de vivienda se crean dinámicamente dentro de esta zona con una salida permanente de vuelta al barrio.
+- `db.vivienda_dbref = None` y `db.vivienda_decorada = False` en `Character.at_object_creation`.
+- `GestorViviendasScript` (script persistente global, key `"gestor_viviendas"`): administra el ciclo de vida de todas las viviendas (creación, eliminación, accesos, decoración).
+- **2 logros nuevos** (categoría "vivienda"): `primera_vivienda` ("Propietario") y `hogar_decorado` ("Toque Personal" — título "el Anfitrión").
+- `systems/housing/housing.py`: lógica pura — `puede_comprar`, `puede_invitar`, `puede_quitar_acceso`, `puede_entrar`, `validar_descripcion`, formateo. 37 tests puros en `tests/test_vivienda_system.py`.
+- `features/housing/housing_script.py`: `GestorViviendasScript` + `obtener_gestor_script()`.
+- `features/housing/commands.py`: `CmdVivienda`, `CmdCasa`, `CmdVisitar`, `CmdDecorar`, `HousingCmdSet`.
+
 ## [0.41.0] — 2026-06-29
 
 ### Añadido

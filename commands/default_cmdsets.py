@@ -47,6 +47,7 @@ from features.mail.commands import MailCmdSet
 from features.world_bosses.commands import WorldBossCmdSet
 from features.runes.commands import RunasCmdSet
 from features.arena.commands import ArenaCmdSet
+from features.housing.commands import HousingCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -130,6 +131,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(RunasCmdSet)
         # --- Arena y Torneos ---
         self.add(ArenaCmdSet)
+        # --- Vivienda ---
+        self.add(HousingCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

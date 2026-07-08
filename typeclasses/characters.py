@@ -82,6 +82,9 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.torneos_ganados = 0
         # --- Correo ---
         self.db.correo = []
+        # --- Vivienda ---
+        self.db.vivienda_dbref    = None
+        self.db.vivienda_decorada = False
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

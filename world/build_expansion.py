@@ -849,6 +849,54 @@ def construir_expansion(caller=None):
             msg("|gZona 'Arena de la Ciudad' creada (1 sala, maestro de arena).|n")
 
     # -----------------------------------------------------------------------
+    # ZONA 10: BARRIO RESIDENCIAL (viviendas de jugadores)
+    # -----------------------------------------------------------------------
+
+    if _find_room("Barrio Residencial"):
+        msg("|yBarrio Residencial ya existe. Omitido.|n")
+    else:
+        plaza = _find_room("Plaza de la Ciudad")
+        if not plaza:
+            msg("|rError: no se encontró la Plaza de la Ciudad. Omitiendo Barrio Residencial.|n")
+        else:
+            barrio = _room(
+                "Barrio Residencial",
+                (
+                    "Un tranquilo barrio de calles adoquinadas y casas de piedra gris. "
+                    "Los propietarios cuidan con esmero sus pequeñas parcelas de jardín. "
+                    "El rumor de la ciudad llega atenuado hasta aquí. "
+                    "Puertas numeradas se alinean a ambos lados de la calle. "
+                    "Al |csuroeste|n está la Plaza de la Ciudad. "
+                    "Usa |wvivienda comprar|n para adquirir tu propia habitación."
+                ),
+            )
+            barrio.db.zona     = "barrio_residencial"
+            barrio.db.exterior = True
+
+            barrio.db.detalles_ocultos = [
+                {
+                    "texto": "Algunas puertas tienen pequeñas inscripciones con los nombres de sus dueños. Un gesto de orgullo y pertenencia.",
+                    "req_percepcion": 8,
+                },
+            ]
+
+            _link("noreste", "ne", "suroeste", "so", plaza, barrio)
+
+            # Actualizar desc de la Plaza para reflejar la nueva salida
+            plaza.db.desc = (
+                "Una amplia plaza empedrada en el corazón de la ciudad. "
+                "Una fuente de piedra ocupa el centro y el rumor del agua calma los nervios. "
+                "Comerciantes pregonan sus mercancías. "
+                "Al |cnorte|n comienza el Bosque del Norte; "
+                "al |csur|n, las sombrías entradas al Calabozo. "
+                "Al |ceste|n está la Taberna; al |coeste|n, el Mercado. "
+                "Al |cnoreste|n, el tranquilo Barrio Residencial."
+            )
+
+            salas_creadas += 1
+            msg("|gZona 'Barrio Residencial' creada (1 sala).|n")
+
+    # -----------------------------------------------------------------------
     # Resumen
     # -----------------------------------------------------------------------
 

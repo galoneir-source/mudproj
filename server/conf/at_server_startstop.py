@@ -65,6 +65,11 @@ def at_server_start():
         obtener_world_boss_script()
     except Exception:
         pass
+    try:
+        from features.housing.housing_script import obtener_gestor_script
+        obtener_gestor_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

@@ -20,7 +20,7 @@ _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
-    "arena", "runas",
+    "arena", "runas", "vivienda",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -39,6 +39,7 @@ _NOMBRES_CATS = {
     "mazmorra":     "Mazmorras",
     "arena":        "Arena",
     "runas":        "Runas",
+    "vivienda":     "Vivienda",
 }
 
 
@@ -84,6 +85,8 @@ def _extraer_datos(caller) -> dict:
         "jefes_mundo_derrotados":    dict(getattr(caller.db, "jefes_mundo_derrotados", {}) or {}),
         "runas_equipadas":           dict(getattr(caller.db, "runas_equipadas", {}) or {}),
         "torneos_ganados":           int(getattr(caller.db, "torneos_ganados", 0) or 0),
+        "vivienda_comprada":         bool(getattr(caller.db, "vivienda_dbref", None)),
+        "vivienda_decorada":         bool(getattr(caller.db, "vivienda_decorada", False)),
         **_extraer_datos_gremio(caller),
     }
 
