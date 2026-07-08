@@ -211,9 +211,10 @@ PROTOTIPOS_EQUIPO_ESPERADOS = {
 
 class TestRecetasEquipo(unittest.TestCase):
 
-    def test_existen_ocho_recetas_equipo(self):
+    def test_existen_diez_recetas_equipo(self):
+        # 8 de v0.24 + 2 de recetas posteriores con materiales de profesión
         recetas_equipo = [k for k, v in RECETAS.items() if v.get("tipo") == "equipo"]
-        self.assertEqual(len(recetas_equipo), 8)
+        self.assertEqual(len(recetas_equipo), 10)
 
     def test_todas_recetas_equipo_presentes(self):
         for nombre in RECETAS_EQUIPO_ESPERADAS:

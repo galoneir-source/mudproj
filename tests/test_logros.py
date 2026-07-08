@@ -51,8 +51,8 @@ def _datos(**kwargs) -> dict:
 
 class TestCatalogo(unittest.TestCase):
 
-    def test_hay_38_logros(self):
-        self.assertEqual(len(LOGROS), 38)
+    def test_hay_81_logros(self):
+        self.assertEqual(len(LOGROS), 81)
 
     def test_todos_tienen_campos_obligatorios(self):
         for lid, logro in LOGROS.items():
@@ -63,7 +63,10 @@ class TestCatalogo(unittest.TestCase):
         cats_validas = {
             "progresion", "misiones", "combate", "habilidades",
             "encantamiento", "reputacion", "crafteo", "economia",
-            "gremio", "mascotas", "subclase", "clase",
+            "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
+            "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas",
+            "coleccion", "apuestas", "cazarrecompensas", "expediciones",
+            "alquimia", "desafios",
         }
         for lid, logro in LOGROS.items():
             self.assertIn(logro["categoria"], cats_validas, lid)
