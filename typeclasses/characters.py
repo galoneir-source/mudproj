@@ -87,6 +87,8 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.vivienda_decorada = False
         # --- Bestiario ---
         self.db.bestiary = {}
+        # --- Cartografía ---
+        self.db.salas_exploradas = []
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

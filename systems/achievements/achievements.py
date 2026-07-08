@@ -419,6 +419,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "vivienda",
     },
 
+    # ── Cartografía ───────────────────────────────────────────────────────────
+    "primer_viaje": {
+        "nombre":      "Primer Viaje",
+        "descripcion": "Visita tu primera sala del mundo.",
+        "titulo":      None,
+        "categoria":   "cartografia",
+    },
+    "explorador": {
+        "nombre":      "Explorador",
+        "descripcion": "Explora 10 salas distintas del mundo.",
+        "titulo":      None,
+        "categoria":   "cartografia",
+    },
+    "cartografo": {
+        "nombre":      "Cartógrafo",
+        "descripcion": "Explora las 29 salas del mundo.",
+        "titulo":      "el Cartógrafo",
+        "categoria":   "cartografia",
+    },
+
     # ── Runas ─────────────────────────────────────────────────────────────────
     "primera_runa": {
         "nombre":      "Grabador de Runas",
@@ -560,6 +580,11 @@ def _cumple(logro_id: str, datos: dict) -> bool:
 
     if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
     if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
+
+    salas_exploradas = datos.get("salas_exploradas", 0)
+    if logro_id == "primer_viaje":  return salas_exploradas >= 1
+    if logro_id == "explorador":    return salas_exploradas >= 10
+    if logro_id == "cartografo":    return salas_exploradas >= 29
 
     criaturas = datos.get("criaturas_registradas", 0)
     if logro_id == "primera_presa":          return criaturas >= 1

@@ -20,7 +20,7 @@ _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
-    "arena", "runas", "vivienda", "bestiario",
+    "arena", "runas", "vivienda", "bestiario", "cartografia",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -41,6 +41,7 @@ _NOMBRES_CATS = {
     "runas":        "Runas",
     "vivienda":     "Vivienda",
     "bestiario":    "Bestiario",
+    "cartografia":  "Cartografía",
 }
 
 
@@ -58,6 +59,12 @@ def _extraer_datos_gremio(caller) -> dict:
     except Exception:
         pass
     return {"es_lider_gremio": False, "miembros_gremio": 0}
+
+
+def _extraer_datos_cartografia(caller) -> dict:
+    from systems.cartography.cartography import total_exploradas
+    exploradas = list(getattr(caller.db, "salas_exploradas", []) or [])
+    return {"salas_exploradas": total_exploradas(exploradas)}
 
 
 def _extraer_datos_bestiary(caller) -> dict:
@@ -98,6 +105,7 @@ def _extraer_datos(caller) -> dict:
         "vivienda_comprada":         bool(getattr(caller.db, "vivienda_dbref", None)),
         "vivienda_decorada":         bool(getattr(caller.db, "vivienda_decorada", False)),
         **_extraer_datos_bestiary(caller),
+        **_extraer_datos_cartografia(caller),
         **_extraer_datos_gremio(caller),
     }
 

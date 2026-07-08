@@ -49,6 +49,7 @@ from features.runes.commands import RunasCmdSet
 from features.arena.commands import ArenaCmdSet
 from features.housing.commands import HousingCmdSet
 from features.bestiary.commands import BestiaryCmdSet
+from features.cartography.commands import CartographyCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -136,6 +137,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(HousingCmdSet)
         # --- Bestiario ---
         self.add(BestiaryCmdSet)
+        # --- Cartografía ---
+        self.add(CartographyCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

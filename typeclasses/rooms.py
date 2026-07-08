@@ -45,6 +45,22 @@ class Room(ObjectParent, DefaultRoom):
         for obj in self.contents:
             if obj != moved_obj and isinstance(obj, NPC):
                 obj.at_object_arrive(moved_obj, source_location)
+        # Registrar exploración de la sala
+        try:
+            if getattr(self.db, "es_mazmorra", False) or getattr(self.db, "es_vivienda", False):
+                return
+            zona = getattr(self.db, "zona", None)
+            from systems.cartography.cartography import es_zona_explorable, registrar_sala
+            if not es_zona_explorable(zona):
+                return
+            exploradas = list(getattr(moved_obj.db, "salas_exploradas", []) or [])
+            nueva_lista, es_nueva = registrar_sala(exploradas, self.dbref)
+            if es_nueva:
+                moved_obj.db.salas_exploradas = nueva_lista
+                from features.achievements.commands import comprobar_y_notificar
+                comprobar_y_notificar(moved_obj)
+        except Exception:
+            pass
 
 
     def return_appearance(self, looker, **kwargs):

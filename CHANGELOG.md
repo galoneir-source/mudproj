@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.46.0] — 2026-07-01
+
+### Añadido
+- **Cartografía / exploración del mundo** — los jugadores acumulan un mapa personal de las salas que han visitado.
+  - `mapa` — muestra todas las zonas del mundo agrupadas por área con estado ✔/✗ y barra de progreso global.
+  - `mapa resumen` — muestra solo el conteo de salas exploradas.
+  - El registro se actualiza automáticamente en `Room.at_object_receive` al entrar en cualquier sala con `db.zona` en el catálogo. Excluye salas instanciadas (mazmorras) y privadas (viviendas).
+  - **29 zonas rastreadas** en 10 áreas: Ciudad (3), Bosque (2), Calabozo (3), Pantano del Troll (3), Catacumbas (2), Ruinas del Templo (3), Minas de Hierro Viejo (3), Torre del Mago Caído (3), Ciudadela Oscura (3), Zonas Especiales (4).
+- `db.salas_exploradas = []` en `Character.at_object_creation`. Estructura: `list[str]` de dbrefs únicos.
+- **3 logros nuevos** (categoría "cartografia"): `primer_viaje` (1 sala), `explorador` (10 salas), `cartografo` (29 salas — título "el Cartógrafo").
+- `systems/cartography/cartography.py`: lógica pura — `ZONAS_INFO`, `ZONAS_VALIDAS`, `TOTAL_SALAS`, `registrar_sala`, `total_exploradas`, `es_zona_explorable`, `formatear_mapa`, `_barra`. 33 tests puros en `tests/test_cartography_system.py`.
+- `features/cartography/commands.py`: `CmdMapa`, `CartographyCmdSet`.
+
 ## [0.45.0] — 2026-06-30
 
 ### Añadido
