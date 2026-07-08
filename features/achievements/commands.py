@@ -20,7 +20,7 @@ _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
-    "arena", "runas", "vivienda", "bestiario", "cartografia",
+    "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -42,6 +42,7 @@ _NOMBRES_CATS = {
     "vivienda":     "Vivienda",
     "bestiario":    "Bestiario",
     "cartografia":  "Cartografía",
+    "monturas":     "Monturas",
 }
 
 
@@ -59,6 +60,15 @@ def _extraer_datos_gremio(caller) -> dict:
     except Exception:
         pass
     return {"es_lider_gremio": False, "miembros_gremio": 0}
+
+
+def _extraer_datos_monturas(caller) -> dict:
+    from systems.mounts.mounts import monturas_poseidas_count
+    monturas = list(getattr(caller.db, "monturas", []) or [])
+    return {
+        "monturas_poseidas": monturas_poseidas_count(monturas),
+        "tiene_grifo_real":  "grifo_real" in monturas,
+    }
 
 
 def _extraer_datos_cartografia(caller) -> dict:
@@ -106,6 +116,7 @@ def _extraer_datos(caller) -> dict:
         "vivienda_decorada":         bool(getattr(caller.db, "vivienda_decorada", False)),
         **_extraer_datos_bestiary(caller),
         **_extraer_datos_cartografia(caller),
+        **_extraer_datos_monturas(caller),
         **_extraer_datos_gremio(caller),
     }
 

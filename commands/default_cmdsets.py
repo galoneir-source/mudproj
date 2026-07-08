@@ -50,6 +50,7 @@ from features.arena.commands import ArenaCmdSet
 from features.housing.commands import HousingCmdSet
 from features.bestiary.commands import BestiaryCmdSet
 from features.cartography.commands import CartographyCmdSet
+from features.mounts.commands import MountCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -139,6 +140,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(BestiaryCmdSet)
         # --- Cartografía ---
         self.add(CartographyCmdSet)
+        # --- Monturas ---
+        self.add(MountCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

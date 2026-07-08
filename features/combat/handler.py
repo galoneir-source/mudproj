@@ -58,6 +58,15 @@ def _get_stats(obj) -> dict:
                 stats["inteligencia"] = (stats.get("inteligencia") or 10) + ef["bonus_inteligencia"]
         except Exception:
             pass
+        # Bonus de montura (pasivo mientras montado)
+        try:
+            from systems.mounts.mounts import bonus_montura
+            montura_id = getattr(obj.db, "montura_activa", None)
+            if montura_id:
+                for stat, val in bonus_montura(montura_id).items():
+                    stats[stat] = (stats.get(stat) or 0) + val
+        except Exception:
+            pass
     return stats
 
 

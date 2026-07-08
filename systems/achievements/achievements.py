@@ -419,6 +419,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "vivienda",
     },
 
+    # ── Monturas ──────────────────────────────────────────────────────────────
+    "primer_jinete": {
+        "nombre":      "Primer Jinete",
+        "descripcion": "Adquiere tu primera montura.",
+        "titulo":      None,
+        "categoria":   "monturas",
+    },
+    "ecuyer": {
+        "nombre":      "Escudero",
+        "descripcion": "Posee 3 monturas distintas en tu cuadra.",
+        "titulo":      None,
+        "categoria":   "monturas",
+    },
+    "amo_grifo": {
+        "nombre":      "Amo del Grifo",
+        "descripcion": "Desbloquea el legendario Grifo Real.",
+        "titulo":      "el Jinete",
+        "categoria":   "monturas",
+    },
+
     # ── Cartografía ───────────────────────────────────────────────────────────
     "primer_viaje": {
         "nombre":      "Primer Viaje",
@@ -580,6 +600,11 @@ def _cumple(logro_id: str, datos: dict) -> bool:
 
     if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
     if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
+
+    monturas_count = datos.get("monturas_poseidas", 0)
+    if logro_id == "primer_jinete": return monturas_count >= 1
+    if logro_id == "ecuyer":        return monturas_count >= 3
+    if logro_id == "amo_grifo":     return bool(datos.get("tiene_grifo_real", False))
 
     salas_exploradas = datos.get("salas_exploradas", 0)
     if logro_id == "primer_viaje":  return salas_exploradas >= 1

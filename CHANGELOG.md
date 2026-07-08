@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.47.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Monturas** — los jugadores pueden adquirir e invocar monturas que otorgan bonus pasivos en combate.
+  - `montura` — muestra la montura activa y la cuadra propia.
+  - `montura lista` — catálogo completo con requisitos, coste y bonus de cada montura.
+  - `montura comprar <nombre>` — adquiere una montura si se cumplen los requisitos.
+  - `montura invocar <nombre>` — monta una montura poseída; su bonus se aplica inmediatamente.
+  - `montura desmontar` — desmonta la montura actual, eliminando el bonus.
+  - **7 monturas** en el catálogo: Poni Viejo (+1 DEF, 200m, nv.1), Corcel de Guerra (+2 DEF +1 FUE, 600m, nv.4), Lobo Cazador (+3 DES, 900m, nv.5), Hipogrifo (+2 DES +2 DEF, 1500m, nv.6, Honrado/Ciudadanos), Corcel Oscuro (+3 FUE +1 INT, 2000m, nv.8), Dragón de Ceniza (+3 INT +2 DEF, gratis, requiere derrotar DRAGON_CENIZA), Grifo Real (+4 DEF +2 DES, 3000m, nv.10).
+  - Los bonus se aplican pasivamente en `CombatHandler._get_stats` junto a los de buffs y runas.
+- `db.monturas = []` y `db.montura_activa = None` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "monturas"): `primer_jinete` (1 montura), `ecuyer` (3 monturas), `amo_grifo` (Grifo Real — título "el Jinete").
+- `systems/mounts/mounts.py`: lógica pura — `MONTURAS`, `puede_comprar`, `puede_invocar`, `puede_desmontar`, `bonus_montura`, `monturas_poseidas_count`, `formatear_estado`, `formatear_catalogo`. 46 tests puros en `tests/test_mounts_system.py`.
+- `features/mounts/commands.py`: `CmdMontura`, `MountCmdSet`.
+
 ## [0.46.0] — 2026-07-01
 
 ### Añadido
