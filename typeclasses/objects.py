@@ -270,7 +270,8 @@ class Consumible(DefaultObject):
     """
 
     EFECTOS_VALIDOS = ("curar_hp", "curar_maximo", "curar_veneno",
-                        "buff_stat", "buff_xp")
+                        "buff_stat", "buff_xp",
+                        "sigilo", "curar_veneno_protegido")
 
     def at_object_creation(self):
         super().at_object_creation()
@@ -332,6 +333,31 @@ class Consumible(DefaultObject):
             pct = int(potencia * 100)
             return f"|Y¡{self.key}! Ganas +{pct}% XP durante {duracion // 60} minutos.|n"
 
+        if efecto == "sigilo":
+            dur = int(potencia or 180)
+            caller.db.oculto = True
+            caller.db.nivel_sigilo = 25
+            from evennia.utils import delay as _delay
+            def _quitar_sigilo(char=caller):
+                try:
+                    if char and char.db:
+                        char.db.oculto = False
+                        char.msg("|xEl efecto de sigilo ha expirado.|n")
+                except Exception:
+                    pass
+            _delay(dur, _quitar_sigilo)
+            mins = dur // 60
+            segs = dur % 60
+            dur_txt = f"{mins} min" if not segs else (f"{mins} min {segs} s" if mins else f"{segs} s")
+            return f"|cTe mueves en las sombras.|n  Duración: |w{dur_txt}|n."
+
+        if efecto == "curar_veneno_protegido":
+            from systems.combat.states import limpiar_estado
+            estados = dict(getattr(caller.db, "estados", {}) or {})
+            caller.db.estados = limpiar_estado(estados, "veneno")
+            caller.db.inmune_veneno = True
+            return "|gEl antídoto purifica tu sangre y te protege del veneno.|n"
+
         return "No tiene ningún efecto aparente."
 
     def consumir(self, caller) -> bool:
@@ -363,9 +389,11 @@ class Consumible(DefaultObject):
             efecto_txt = f"+{pct}% XP durante {dur} min"
         else:
             efecto_txt = {
-                "curar_hp": f"Restaura {potencia} HP",
-                "curar_maximo": "Restaura HP al máximo",
-                "curar_veneno": "Cura el envenenamiento",
+                "curar_hp":               f"Restaura {potencia} HP",
+                "curar_maximo":           "Restaura HP al máximo",
+                "curar_veneno":           "Cura el envenenamiento",
+                "sigilo":                 f"Sigilo {potencia // 60} min",
+                "curar_veneno_protegido": "Cura veneno + Inmunidad (1 combate)",
             }.get(efecto, efecto)
 
         usos_txt = "ilimitados" if usos == -1 else f"{usos} uso{'s' if usos != 1 else ''}"

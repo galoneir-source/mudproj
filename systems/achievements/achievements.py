@@ -479,6 +479,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "monturas",
     },
 
+    # ── Alquimia ──────────────────────────────────────────────────────────────
+    "primer_elixir": {
+        "nombre":      "Primer Elixir",
+        "descripcion": "Elabora tu primera poción alquímica.",
+        "titulo":      None,
+        "categoria":   "alquimia",
+    },
+    "artesano_alquimia": {
+        "nombre":      "Artesano Alquimista",
+        "descripcion": "Alcanza el rango Artesano en alquimia (5 pociones elaboradas).",
+        "titulo":      "el Alquimista",
+        "categoria":   "alquimia",
+    },
+    "maestro_alquimia": {
+        "nombre":      "Maestro Alquimista",
+        "descripcion": "Alcanza el rango Maestro en alquimia (15 pociones elaboradas).",
+        "titulo":      "el Maestro Alquimista",
+        "categoria":   "alquimia",
+    },
+
     # ── Expediciones ─────────────────────────────────────────────────────────
     "primera_expedicion": {
         "nombre":      "Primera Expedición",
@@ -712,6 +732,11 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "primer_cazador":   return recomp_cob >= 1
     if logro_id == "generoso_verdugo": return recomp_cob >= 3
     if logro_id == "mas_buscado":      return recomp_rec >= 1
+
+    pociones_elab = datos.get("pociones_elaboradas", 0)
+    if logro_id == "primer_elixir":      return pociones_elab >= 1
+    if logro_id == "artesano_alquimia":  return pociones_elab >= 5
+    if logro_id == "maestro_alquimia":   return pociones_elab >= 15
 
     exped = datos.get("expediciones_completadas", 0)
     fortaleza_hecha = datos.get("fortaleza_completada", False)

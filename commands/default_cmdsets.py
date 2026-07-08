@@ -55,6 +55,7 @@ from features.collectibles.commands import CollectiblesCmdSet
 from features.gambling.commands import GamblingCmdSet
 from features.bounty.commands import BountyCmdSet
 from features.expeditions.commands import ExpeditionCmdSet
+from features.alchemy.commands import AlchemyCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -154,6 +155,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(BountyCmdSet)
         # --- Expediciones ---
         self.add(ExpeditionCmdSet)
+        # --- Alquimia ---
+        self.add(AlchemyCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

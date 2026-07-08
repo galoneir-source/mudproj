@@ -212,6 +212,9 @@ class CombatHandler(DefaultScript):
         for p in participantes:
             if hasattr(p, "db"):
                 p.db.en_combate = True
+                # El combate rompe el sigilo alquímico
+                if getattr(p.db, "oculto", False) and getattr(p.db, "nivel_sigilo", 0) == 25:
+                    p.db.oculto = False
 
         sala = self.obj
         nombres = ", ".join(p.key for p in participantes)
@@ -525,6 +528,11 @@ class CombatHandler(DefaultScript):
                             )
                     except Exception:
                         pass
+                    if not estado_bloqueado and nombre_estado == "veneno":
+                        if getattr(objetivo.db, "inmune_veneno", False):
+                            objetivo.db.inmune_veneno = False
+                            objetivo.msg("|gEl antídoto reforzado neutraliza el veneno.|n")
+                            estado_bloqueado = True
                     if not estado_bloqueado:
                         estados = dict(getattr(objetivo.db, "estados", {}) or {})
                         objetivo.db.estados = aplicar_estado(estados, nombre_estado)

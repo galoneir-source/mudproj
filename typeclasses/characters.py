@@ -104,6 +104,9 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Expediciones ---
         self.db.expediciones_completadas = 0
         self.db.fortaleza_completada     = False
+        # --- Alquimia ---
+        self.db.pociones_elaboradas = 0
+        self.db.rango_alquimia      = "aprendiz"
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

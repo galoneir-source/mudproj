@@ -21,7 +21,7 @@ _ORDEN_CATS = [
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
     "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas", "coleccion",
-    "apuestas", "cazarrecompensas", "expediciones",
+    "apuestas", "cazarrecompensas", "expediciones", "alquimia",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -48,6 +48,7 @@ _NOMBRES_CATS = {
     "apuestas":          "Apuestas",
     "cazarrecompensas":  "Cazarrecompensas",
     "expediciones":      "Expediciones",
+    "alquimia":          "Alquimia",
 }
 
 
@@ -79,6 +80,12 @@ def _extraer_datos_cazarrecompensas(caller) -> dict:
     return {
         "recompensas_cobradas":  int(getattr(caller.db, "recompensas_cobradas", 0) or 0),
         "recompensas_recibidas": int(getattr(caller.db, "recompensas_recibidas", 0) or 0),
+    }
+
+
+def _extraer_datos_alquimia(caller) -> dict:
+    return {
+        "pociones_elaboradas": int(getattr(caller.db, "pociones_elaboradas", 0) or 0),
     }
 
 
@@ -156,6 +163,7 @@ def _extraer_datos(caller) -> dict:
         **_extraer_datos_coleccion(caller),
         **_extraer_datos_apuestas(caller),
         **_extraer_datos_cazarrecompensas(caller),
+        **_extraer_datos_alquimia(caller),
         **_extraer_datos_expediciones(caller),
         **_extraer_datos_gremio(caller),
     }

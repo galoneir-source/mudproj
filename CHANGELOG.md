@@ -5,6 +5,28 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.52.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Alquimia Avanzada** — árbol de recetas de tres rangos (Aprendiz / Artesano / Maestro) que produce pociones únicas usando materiales de herboristería. Complementa el crafteo básico con efectos que no existían en el juego.
+  - `alquimia [lista]` — libro de recetas con estado de desbloqueo por rango.
+  - `alquimia info <receta>` — ingredientes y descripción de una receta.
+  - `alquimia elaborar <receta>` — consume los ingredientes del inventario y crea la poción.
+  - Al subir de rango se notifica al jugador y se desbloquean nuevas recetas.
+- **9 recetas** divididas en 3 rangos:
+  - *Aprendiz* (0 pociones): Bálsamo Regenerador (cura 60 HP), Antídoto Reforzado (cura veneno + inmunidad), Poción de Sigilo Menor (oculto 2 min).
+  - *Artesano* (≥5 pociones): Poción de Sigilo (oculto 5 min), Elixir de Reflejos (+5 DES 25 min), Poción Arcana (+6 INT 25 min).
+  - *Maestro* (≥15 pociones): Gran Elixir de Vida (HP al máximo), Elixir del Maestro (+8 FUE 35 min), Esencia de la Eternidad (+25% XP 35 min).
+- **2 efectos nuevos** añadidos a `Consumible`:
+  - `sigilo` — hace al jugador invisible en `look` de sala durante N segundos. El combate rompe el efecto automáticamente. Timer resuelto con `evennia.utils.delay`.
+  - `curar_veneno_protegido` — cura el veneno activo y activa `db.inmune_veneno = True` (el siguiente veneno que llegue es bloqueado y consume la inmunidad).
+- Hook de inmunidad al veneno en `CombatHandler` (antes de `aplicar_estado`).
+- Sigilo se limpia automáticamente al entrar en combate (`CombatHandler.iniciar`).
+- `db.pociones_elaboradas = 0`, `db.rango_alquimia = "aprendiz"` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "alquimia"): `primer_elixir` (1 poción), `artesano_alquimia` (5 pociones — título "el Alquimista"), `maestro_alquimia` (15 pociones — título "el Maestro Alquimista").
+- `systems/alchemy/alchemy.py`: lógica pura — 9 recetas, funciones de rango, validación, formateo. 61 tests puros en `tests/test_alchemy_system.py`.
+- `features/alchemy/commands.py`: `CmdAlquimia`, `AlchemyCmdSet`.
+
 ## [0.51.0] — 2026-07-01
 
 ### Añadido
