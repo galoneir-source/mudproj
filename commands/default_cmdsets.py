@@ -51,6 +51,7 @@ from features.housing.commands import HousingCmdSet
 from features.bestiary.commands import BestiaryCmdSet
 from features.cartography.commands import CartographyCmdSet
 from features.mounts.commands import MountCmdSet
+from features.collectibles.commands import CollectiblesCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -142,6 +143,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CartographyCmdSet)
         # --- Monturas ---
         self.add(MountCmdSet)
+        # --- Coleccionables ---
+        self.add(CollectiblesCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

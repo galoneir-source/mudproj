@@ -419,6 +419,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "vivienda",
     },
 
+    # ── Coleccionables ────────────────────────────────────────────────────────
+    "primer_tesoro": {
+        "nombre":      "Primer Hallazgo",
+        "descripcion": "Encuentra tu primer tesoro oculto.",
+        "titulo":      None,
+        "categoria":   "coleccion",
+    },
+    "cazatesoros": {
+        "nombre":      "Cazatesoros",
+        "descripcion": "Encuentra 8 tesoros ocultos distintos.",
+        "titulo":      None,
+        "categoria":   "coleccion",
+    },
+    "coleccionista": {
+        "nombre":      "Coleccionista",
+        "descripcion": "Encuentra los 15 tesoros ocultos del mundo.",
+        "titulo":      "el Coleccionista",
+        "categoria":   "coleccion",
+    },
+
     # ── Monturas ──────────────────────────────────────────────────────────────
     "primer_jinete": {
         "nombre":      "Primer Jinete",
@@ -600,6 +620,11 @@ def _cumple(logro_id: str, datos: dict) -> bool:
 
     if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
     if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
+
+    tesoros = datos.get("tesoros_encontrados", 0)
+    if logro_id == "primer_tesoro":  return tesoros >= 1
+    if logro_id == "cazatesoros":    return tesoros >= 8
+    if logro_id == "coleccionista":  return bool(datos.get("coleccion_completa", False))
 
     monturas_count = datos.get("monturas_poseidas", 0)
     if logro_id == "primer_jinete": return monturas_count >= 1

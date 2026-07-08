@@ -5,6 +5,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.48.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Coleccionables / Tesoros Ocultos** — 15 objetos únicos escondidos en salas del mundo que el jugador descubre con el comando `buscar`.
+  - `buscar` — registra el tesoro de la sala actual si se cumplen los requisitos. Cooldown de 30 s entre búsquedas.
+  - `buscar pistas` — muestra las pistas de todos los tesoros aún no hallados.
+  - `coleccion` — progreso de coleccionables con barra de avance.
+  - **15 tesoros** progresivos (nv.1 Ciudad → nv.10 Ciudadela Oscura). Tres requieren haber derrotado al guardián de la zona: TROLL (`corona_lodo`), CABALLERO_OSCURO (`sello_baron`), LICHE_INMORTAL (`ceniza_liche`). Recompensa: monedas (60–500) al encontrarlos.
+  - Sinergias: requiere exploración (cartografía) y combate (bestiario) para los tesoros bloqueados por guardián.
+- `db.tesoros_encontrados = []` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "coleccion"): `primer_tesoro` (1 tesoro), `cazatesoros` (8 tesoros), `coleccionista` (15 tesoros — título "el Coleccionista").
+- `systems/collectibles/collectibles.py`: lógica pura — `TESOROS`, `ZONA_A_TESORO`, `tesoro_de_zona`, `ya_encontrado`, `puede_buscar`, `total_tesoros`, `tesoros_encontrados_count`, `coleccion_completa`, `formatear_coleccion`, `formatear_pistas`. 47 tests puros en `tests/test_collectibles_system.py`.
+- `features/collectibles/commands.py`: `CmdBuscar`, `CmdColeccion`, `CollectiblesCmdSet`.
+
 ## [0.47.0] — 2026-07-01
 
 ### Añadido

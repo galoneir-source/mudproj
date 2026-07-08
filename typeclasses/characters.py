@@ -92,6 +92,8 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Monturas ---
         self.db.monturas = []
         self.db.montura_activa = None
+        # --- Coleccionables ---
+        self.db.tesoros_encontrados = []
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

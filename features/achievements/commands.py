@@ -20,7 +20,7 @@ _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
-    "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas",
+    "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas", "coleccion",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -43,6 +43,7 @@ _NOMBRES_CATS = {
     "bestiario":    "Bestiario",
     "cartografia":  "Cartografía",
     "monturas":     "Monturas",
+    "coleccion":    "Coleccionables",
 }
 
 
@@ -60,6 +61,15 @@ def _extraer_datos_gremio(caller) -> dict:
     except Exception:
         pass
     return {"es_lider_gremio": False, "miembros_gremio": 0}
+
+
+def _extraer_datos_coleccion(caller) -> dict:
+    from systems.collectibles.collectibles import tesoros_encontrados_count, coleccion_completa
+    encontrados = list(getattr(caller.db, "tesoros_encontrados", []) or [])
+    return {
+        "tesoros_encontrados": tesoros_encontrados_count(encontrados),
+        "coleccion_completa":  coleccion_completa(encontrados),
+    }
 
 
 def _extraer_datos_monturas(caller) -> dict:
@@ -117,6 +127,7 @@ def _extraer_datos(caller) -> dict:
         **_extraer_datos_bestiary(caller),
         **_extraer_datos_cartografia(caller),
         **_extraer_datos_monturas(caller),
+        **_extraer_datos_coleccion(caller),
         **_extraer_datos_gremio(caller),
     }
 
