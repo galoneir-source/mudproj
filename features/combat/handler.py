@@ -634,6 +634,15 @@ class CombatHandler(DefaultScript):
             except Exception as _te:
                 logger.log_err(f"Tournament hook: {_te}")
 
+        if getattr(self.db, "es_caza_recompensa", False):
+            cazador_dbref = getattr(self.db, "cazador_dbref", None)
+            if ganador.dbref == cazador_dbref:
+                try:
+                    from features.bounty.bounty_script import cobrar_recompensa_por_duelo
+                    cobrar_recompensa_por_duelo(ganador, perdedor)
+                except Exception as _be:
+                    logger.log_err(f"Bounty hook: {_be}")
+
         self.delete()
 
     def _procesar_muerte(self, muerto, asesino=None):

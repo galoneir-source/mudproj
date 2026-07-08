@@ -21,7 +21,7 @@ _ORDEN_CATS = [
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
     "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas", "coleccion",
-    "apuestas",
+    "apuestas", "cazarrecompensas",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -46,6 +46,7 @@ _NOMBRES_CATS = {
     "monturas":     "Monturas",
     "coleccion":    "Coleccionables",
     "apuestas":          "Apuestas",
+    "cazarrecompensas":  "Cazarrecompensas",
 }
 
 
@@ -70,6 +71,13 @@ def _extraer_datos_apuestas(caller) -> dict:
         "apuestas_jugadas": int(getattr(caller.db, "apuestas_jugadas", 0) or 0),
         "apuestas_ganadas": int(getattr(caller.db, "apuestas_ganadas", 0) or 0),
         "mayor_ganancia":   int(getattr(caller.db, "mayor_ganancia", 0) or 0),
+    }
+
+
+def _extraer_datos_cazarrecompensas(caller) -> dict:
+    return {
+        "recompensas_cobradas":  int(getattr(caller.db, "recompensas_cobradas", 0) or 0),
+        "recompensas_recibidas": int(getattr(caller.db, "recompensas_recibidas", 0) or 0),
     }
 
 
@@ -139,6 +147,7 @@ def _extraer_datos(caller) -> dict:
         **_extraer_datos_monturas(caller),
         **_extraer_datos_coleccion(caller),
         **_extraer_datos_apuestas(caller),
+        **_extraer_datos_cazarrecompensas(caller),
         **_extraer_datos_gremio(caller),
     }
 

@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.50.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Cazarrecompensas** — permite a los jugadores poner precio a la cabeza de otros y cobrar recompensas mediante duelos de caza.
+  - `recompensa` / `recompensa tablon` — muestra el tablón global ordenado por precio total.
+  - `recompensa poner <jugador> <cantidad>` — publica una recompensa (mín. 100, máx. 5 000 monedas). Se descuenta al instante. Solo una recompensa por par emisor/objetivo.
+  - `recompensa cancelar <jugador>` — retira tu recompensa y recuperas el importe.
+  - `recompensa mias` — tus recompensas puestas y las que hay sobre ti.
+  - `cazar <jugador>` — inicia un duelo de caza contra un objetivo con recompensa activa. Al ganar se cobran automáticamente todas las recompensas sobre ese objetivo.
+  - El objetivo recibe aviso inmediato cuando alguien pone precio a su cabeza (si está conectado).
+- `RecompensasScript` — script global persistente que almacena la lista de recompensas activas; arrancado en `at_server_start`.
+- `db.recompensas_cobradas = 0`, `db.recompensas_recibidas = 0` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "cazarrecompensas"): `primer_cazador` (1 recompensa cobrada — título "el Cazador"), `generoso_verdugo` (3 cobradas), `mas_buscado` (alguien pone precio a tu cabeza — título "el Más Buscado").
+- `systems/bounty/bounty.py`: lógica pura — `puede_poner`, `puede_cancelar`, `hay_recompensa`, `bounties_sobre`, `total_sobre_objetivo`, `añadir_bounty`, `cobrar_bounties`, `cancelar_bounty`, `formatear_tablon`, `formatear_mi_estado`. 54 tests puros en `tests/test_bounty_system.py`.
+- `features/bounty/bounty_script.py`: `RecompensasScript`, `obtener_recompensas_script`, `cobrar_recompensa_por_duelo`.
+- `features/bounty/commands.py`: `CmdRecompensa`, `CmdCazar`, `BountyCmdSet`.
+- Hook de caza en `_fin_duelo` de `CombatHandler` (idéntico al patrón del torneo).
+
 ## [0.49.0] — 2026-07-01
 
 ### Añadido

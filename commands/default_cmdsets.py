@@ -53,6 +53,7 @@ from features.cartography.commands import CartographyCmdSet
 from features.mounts.commands import MountCmdSet
 from features.collectibles.commands import CollectiblesCmdSet
 from features.gambling.commands import GamblingCmdSet
+from features.bounty.commands import BountyCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -148,6 +149,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CollectiblesCmdSet)
         # --- Apuestas ---
         self.add(GamblingCmdSet)
+        # --- Cazarrecompensas ---
+        self.add(BountyCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

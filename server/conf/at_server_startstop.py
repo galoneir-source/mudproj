@@ -70,6 +70,11 @@ def at_server_start():
         obtener_gestor_script()
     except Exception:
         pass
+    try:
+        from features.bounty.bounty_script import obtener_recompensas_script
+        obtener_recompensas_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

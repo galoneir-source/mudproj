@@ -98,6 +98,9 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.apuestas_jugadas  = 0
         self.db.apuestas_ganadas  = 0
         self.db.mayor_ganancia    = 0
+        # --- Cazarrecompensas ---
+        self.db.recompensas_cobradas  = 0
+        self.db.recompensas_recibidas = 0
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

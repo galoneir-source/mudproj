@@ -479,6 +479,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "monturas",
     },
 
+    # ── Cazarrecompensas ──────────────────────────────────────────────────────
+    "primer_cazador": {
+        "nombre":      "Primer Cazador",
+        "descripcion": "Cobra tu primera recompensa derrotando al objetivo.",
+        "titulo":      "el Cazador",
+        "categoria":   "cazarrecompensas",
+    },
+    "generoso_verdugo": {
+        "nombre":      "Verdugo Generoso",
+        "descripcion": "Cobra 3 recompensas distintas.",
+        "titulo":      None,
+        "categoria":   "cazarrecompensas",
+    },
+    "mas_buscado": {
+        "nombre":      "El Más Buscado",
+        "descripcion": "Alguien pone precio a tu cabeza al menos una vez.",
+        "titulo":      "el Más Buscado",
+        "categoria":   "cazarrecompensas",
+    },
+
     # ── Cartografía ───────────────────────────────────────────────────────────
     "primer_viaje": {
         "nombre":      "Primer Viaje",
@@ -666,6 +686,12 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "primera_presa":          return criaturas >= 1
     if logro_id == "cazador_experimentado":  return criaturas >= 10
     if logro_id == "enciclopedista":         return bool(datos.get("bestiary_completo", False))
+
+    recomp_cob = datos.get("recompensas_cobradas", 0)
+    recomp_rec = datos.get("recompensas_recibidas", 0)
+    if logro_id == "primer_cazador":   return recomp_cob >= 1
+    if logro_id == "generoso_verdugo": return recomp_cob >= 3
+    if logro_id == "mas_buscado":      return recomp_rec >= 1
 
     return False
 
