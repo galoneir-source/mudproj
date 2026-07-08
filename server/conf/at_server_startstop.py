@@ -75,6 +75,11 @@ def at_server_start():
         obtener_recompensas_script()
     except Exception:
         pass
+    try:
+        from features.daily.daily_script import obtener_desafios_script
+        obtener_desafios_script()
+    except Exception:
+        pass
 
 
 def at_server_stop():

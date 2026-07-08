@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.53.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Desafíos Diarios** — 5 tareas que se renuevan cada día a medianoche UTC, generadas de forma determinista (misma fecha = mismos desafíos para todos los jugadores).
+  - Tipos de desafío: matar X enemigos de una facción, recolectar con una profesión, ganar apuestas, elaborar pociones alquímicas, completar una expedición grupal.
+  - Cada desafío completado otorga XP y monedas inmediatamente.
+  - Al completar los 5 en el mismo día se activa el bonus de racha (escalado: racha 2→+50m/100xp, racha 3→+100m/200xp, racha 4→+200m/400xp, racha 5+→+300m/600xp).
+  - `desafios` — lista los 5 desafíos del día con progreso personal.
+  - `desafios racha` — muestra tu racha de días consecutivos y total de desafíos completados.
+  - Hooks integrados en: combate (kill_faccion vía `db.faccion` del NPC), profesiones (recolectar), apuestas (victoria), alquimia (elaborar), expediciones (completar).
+  - `DesafiosDiariosScript` global persistente (tick horario).
+  - 3 nuevos logros en categoría "Desafíos Diarios": *Primer Desafío*, *Veterano de Desafíos* (25 completados, título "el Incansable"), *Racha Legendaria* (7 días, título "el Constante").
+
 ## [0.52.0] — 2026-07-01
 
 ### Añadido

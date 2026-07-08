@@ -107,6 +107,13 @@ class Character(ObjectParent, DefaultCharacter):
         # --- Alquimia ---
         self.db.pociones_elaboradas = 0
         self.db.rango_alquimia      = "aprendiz"
+        # --- Desafíos Diarios ---
+        self.db.fecha_desafios              = None
+        self.db.progreso_desafios           = [0, 0, 0, 0, 0]
+        self.db.desafios_completados_hoy    = []
+        self.db.racha_desafios              = 0
+        self.db.ultimo_dia_desafios         = None
+        self.db.total_desafios_completados  = 0
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""

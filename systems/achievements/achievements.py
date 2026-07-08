@@ -519,6 +519,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "expediciones",
     },
 
+    # ── Desafíos Diarios ─────────────────────────────────────────────────────
+    "primer_desafio": {
+        "nombre":      "Primer Desafío",
+        "descripcion": "Completa tu primer desafío diario.",
+        "titulo":      None,
+        "categoria":   "desafios",
+    },
+    "veterano_desafios": {
+        "nombre":      "Veterano de Desafíos",
+        "descripcion": "Completa un total de 25 desafíos diarios.",
+        "titulo":      "el Incansable",
+        "categoria":   "desafios",
+    },
+    "racha_legendaria": {
+        "nombre":      "Racha Legendaria",
+        "descripcion": "Completa los 5 desafíos durante 7 días consecutivos.",
+        "titulo":      "el Constante",
+        "categoria":   "desafios",
+    },
+
     # ── Cazarrecompensas ──────────────────────────────────────────────────────
     "primer_cazador": {
         "nombre":      "Primer Cazador",
@@ -743,6 +763,12 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "primera_expedicion":     return exped >= 1
     if logro_id == "veterano_expedicion":    return exped >= 5
     if logro_id == "conquistador_fortaleza": return bool(fortaleza_hecha)
+
+    total_desafios = datos.get("total_desafios_completados", 0)
+    racha_desafios = datos.get("racha_desafios", 0)
+    if logro_id == "primer_desafio":    return total_desafios >= 1
+    if logro_id == "veterano_desafios": return total_desafios >= 25
+    if logro_id == "racha_legendaria":  return racha_desafios >= 7
 
     return False
 

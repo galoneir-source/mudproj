@@ -56,6 +56,7 @@ from features.gambling.commands import GamblingCmdSet
 from features.bounty.commands import BountyCmdSet
 from features.expeditions.commands import ExpeditionCmdSet
 from features.alchemy.commands import AlchemyCmdSet
+from features.daily.commands import DailyCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -157,6 +158,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(ExpeditionCmdSet)
         # --- Alquimia ---
         self.add(AlchemyCmdSet)
+        # --- Desafíos Diarios ---
+        self.add(DailyCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

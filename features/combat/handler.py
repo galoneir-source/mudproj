@@ -716,6 +716,14 @@ class CombatHandler(DefaultScript):
                 _subir_vinculo_mascota(j, 5)
                 _dar_xp_mascota(j, getattr(muerto.db, "nivel", 1) or 1)
                 comprobar_y_notificar(j)
+                # Desafíos diarios — kill_faccion
+                faccion_npc = getattr(muerto.db, "faccion", None)
+                if faccion_npc:
+                    try:
+                        from features.daily.daily_script import notificar_progreso
+                        notificar_progreso(j, "kill_faccion", faccion=faccion_npc)
+                    except Exception as _de:
+                        logger.log_err(f"Desafíos kill hook: {_de}")
 
         # Loot: generar items desde la tabla db.loot
         items_generados = _generar_loot(muerto, sala)

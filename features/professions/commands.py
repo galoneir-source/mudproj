@@ -205,6 +205,13 @@ class CmdRecolectar(Command):
                     f"|xPróximo nivel: |w{xp_sig}|x XP totales.|n"
                 )
 
+        # Desafíos diarios — recolectar
+        try:
+            from features.daily.daily_script import notificar_progreso
+            notificar_progreso(char, "recolectar", profesion=prof_id)
+        except Exception:
+            pass
+
 
 class ProfessionCmdSet(CmdSet):
     key = "ProfessionCmdSet"

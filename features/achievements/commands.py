@@ -21,7 +21,7 @@ _ORDEN_CATS = [
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
     "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas", "coleccion",
-    "apuestas", "cazarrecompensas", "expediciones", "alquimia",
+    "apuestas", "cazarrecompensas", "expediciones", "alquimia", "desafios",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -49,6 +49,7 @@ _NOMBRES_CATS = {
     "cazarrecompensas":  "Cazarrecompensas",
     "expediciones":      "Expediciones",
     "alquimia":          "Alquimia",
+    "desafios":          "Desafíos Diarios",
 }
 
 
@@ -93,6 +94,13 @@ def _extraer_datos_expediciones(caller) -> dict:
     return {
         "expediciones_completadas": int(getattr(caller.db, "expediciones_completadas", 0) or 0),
         "fortaleza_completada":     bool(getattr(caller.db, "fortaleza_completada", False)),
+    }
+
+
+def _extraer_datos_desafios(caller) -> dict:
+    return {
+        "total_desafios_completados": int(getattr(caller.db, "total_desafios_completados", 0) or 0),
+        "racha_desafios":             int(getattr(caller.db, "racha_desafios", 0) or 0),
     }
 
 
@@ -165,6 +173,7 @@ def _extraer_datos(caller) -> dict:
         **_extraer_datos_cazarrecompensas(caller),
         **_extraer_datos_alquimia(caller),
         **_extraer_datos_expediciones(caller),
+        **_extraer_datos_desafios(caller),
         **_extraer_datos_gremio(caller),
     }
 
