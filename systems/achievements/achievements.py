@@ -419,6 +419,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "vivienda",
     },
 
+    # ── Apuestas ──────────────────────────────────────────────────────────────
+    "primera_apuesta": {
+        "nombre":      "Golpe de Dados",
+        "descripcion": "Participa en tu primera apuesta en la Taberna.",
+        "titulo":      None,
+        "categoria":   "apuestas",
+    },
+    "golpe_de_suerte": {
+        "nombre":      "Golpe de Suerte",
+        "descripcion": "Gana 10 apuestas.",
+        "titulo":      None,
+        "categoria":   "apuestas",
+    },
+    "gran_tahur": {
+        "nombre":      "Gran Tahúr",
+        "descripcion": "Gana 500 monedas o más en una sola apuesta.",
+        "titulo":      "el Tahúr",
+        "categoria":   "apuestas",
+    },
+
     # ── Coleccionables ────────────────────────────────────────────────────────
     "primer_tesoro": {
         "nombre":      "Primer Hallazgo",
@@ -620,6 +640,12 @@ def _cumple(logro_id: str, datos: dict) -> bool:
 
     if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
     if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
+
+    apuestas_j = datos.get("apuestas_jugadas", 0)
+    apuestas_g = datos.get("apuestas_ganadas", 0)
+    if logro_id == "primera_apuesta": return apuestas_j >= 1
+    if logro_id == "golpe_de_suerte": return apuestas_g >= 10
+    if logro_id == "gran_tahur":      return datos.get("mayor_ganancia", 0) >= 500
 
     tesoros = datos.get("tesoros_encontrados", 0)
     if logro_id == "primer_tesoro":  return tesoros >= 1

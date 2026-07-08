@@ -52,6 +52,7 @@ from features.bestiary.commands import BestiaryCmdSet
 from features.cartography.commands import CartographyCmdSet
 from features.mounts.commands import MountCmdSet
 from features.collectibles.commands import CollectiblesCmdSet
+from features.gambling.commands import GamblingCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -145,6 +146,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(MountCmdSet)
         # --- Coleccionables ---
         self.add(CollectiblesCmdSet)
+        # --- Apuestas ---
+        self.add(GamblingCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 

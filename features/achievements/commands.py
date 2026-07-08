@@ -21,6 +21,7 @@ _ORDEN_CATS = [
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
     "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas", "coleccion",
+    "apuestas",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -44,6 +45,7 @@ _NOMBRES_CATS = {
     "cartografia":  "Cartografía",
     "monturas":     "Monturas",
     "coleccion":    "Coleccionables",
+    "apuestas":          "Apuestas",
 }
 
 
@@ -61,6 +63,14 @@ def _extraer_datos_gremio(caller) -> dict:
     except Exception:
         pass
     return {"es_lider_gremio": False, "miembros_gremio": 0}
+
+
+def _extraer_datos_apuestas(caller) -> dict:
+    return {
+        "apuestas_jugadas": int(getattr(caller.db, "apuestas_jugadas", 0) or 0),
+        "apuestas_ganadas": int(getattr(caller.db, "apuestas_ganadas", 0) or 0),
+        "mayor_ganancia":   int(getattr(caller.db, "mayor_ganancia", 0) or 0),
+    }
 
 
 def _extraer_datos_coleccion(caller) -> dict:
@@ -128,6 +138,7 @@ def _extraer_datos(caller) -> dict:
         **_extraer_datos_cartografia(caller),
         **_extraer_datos_monturas(caller),
         **_extraer_datos_coleccion(caller),
+        **_extraer_datos_apuestas(caller),
         **_extraer_datos_gremio(caller),
     }
 

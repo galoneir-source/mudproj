@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.49.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Apuestas / Minijuegos** — cuatro juegos de azar disponibles en la Taberna El Jabalí Borracho.
+  - `apostar` — muestra las reglas y límites de todos los juegos.
+  - `apostar moneda <cara|cruz> <N>` — adivina la cara de una moneda. 50 % de ganar. Premio: ×2.
+  - `apostar dados <N>` — lanza 2d6 contra la casa. El mayor total gana; empate = casa gana. Premio: ×2.
+  - `apostar cartas <N>` — saca una carta (As–Rey) contra la casa. La más alta gana; empate = casa gana. Premio: ×2.
+  - `apostar ruleta <1-6> <N>` — elige un número de la ruleta de 6 posiciones. Prob. 1/6; premio: ×5 (ganancia neta ×4).
+  - Apuesta mínima 10 monedas, máxima 1000. Solo en la Taberna (`db.zona == "taberna"`).
+  - Aleatoriedad inyectable (`_rng`) para tests 100 % deterministas.
+- `db.apuestas_jugadas = 0`, `db.apuestas_ganadas = 0`, `db.mayor_ganancia = 0` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "apuestas"): `primera_apuesta` (1 partida), `golpe_de_suerte` (10 victorias), `gran_tahur` (ganar ≥500 monedas en una partida — título "el Tahúr").
+- `systems/gambling/gambling.py`: lógica pura — `puede_apostar`, `jugar_moneda`, `jugar_dados`, `jugar_cartas`, `jugar_ruleta`, `formatear_reglas`. 45 tests puros en `tests/test_gambling_system.py`.
+- `features/gambling/commands.py`: `CmdApostar`, `GamblingCmdSet`.
+
 ## [0.48.0] — 2026-07-01
 
 ### Añadido
