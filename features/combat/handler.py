@@ -677,6 +677,7 @@ class CombatHandler(DefaultScript):
                 p for p in (self.db.participantes or [])
                 if getattr(p, "has_account", False)
             ]
+            from systems.bestiary.bestiary import registrar_kill
             for j in jugadores:
                 j.db.kills_totales = (getattr(j.db, "kills_totales", 0) or 0) + 1
                 if is_boss:
@@ -684,6 +685,8 @@ class CombatHandler(DefaultScript):
                     if proto not in jefes_list:
                         jefes_list.append(proto)
                         j.db.jefes_derrotados = jefes_list
+                if proto:
+                    j.db.bestiary = registrar_kill(dict(getattr(j.db, "bestiary", {}) or {}), proto)
                 _subir_vinculo_mascota(j, 5)
                 _dar_xp_mascota(j, getattr(muerto.db, "nivel", 1) or 1)
                 comprobar_y_notificar(j)

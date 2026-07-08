@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.45.0] — 2026-06-30
+
+### Añadido
+- **Bestiario / enciclopedia de criaturas** — los jugadores acumulan un registro personal de las criaturas que han derrotado.
+  - `bestiario` — lista todas las criaturas del catálogo agrupadas por tipo (Bestias / Humanoides / No-Muertos / Constructos / Oscuros), con estado ✔/✗, número de bajas y tiempo desde el primer encuentro.
+  - `bestiario <nombre>` — ficha detallada de una criatura: descripción, zona, nivel, tipo, bajas registradas y fecha de primer encuentro. Soporta búsqueda parcial e insensible a mayúsculas.
+  - **24 criaturas en el catálogo**: GOBLIN, GOBLIN_JEFE, BANDIDO, BANDIDO_CAPITAN, HOMBRE_LAGARTO, APRENDIZ_CORRUPTO, MINERO_MALDITO (humanoides); SERPIENTE_PANTANO, ARANA_CUEVA, TROLL, DRAGON_CENIZA (bestias); ESQUELETO, LICHE_MENOR, ESPECTRO, CABALLERO_MUERTE, LICHE_INMORTAL, SENOR_CENIZAS (no-muertos); GOLEM_PIEDRA, GUARDIAN_ARCANO, TITAN_PANTANO, GUARDIAN_FORJA, MAESTRO_FORJADOR (constructos); CABALLERO_OSCURO, HECHICERO_SOMBRIO, ARCHIMAGO_VEXTHAR, SENOR_ABISMO (oscuros).
+  - El registro se actualiza automáticamente en `CombatHandler._procesar_muerte` para todos los participantes del grupo. Solo se registran criaturas del catálogo (criaturas con `db.npc_prototipo` reconocido).
+- `db.bestiary = {}` en `Character.at_object_creation`. Estructura: `{proto_key: {"kills": int, "primera_vez": unix_ts}}`.
+- **3 logros nuevos** (categoría "bestiario"): `primera_presa` (1 criatura), `cazador_experimentado` (10 criaturas distintas), `enciclopedista` (catálogo completo — título "el Enciclopedista").
+- `systems/bestiary/bestiary.py`: lógica pura — `CATALOGO`, `TIPOS`, `registrar_kill`, `criaturas_registradas`, `bestiary_completo`, `buscar_en_catalogo`, `formatear_lista`, `formatear_entrada`. 45 tests puros en `tests/test_bestiary_system.py`.
+- `features/bestiary/commands.py`: `CmdBestiario`, `BestiaryCmdSet`.
+
 ## [0.44.0] — 2026-06-30
 
 ### Añadido

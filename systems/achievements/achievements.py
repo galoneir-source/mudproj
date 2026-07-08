@@ -385,6 +385,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "arena",
     },
 
+    # ── Bestiario ─────────────────────────────────────────────────────────────
+    "primera_presa": {
+        "nombre":      "Primera Presa",
+        "descripcion": "Registra tu primera criatura en el bestiario.",
+        "titulo":      None,
+        "categoria":   "bestiario",
+    },
+    "cazador_experimentado": {
+        "nombre":      "Cazador Experimentado",
+        "descripcion": "Registra 10 criaturas distintas en el bestiario.",
+        "titulo":      None,
+        "categoria":   "bestiario",
+    },
+    "enciclopedista": {
+        "nombre":      "Enciclopedista",
+        "descripcion": "Completa el bestiario derrotando todas las criaturas del catálogo.",
+        "titulo":      "el Enciclopedista",
+        "categoria":   "bestiario",
+    },
+
     # ── Vivienda ───────────────────────────────────────────────────────────────
     "primera_vivienda": {
         "nombre":      "Propietario",
@@ -540,6 +560,11 @@ def _cumple(logro_id: str, datos: dict) -> bool:
 
     if logro_id == "primera_vivienda": return bool(datos.get("vivienda_comprada", False))
     if logro_id == "hogar_decorado":   return bool(datos.get("vivienda_decorada", False))
+
+    criaturas = datos.get("criaturas_registradas", 0)
+    if logro_id == "primera_presa":          return criaturas >= 1
+    if logro_id == "cazador_experimentado":  return criaturas >= 10
+    if logro_id == "enciclopedista":         return bool(datos.get("bestiary_completo", False))
 
     return False
 

@@ -20,7 +20,7 @@ _ORDEN_CATS = [
     "progresion", "misiones", "combate", "habilidades",
     "encantamiento", "reputacion", "crafteo", "economia",
     "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
-    "arena", "runas", "vivienda",
+    "arena", "runas", "vivienda", "bestiario",
 ]
 _NOMBRES_CATS = {
     "progresion":   "Progresión",
@@ -40,6 +40,7 @@ _NOMBRES_CATS = {
     "arena":        "Arena",
     "runas":        "Runas",
     "vivienda":     "Vivienda",
+    "bestiario":    "Bestiario",
 }
 
 
@@ -57,6 +58,15 @@ def _extraer_datos_gremio(caller) -> dict:
     except Exception:
         pass
     return {"es_lider_gremio": False, "miembros_gremio": 0}
+
+
+def _extraer_datos_bestiary(caller) -> dict:
+    from systems.bestiary.bestiary import criaturas_registradas, bestiary_completo
+    bestiary = dict(getattr(caller.db, "bestiary", {}) or {})
+    return {
+        "criaturas_registradas": criaturas_registradas(bestiary),
+        "bestiary_completo":     bestiary_completo(bestiary),
+    }
 
 
 def _extraer_datos(caller) -> dict:
@@ -87,6 +97,7 @@ def _extraer_datos(caller) -> dict:
         "torneos_ganados":           int(getattr(caller.db, "torneos_ganados", 0) or 0),
         "vivienda_comprada":         bool(getattr(caller.db, "vivienda_dbref", None)),
         "vivienda_decorada":         bool(getattr(caller.db, "vivienda_decorada", False)),
+        **_extraer_datos_bestiary(caller),
         **_extraer_datos_gremio(caller),
     }
 
