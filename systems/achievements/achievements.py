@@ -479,6 +479,26 @@ LOGROS: dict[str, dict] = {
         "categoria":   "monturas",
     },
 
+    # ── Expediciones ─────────────────────────────────────────────────────────
+    "primera_expedicion": {
+        "nombre":      "Primera Expedición",
+        "descripcion": "Completa tu primera expedición grupal.",
+        "titulo":      None,
+        "categoria":   "expediciones",
+    },
+    "veterano_expedicion": {
+        "nombre":      "Veterano de Expediciones",
+        "descripcion": "Completa 5 expediciones grupales.",
+        "titulo":      "el Expedicionario",
+        "categoria":   "expediciones",
+    },
+    "conquistador_fortaleza": {
+        "nombre":      "Conquistador de la Fortaleza",
+        "descripcion": "Completa la Fortaleza Caída, la expedición más peligrosa.",
+        "titulo":      "el Conquistador",
+        "categoria":   "expediciones",
+    },
+
     # ── Cazarrecompensas ──────────────────────────────────────────────────────
     "primer_cazador": {
         "nombre":      "Primer Cazador",
@@ -692,6 +712,12 @@ def _cumple(logro_id: str, datos: dict) -> bool:
     if logro_id == "primer_cazador":   return recomp_cob >= 1
     if logro_id == "generoso_verdugo": return recomp_cob >= 3
     if logro_id == "mas_buscado":      return recomp_rec >= 1
+
+    exped = datos.get("expediciones_completadas", 0)
+    fortaleza_hecha = datos.get("fortaleza_completada", False)
+    if logro_id == "primera_expedicion":     return exped >= 1
+    if logro_id == "veterano_expedicion":    return exped >= 5
+    if logro_id == "conquistador_fortaleza": return bool(fortaleza_hecha)
 
     return False
 

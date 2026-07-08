@@ -5,6 +5,29 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.51.0] — 2026-07-01
+
+### Añadido
+- **Sistema de Expediciones Grupales** — secuencias de oleadas de enemigos para grupos (party). Tres expediciones con dificultad creciente.
+  - `expedicion [lista]` — muestra el catálogo de expediciones con nivel mínimo, tamaño de grupo y número de oleadas.
+  - `expedicion info <tipo>` — detalles y recompensas de una expedición concreta.
+  - `expedicion iniciar <tipo>` — el líder del grupo inicia la expedición; todos los miembros son teletransportados a la sala de combate temporal.
+  - `expedicion estado` — muestra la oleada actual y la barra de progreso.
+  - `expedicion abandonar` — un miembro puede salir y regresa a su sala de origen. Si todos abandonan, la expedición termina.
+  - Las oleadas progresan automáticamente (cada 5 s de comprobación) cuando todos los enemigos están derrotados.
+  - Pausa de ~8 s entre oleadas con aviso en sala.
+  - Al completar la expedición: XP y monedas por oleada + bonus de finalización, luego teleport al origen.
+  - Timeout de 30 minutos. Sala temporal eliminada al finalizar o al expirar.
+- **Tres expediciones**:
+  - `bosque_profundo` — nivel ≥3, 2–4 jugadores, 3 oleadas. Jefe: Goblin Jefe.
+  - `catacumbas_perdidas` — nivel ≥5, 2–4 jugadores, 4 oleadas. Jefe: Caballero Oscuro.
+  - `fortaleza_caida` — nivel ≥7, 3–4 jugadores, 5 oleadas. Jefe: Capitán Bandido.
+- `db.expediciones_completadas = 0`, `db.fortaleza_completada = False` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "expediciones"): `primera_expedicion` (1 completada), `veterano_expedicion` (5 completadas — título "el Expedicionario"), `conquistador_fortaleza` (completar Fortaleza Caída — título "el Conquistador").
+- `systems/expeditions/expeditions.py`: lógica pura — catálogo, oleadas, validaciones, recompensas, formateo. 54 tests puros en `tests/test_expeditions_system.py`.
+- `features/expeditions/expedition_script.py`: `ExpedicionScript` (tick 5 s, timeout 30 min).
+- `features/expeditions/commands.py`: `CmdExpedicion`, `ExpeditionCmdSet`.
+
 ## [0.50.0] — 2026-07-01
 
 ### Añadido
