@@ -185,7 +185,7 @@ class TestCombatHandler(EvenniaTest):
         # El jugador es el primero (índice 0); la acción del NPC fuera de turno
         # debe ser rechazada con mensaje
         msgs = []
-        self.npc.msg = lambda m, **kw: msgs.append(m)
+        self.npc.msg = lambda text=None, **kw: msgs.append(text)
         handler.registrar_accion(self.npc, "atacar", objetivo=self.jugador)
         # El NPC no es el turno actual, debe recibir aviso
         self.assertTrue(any("turno" in m.lower() for m in msgs))

@@ -31,7 +31,7 @@ def _make_cmd(CmdClass, caller, args=""):
 class _MsgCapture:
     def __init__(self, char):
         self.msgs = []
-        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
         if char.location:
             char.location.msg_contents = lambda m, **kw: None
 

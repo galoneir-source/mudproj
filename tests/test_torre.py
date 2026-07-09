@@ -50,7 +50,7 @@ class TorreTestBase(EvenniaTest):
         self.jugador.db.experiencia = 0
         self.jugador.db.reputacion = {}
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(str(m))
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(str(text))
         self.sala.msg_contents = lambda m, **kw: None
 
     def _todos_msgs(self):

@@ -43,7 +43,7 @@ def _init_char(char, kills=0, quests=None, jefes=None, duelos=0, crafteo=0, nive
 class _MsgCapture:
     def __init__(self, char):
         self.msgs = []
-        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
     def all(self):
         return "\n".join(self.msgs)

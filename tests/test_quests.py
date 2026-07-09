@@ -40,7 +40,7 @@ class QuestTestBase(EvenniaTest):
         self.jugador.db.monedas = 0
         self.jugador.db.experiencia = 0
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(str(m))
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(str(text))
         # Silenciar msg_contents de la sala
         self.sala.msg_contents = lambda m, **kw: None
 

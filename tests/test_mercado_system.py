@@ -37,7 +37,7 @@ def _make_cmd(CmdClass, caller, args=""):
 class _MsgCapture:
     def __init__(self, char):
         self.msgs = []
-        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
     def all(self):
         return "\n".join(self.msgs)
@@ -242,7 +242,7 @@ class TestMarketScriptComprar(EvenniaTest):
 
     def test_vendedor_notificado_si_online(self):
         mensajes_vendedor = []
-        self.char1.msg = lambda m, **kw: mensajes_vendedor.append(str(m))
+        self.char1.msg = lambda text=None, **kw: mensajes_vendedor.append(str(text))
         self.script.comprar(self.lid, self.char2)
         self.assertTrue(any("comprado" in m.lower() for m in mensajes_vendedor))
 

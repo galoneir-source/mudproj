@@ -54,7 +54,7 @@ class TestBuscarComerciante(EvenniaTest):
         self.jugador = self.char1
         self.jugador.move_to(self.sala, quiet=True)
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(m)
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(text)
 
     def test_sin_sala_da_error(self):
         caller = MagicMock()
@@ -105,7 +105,7 @@ class TestCmdTienda(EvenniaTest):
         self.jugador.move_to(self.sala, quiet=True)
         self.jugador.db.monedas = 50
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(m)
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(text)
 
         self.npc = create_object("typeclasses.npc.NPC", key="Vendedor", location=self.sala)
         self.npc.db.tienda = [
@@ -149,7 +149,7 @@ class TestCmdComprar(EvenniaTest):
         self.jugador.move_to(self.sala, quiet=True)
         self.jugador.db.monedas = 50
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(m)
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(text)
 
         self.npc = create_object("typeclasses.npc.NPC", key="Mercader", location=self.sala)
         self.npc.db.tienda = _tienda_basica()
@@ -221,7 +221,7 @@ class TestCmdVender(EvenniaTest):
         self.jugador.move_to(self.sala, quiet=True)
         self.jugador.db.monedas = 20
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(m)
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(text)
 
         self.npc = create_object("typeclasses.npc.NPC", key="Comprador", location=self.sala)
         self.npc.db.tienda = [{"key": "algo", "precio": 5}]

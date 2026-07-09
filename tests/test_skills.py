@@ -34,7 +34,7 @@ class SkillTestBase(EvenniaTest):
         self.jugador.db.habilidades_desbloqueadas = list(HABILIDADES_INICIALES)
         self.jugador.db.nivel = 1
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(str(m))
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
     def _ultimo(self):
         return self.msgs[-1] if self.msgs else ""

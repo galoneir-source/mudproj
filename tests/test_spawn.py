@@ -43,7 +43,7 @@ class SpawnTestBase(EvenniaTest):
         self.builder = self.char1
         self.builder.move_to(self.sala, quiet=True)
         self.msgs = []
-        self.builder.msg = lambda m, **kw: self.msgs.append(str(m))
+        self.builder.msg = lambda text=None, **kw: self.msgs.append(str(text))
         self.sala.msg_contents = lambda m, **kw: None
 
     def _ultimo_msg(self):

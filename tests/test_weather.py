@@ -95,7 +95,7 @@ class TestCmdClima(EvenniaTest):
     def setUp(self):
         super().setUp()
         self.msgs = []
-        self.char1.msg = lambda m, **kw: self.msgs.append(m)
+        self.char1.msg = lambda text=None, **kw: self.msgs.append(text)
 
     def test_cmd_no_lanza_excepcion(self):
         cmd = _make_cmd(CmdClima, self.char1)

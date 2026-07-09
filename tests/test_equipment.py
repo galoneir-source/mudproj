@@ -125,7 +125,7 @@ class TestCmdEquipar(EvenniaTest):
         self.char.db.hp_max = 50
         self.char.db.equipamiento = {s: None for s in SLOTS}
         self.msgs = []
-        self.char.msg = lambda m, **kw: self.msgs.append(m)
+        self.char.msg = lambda text=None, **kw: self.msgs.append(text)
 
     def _crear_espada(self, key="espada de prueba", bonus_fuerza=3):
         item = create_object("typeclasses.objects.Equipo", key=key, location=self.char)
@@ -190,7 +190,7 @@ class TestCmdDesequipar(EvenniaTest):
         self.char.db.hp = 50
         self.char.db.hp_max = 50
         self.msgs = []
-        self.char.msg = lambda m, **kw: self.msgs.append(m)
+        self.char.msg = lambda text=None, **kw: self.msgs.append(text)
 
         self.espada = create_object(
             "typeclasses.objects.Equipo", key="espada equipada", location=self.char
@@ -237,7 +237,7 @@ class TestCmdEquipo(EvenniaTest):
         self.char = self.char1
         self.char.location = self.room1
         self.msgs = []
-        self.char.msg = lambda m, **kw: self.msgs.append(m)
+        self.char.msg = lambda text=None, **kw: self.msgs.append(text)
 
     def test_muestra_todos_los_slots(self):
         self.char.db.equipamiento = {s: None for s in SLOTS}

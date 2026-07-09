@@ -154,8 +154,8 @@ class TestPartyCmds(EvenniaTest):
         super().setUp()
         self.char2.move_to(self.char1.location, quiet=True)
         # Silenciar msg para que los tests no dependan de mensajes exactos
-        self.char1.msg = lambda m, **kw: None
-        self.char2.msg = lambda m, **kw: None
+        self.char1.msg = lambda text=None, **kw: None
+        self.char2.msg = lambda text=None, **kw: None
 
     def test_invitar_crea_partido(self):
         _cmd(CmdInvitar, self.char1, self.char2.key, target=self.char2)
@@ -205,7 +205,7 @@ class TestPartyCmds(EvenniaTest):
 
     def test_abandonar_como_lider_transfiere(self):
         char3 = create_object(Character, key="Char3_cmd")
-        char3.msg = lambda m, **kw: None
+        char3.msg = lambda text=None, **kw: None
         try:
             # Partido de 3 vía helpers para no depender de has_account en char3
             _crear_partido(self.char1)
@@ -228,7 +228,7 @@ class TestPartyCmds(EvenniaTest):
 
     def test_expulsar_por_lider(self):
         char3 = create_object(Character, key="Char3_exp")
-        char3.msg = lambda m, **kw: None
+        char3.msg = lambda text=None, **kw: None
         try:
             # Partido de 3 vía helpers para no depender de has_account en char3
             _crear_partido(self.char1)

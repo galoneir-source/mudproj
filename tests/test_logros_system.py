@@ -62,7 +62,7 @@ class _MsgCapture:
     def __init__(self, char):
         self.msgs = []
         self.char = char
-        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
         char.location.msg_contents = lambda m, **kw: None
 
     def all(self) -> str:

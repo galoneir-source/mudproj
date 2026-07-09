@@ -56,7 +56,7 @@ class EncantamientoTestBase(EvenniaTest):
         self.jugador.db.constitucion = 10
         self.jugador.db.equipamiento = {"arma": None, "armadura": None, "accesorio": None}
         self.msgs = []
-        self.jugador.msg = lambda m, **kw: self.msgs.append(str(m))
+        self.jugador.msg = lambda text=None, **kw: self.msgs.append(str(text))
         self.sala.msg_contents = lambda m, **kw: None
 
     def _todos_msgs(self):
