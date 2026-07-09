@@ -172,6 +172,34 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 - `features/housing/housing_script.py`: `GestorViviendasScript` + `obtener_gestor_script()`.
 - `features/housing/commands.py`: `CmdVivienda`, `CmdCasa`, `CmdVisitar`, `CmdDecorar`, `HousingCmdSet`.
 
+## [0.43.0] — 2026-06-29
+
+### Añadido
+- **Arena y Torneos PvP** — torneos de eliminación directa en la Arena de la Ciudad.
+  - `arena` / `torneo` — muestra el estado del torneo actual.
+  - `arena inscribir` — inscribe al jugador por **100 monedas** (el pot completo va al campeón).
+  - `arena salir` — cancela la inscripción antes de que empiece el torneo.
+  - `arena iniciar` — arranca el torneo con los jugadores inscritos.
+  - `TorneoScript` (no persistente): gestiona inscripciones, bracket y combates. Bracket de eliminación directa (2–8 jugadores, byes automáticos hasta la siguiente potencia de 2).
+  - Combates resueltos con el `CombatHandler` existente en `modo_duelo=True`; hook en `_fin_duelo()` notifica el resultado al `TorneoScript`.
+  - Anuncios globales en inscripción, inicio, cada combate y resultado final.
+  - Timeout de 10 min (inscripción) / 5 min (combate) con cancelación y devolución de cuotas automática. Forfeit automático si un jugador se desconecta.
+- Nueva sala "Arena de la Ciudad" (al este de la Plaza) con NPC Maestro de Arena.
+- `db.torneos_ganados = 0` en `Character.at_object_creation`.
+- **2 logros nuevos** (categoría "arena"): `campeon_arena` (título "el Campeón de la Arena"), `maestro_arena` (3 victorias, título "el Imbatible").
+- `systems/arena/arena.py` + `features/arena/tournament_script.py` + `features/arena/commands.py`. 34 tests puros en `tests/test_arena_system.py`.
+
+## [0.42.0] — 2026-06-29
+
+### Añadido
+- **Sistema de Runas** — runas inscribibles en equipamiento (arma/armadura/accesorio) con efectos activos en combate.
+  - `runas` — lista/info/estado/grabar/borrar. Grabar consume materiales de profesión + monedas.
+  - **8 runas**: Vigor (regen_hp), Filo (sangrado 25%, arma), Escudo (reducción de daño, armadura), Drenaje (robo de vida, arma), Evasión (esquiva 10%), Poder (bonus fuerza, arma), Firmeza (resistencia a estados, armadura), Arcana (bonus inteligencia).
+  - Integración en combate: `_get_stats()` aplica bonus de fuerza/inteligencia; `_anunciar_turno()` regenera HP con Vigor; `_resolver_turno()` resuelve evasión, reducción de daño, robo de vida, resistencia a estados y sangrado de Filo.
+- `db.runas_equipadas = {"arma": None, "armadura": None, "accesorio": None}` en `Character.at_object_creation`.
+- **3 logros nuevos** (categoría "runas"): `primera_runa`, `runas_completas` (título "el Tallador"), `runa_arcana` (título "el Maestro Rúnico").
+- `systems/runes/runes.py` + `features/runes/commands.py`. 51 tests puros.
+
 ## [0.41.0] — 2026-06-29
 
 ### Añadido
