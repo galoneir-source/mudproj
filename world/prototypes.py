@@ -1584,32 +1584,9 @@ ESPADA_ABISMO = {
 #  NPCs de mazmorra
 # --------------------------------------------------------------------------- #
 
-MINERO_MALDITO = {
-    "prototype_key": "MINERO_MALDITO",
-    "key": "minero maldito",
-    "typeclass": "typeclasses.npc.NPC",
-    "desc": (
-        "Un hombre que ya no es del todo humano. "
-        "Su piel es gris como la piedra y sus ojos brillan con una luz naranja enfermiza. "
-        "Lleva un pico oxidado que maneja con destreza sobrenatural."
-    ),
-    "attrs": [
-        ("nivel", 5),
-        ("hp", 90), ("hp_max", 90),
-        ("fuerza", 16), ("destreza", 10), ("constitucion", 15),
-        ("inteligencia", 5), ("defensa", 8),
-        ("experiencia", 0),
-        ("temperamento", "agresivo"),
-        ("habilidades", ["golpe fuerte", "embestida"]),
-        ("loot", [
-            {"key": "mena maldita", "cantidad": 1, "chance": 0.60,
-             "desc": "Un trozo de mineral corrompido por magia oscura. Desprende calor."},
-        ]),
-        ("faccion", "legion_oscura"),
-        ("npc_prototipo", "MINERO_MALDITO"),
-        ("respawn_tiempo", 180),
-    ],
-}
+# Nota: "forja_maldita" reutiliza MINERO_MALDITO (Minas de Hierro Viejo, v0.14.0)
+# igual que reutiliza ARANA_CUEVA y GOLEM_PIEDRA; la dificultad del calabozo ya
+# escala HP/daño, así que no hace falta un prototipo separado más fuerte.
 
 SENOR_CENIZAS = {
     "prototype_key": "SENOR_CENIZAS",

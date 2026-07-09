@@ -243,7 +243,7 @@ class TestCmdLogros(EvenniaTest):
     def test_muestra_sin_logros(self):
         self.char1.db.logros = []
         self._run()
-        self.assertIn("0/38", self.cap.all())
+        self.assertIn("0/81", self.cap.all())
 
     def test_muestra_logros_desbloqueados(self):
         self.char1.db.logros = ["nivel_2", "primera_mision"]
@@ -251,7 +251,7 @@ class TestCmdLogros(EvenniaTest):
         texto = self.cap.all()
         self.assertIn("Primer Paso", texto)
         self.assertIn("Aventurero", texto)
-        self.assertIn("2/38", texto)
+        self.assertIn("2/81", texto)
 
     def test_filtra_por_categoria(self):
         self.char1.db.logros = ["nivel_2"]
@@ -276,7 +276,7 @@ class TestCmdLogros(EvenniaTest):
     def test_contador_correcto_con_varios(self):
         self.char1.db.logros = list(LOGROS.keys())[:7]
         self._run()
-        self.assertIn("7/38", self.cap.all())
+        self.assertIn("7/81", self.cap.all())
 
 
 # ─── CmdTitulo ───────────────────────────────────────────────────────────────

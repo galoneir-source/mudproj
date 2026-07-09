@@ -60,7 +60,9 @@ def _init_char(char, monedas=1000):
 class _MsgCapture:
     def __init__(self, char):
         self.msgs = []
-        char.msg = lambda m, **kw: self.msgs.append(str(m))
+        # Evennia llama a receiver.msg(text=..., **kwargs) desde msg_contents(),
+        # así que el parámetro debe llamarse "text" para capturarlo también ahí.
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
     def all(self):
         return "\n".join(self.msgs)

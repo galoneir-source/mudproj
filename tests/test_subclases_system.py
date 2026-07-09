@@ -66,9 +66,9 @@ class TestCmdSubclaseVista(EvenniaTest):
     def test_muestra_subclases_disponibles(self):
         cmd = _make_cmd(CmdSubclase, self.char1)
         cmd.func()
-        output = self.cap.all()
-        self.assertIn("Paladín", output)
-        self.assertIn("Berserker", output)
+        output = self.cap.all().upper()
+        self.assertIn("PALADÍN", output)
+        self.assertIn("BERSERKER", output)
 
     def test_sin_clase_muestra_mensaje(self):
         self.char1.db.clase = None
@@ -91,8 +91,8 @@ class TestCmdSubclaseVista(EvenniaTest):
     def test_muestra_bonuses(self):
         cmd = _make_cmd(CmdSubclase, self.char1)
         cmd.func()
-        output = self.cap.all()
-        self.assertIn("DEF", output)  # Paladín: +2 DEF
+        output = self.cap.all().upper()
+        self.assertIn("DEF", output)  # Paladín: +2 DEF (mostrado como "Def")
 
 
 # ─── CmdSubclase: elección ───────────────────────────────────────────────────
@@ -271,9 +271,12 @@ class TestArbolHabilidadesConSubclase(EvenniaTest):
         self.assertIn("[S]", output)
 
     def test_habilidad_subclase_disponible_con_subclase(self):
+        # La leyenda al pie ("[S]=subclase") siempre menciona el marcador
+        # cuando el personaje tiene clase; lo que se comprueba aquí es que
+        # ninguna fila de habilidad lo use realmente.
         self._habilidades()
-        output = self.cap.all()
-        self.assertNotIn("[S]", output)
+        lineas = [l for l in self.cap.all().splitlines() if "=subclase" not in l]
+        self.assertNotIn("[S]", "\n".join(lineas))
 
 
 if __name__ == "__main__":

@@ -113,11 +113,13 @@ class TestCmdCraftear(EvenniaTest):
         self.assertIn(piel, self.char1.contents)
 
     def test_crafteo_parcial_nombre(self):
-        # "elixir" debería encontrar "elixir de restauración"
+        # "elixir de rest" debería encontrar "elixir de restauración" sin ambigüedad
+        # ("elixir" solo ya no es único: también matchea "elixir arcano",
+        # "elixir sombrío" y "elixir de esencia" de zonas posteriores)
         _item("escama de lagarto", self.char1)
         _item("escama de lagarto", self.char1)
         _item("fragmento de alma", self.char1)
-        self._craftear("elixir")
+        self._craftear("elixir de rest")
         consumibles = [o for o in self.char1.contents if isinstance(o, Consumible)]
         self.assertEqual(len(consumibles), 1)
 
