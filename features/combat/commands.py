@@ -121,7 +121,7 @@ class CmdHabilidad(Command):
     Habilidades disponibles: golpe fuerte, golpe rapido, embestida, corte
     """
     key = "habilidad"
-    aliases = ["skill", "usar"]
+    aliases = ["skill"]
     locks = "cmd:all()"
     help_category = "Combate"
 
@@ -283,42 +283,6 @@ class CmdStats(Command):
         )
 
 
-
-
-# --------------------------------------------------------------------------- #
-#  Comando: habilidades (listar las propias)
-# --------------------------------------------------------------------------- #
-
-class CmdListarHabilidades(Command):
-    """
-    Ver tus habilidades de combate disponibles.
-
-    Uso:
-      habilidades
-    """
-    key = "habilidades"
-    aliases = ["skills"]
-    locks = "cmd:all()"
-    help_category = "Combate"
-
-    def func(self):
-        caller = self.caller
-        habilidades = getattr(caller.db, "habilidades", []) or []
-        if not habilidades:
-            caller.msg("Aún no tienes habilidades especiales de combate.")
-            return
-        desc = {
-            "golpe fuerte": "Ataque potente. x1.5 daño, sin bonificación de velocidad.",
-            "golpe rapido": "Ataque rápido. Menor daño, más difícil de esquivar.",
-            "embestida": "+5 daño base. Puede romper la postura del enemigo.",
-            "corte": "Herida cortante. x1.3 daño.",
-            "veneno": "Envenenar al objetivo. +1d4 daño extra.",
-        }
-        lineas = [f"\n|cHabilidades de {caller.key}:|n"]
-        for h in habilidades:
-            d = desc.get(h.lower(), "Sin descripción.")
-            lineas.append(f"  |w{h}|n — {d}")
-        caller.msg("\n".join(lineas) + "\n")
 
 
 # --------------------------------------------------------------------------- #

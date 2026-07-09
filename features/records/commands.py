@@ -50,7 +50,7 @@ class CmdRecords(Command):
     El tablón global se actualiza automáticamente cada 5 minutos.
     """
     key = "records"
-    aliases = ["récords", "ranking", "tablón", "records"]
+    aliases = ["récords", "ranking", "records"]
     locks = "cmd:all()"
     help_category = "General"
 

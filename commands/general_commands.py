@@ -504,7 +504,7 @@ class CmdPercibir(Command):
     Cuanto mayor sea, más detalles podrás descubrir.
     """
     key = "percibir"
-    aliases = ["examinar", "inspect", "buscar"]
+    aliases = ["examinar", "inspect"]
     locks = "cmd:all()"
     help_category = "General"
 
