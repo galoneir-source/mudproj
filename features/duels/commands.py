@@ -185,6 +185,11 @@ class CmdAceptarDuelo(Command):
             caller.msg("No se puede iniciar el duelo: uno de los dos ya está en combate.")
             return
 
+        from features.combat.commands import _get_combat_handler
+        if _get_combat_handler(caller.location):
+            caller.msg("No se puede iniciar el duelo: ya hay un combate en curso en esta sala.")
+            return
+
         apuesta = pendiente.get("apuesta", 0)
         if apuesta:
             ok, motivo = validar_apuesta(

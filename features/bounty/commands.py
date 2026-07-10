@@ -229,6 +229,11 @@ class CmdCazar(Command):
             caller.msg("No puedes iniciar un duelo aquí.")
             return
 
+        from features.combat.commands import _get_combat_handler
+        if _get_combat_handler(sala):
+            caller.msg("|rYa hay un combate en curso en esta sala. Espera a que termine.|n")
+            return
+
         from systems.bounty.bounty import total_sobre_objetivo
         total = total_sobre_objetivo(objetivo.dbref, bounties)
 
