@@ -116,6 +116,14 @@ class ExpedicionScript(DefaultScript):
     # ------------------------------------------------------------------ #
 
     def at_repeat(self):
+        if self.db.completada:
+            # Expedición ya superada: cuenta atrás antes de teleportar y limpiar.
+            if self.db.ticks_pausa > 0:
+                self.db.ticks_pausa -= 1
+                if self.db.ticks_pausa == 0:
+                    self._limpiar(exito=True)
+            return
+
         if not self.db.activo:
             return
 
@@ -287,12 +295,9 @@ class ExpedicionScript(DefaultScript):
             except Exception:
                 pass
 
-        # Esperar 5 segundos (2 ticks) antes de limpiar
+        # Pausa de 5s antes de teleportar y limpiar (gestionada en at_repeat
+        # cuando self.db.completada es True).
         self.db.ticks_pausa = max(1, 5 // _TICK_SEGS)
-        # Marcar para limpieza tras la pausa usando el flag completada
-        # El siguiente at_repeat lo detectará y limpiará
-        # Sobreescribir at_repeat para manejar el estado post-completado
-        self._pendiente_limpieza = True
 
     # ------------------------------------------------------------------ #
     #  Limpieza

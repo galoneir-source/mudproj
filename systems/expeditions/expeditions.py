@@ -51,14 +51,14 @@ TIPOS_VALIDOS: frozenset[str] = frozenset(EXPEDICIONES)
 # La última oleada es siempre la del jefe.
 OLEADAS: dict[str, list[list[tuple[str, int]]]] = {
     "bosque_profundo": [
-        [("LOBO", 2), ("ARAÑA_CUEVA", 1)],
-        [("LOBO", 3), ("BANDIDO", 1)],
+        [("GOBLIN", 2), ("ARANA_CUEVA", 1)],
+        [("GOBLIN", 3), ("BANDIDO", 1)],
         [("GOBLIN_JEFE", 1)],
     ],
     "catacumbas_perdidas": [
-        [("CABALLERO_SOMBRAS", 2)],
-        [("CABALLERO_SOMBRAS", 2), ("ESPECTRO", 1)],
-        [("CABALLERO_SOMBRAS", 1), ("HECHICERO_SOMBRIO", 1)],
+        [("ESQUELETO", 2)],
+        [("ESQUELETO", 2), ("ESPECTRO", 1)],
+        [("ESQUELETO", 1), ("HECHICERO_SOMBRIO", 1)],
         [("CABALLERO_OSCURO", 1)],
     ],
     "fortaleza_caida": [
