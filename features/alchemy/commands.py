@@ -35,7 +35,7 @@ class CmdAlquimia(Command):
     Ejemplo:
       alquimia lista
       alquimia info antidoto_reforzado
-      alquimia elaborar balsamoregenerador
+      alquimia elaborar balsamo_regenerador
     """
     key = "alquimia"
     aliases = ["alchemy", "alq"]
