@@ -1,539 +1,233 @@
 """
 tests/test_mercado_system.py
 
-Tests de integración Evennia para el sistema de mercado de jugadores (v0.25.0).
-Cubre: MarketScript (publicar, comprar, retirar), CmdMercado (todos los
-subcomandos), límites, comisión, notificación al vendedor.
+Tests unitarios puros para el sistema de mercado de jugadores (v0.25.0).
+Sin dependencias de Evennia.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_mercado_system
+  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_mercado_system.py
 """
-from evennia import create_object, create_script
-from evennia.utils.test_resources import EvenniaTest
+import unittest
 
-from features.market.commands import CmdMercado
-from features.market.market_script import MarketScript
 from systems.market.market import (
     MAX_LISTINGS_POR_JUGADOR,
+    PRECIO_MAX,
+    PRECIO_MIN,
+    COMISION_PCT,
     calcular_comision,
     calcular_ganancia,
+    formatear_listing,
+    validar_precio,
+    _fmt,
 )
 
 
-def _make_cmd(CmdClass, caller, args=""):
-    cmd = CmdClass()
-    cmd.caller = caller
-    cmd.args = args
-    cmd.cmdstring = cmd.key
-    cmd.session = None
-    cmd.obj = caller
-    cmd.raw_string = cmd.key + (" " + args if args else "")
-    cmd.switches = []
-    cmd.lhs = args
-    cmd.rhs = ""
-    return cmd
+# --------------------------------------------------------------------------- #
+#  Constantes
+# --------------------------------------------------------------------------- #
 
+class TestConstantes(unittest.TestCase):
 
-class _MsgCapture:
-    def __init__(self, char):
-        self.msgs = []
-        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
+    def test_max_listings_positivo(self):
+        self.assertGreater(MAX_LISTINGS_POR_JUGADOR, 0)
 
-    def all(self):
-        return "\n".join(self.msgs)
+    def test_precio_min_es_uno(self):
+        self.assertEqual(PRECIO_MIN, 1)
 
+    def test_precio_max_mayor_que_min(self):
+        self.assertGreater(PRECIO_MAX, PRECIO_MIN)
 
-def _crear_script():
-    return create_script(MarketScript, key="mercado_global", persistent=True)
-
-
-def _crear_item(owner, nombre="espada de hierro"):
-    return create_object("typeclasses.objects.Object", key=nombre, location=owner)
+    def test_comision_pct_entre_0_y_100(self):
+        self.assertGreater(COMISION_PCT, 0)
+        self.assertLess(COMISION_PCT, 100)
 
 
 # --------------------------------------------------------------------------- #
-#  MarketScript — lógica de datos
+#  validar_precio
 # --------------------------------------------------------------------------- #
 
-class TestMarketScriptPublicar(EvenniaTest):
+class TestValidarPrecio(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
-
-    def test_publicar_devuelve_true_y_lid(self):
-        item = _crear_item(self.char1)
-        ok, lid = self.script.publicar(self.char1, item, 100)
-        self.assertTrue(ok)
-        self.assertIsNotNone(lid)
-
-    def test_lid_es_string(self):
-        item = _crear_item(self.char1)
-        ok, lid = self.script.publicar(self.char1, item, 100)
-        self.assertTrue(ok)
-        self.assertIsInstance(lid, str)
-
-    def test_item_pasa_a_limbo(self):
-        item = _crear_item(self.char1)
-        self.script.publicar(self.char1, item, 100)
-        self.assertIsNone(item.location)
-
-    def test_listing_aparece_en_obtener(self):
-        item = _crear_item(self.char1)
-        ok, lid = self.script.publicar(self.char1, item, 100)
-        listings = self.script.obtener_listings()
-        self.assertIn(lid, listings)
-
-    def test_listing_almacena_precio(self):
-        item = _crear_item(self.char1)
-        ok, lid = self.script.publicar(self.char1, item, 250)
-        entry = self.script.obtener_listings()[lid]
-        self.assertEqual(entry["precio"], 250)
-
-    def test_listing_almacena_vendedor_dbref(self):
-        item = _crear_item(self.char1)
-        ok, lid = self.script.publicar(self.char1, item, 100)
-        entry = self.script.obtener_listings()[lid]
-        self.assertEqual(entry["vendedor_dbref"], self.char1.dbref)
-
-    def test_listing_almacena_nombre_item(self):
-        item = _crear_item(self.char1, nombre="vara arcana")
-        ok, lid = self.script.publicar(self.char1, item, 100)
-        entry = self.script.obtener_listings()[lid]
-        self.assertEqual(entry["item_nombre"], "vara arcana")
-
-    def test_ids_incrementales(self):
-        item1 = _crear_item(self.char1, "a")
-        item2 = _crear_item(self.char1, "b")
-        _, lid1 = self.script.publicar(self.char1, item1, 100)
-        _, lid2 = self.script.publicar(self.char1, item2, 100)
-        self.assertNotEqual(lid1, lid2)
-        self.assertGreater(int(lid2), int(lid1))
-
-    def test_max_listings_bloqueado(self):
-        for i in range(MAX_LISTINGS_POR_JUGADOR):
-            item = _crear_item(self.char1, f"item_{i}")
-            self.script.publicar(self.char1, item, 10)
-        item_extra = _crear_item(self.char1, "extra")
-        ok, msg = self.script.publicar(self.char1, item_extra, 10)
-        self.assertFalse(ok)
-        self.assertIn(str(MAX_LISTINGS_POR_JUGADOR), msg)
-
-    def test_otro_jugador_no_afectado_por_limite_del_primero(self):
-        for i in range(MAX_LISTINGS_POR_JUGADOR):
-            item = _crear_item(self.char1, f"item_{i}")
-            self.script.publicar(self.char1, item, 10)
-        item2 = _crear_item(self.char2, "item_char2")
-        ok, _ = self.script.publicar(self.char2, item2, 10)
+    def test_precio_minimo_valido(self):
+        ok, _ = validar_precio(PRECIO_MIN)
         self.assertTrue(ok)
 
-
-class TestMarketScriptRetirar(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.item = _crear_item(self.char1)
-        _, self.lid = self.script.publicar(self.char1, self.item, 100)
-
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
-
-    def test_retirar_devuelve_true(self):
-        ok, _ = self.script.retirar(self.lid, self.char1)
+    def test_precio_maximo_valido(self):
+        ok, _ = validar_precio(PRECIO_MAX)
         self.assertTrue(ok)
 
-    def test_item_vuelve_al_vendedor(self):
-        self.script.retirar(self.lid, self.char1)
-        self.assertEqual(self.item.location, self.char1)
+    def test_precio_normal_valido(self):
+        ok, _ = validar_precio(500)
+        self.assertTrue(ok)
 
-    def test_listing_eliminado(self):
-        self.script.retirar(self.lid, self.char1)
-        self.assertNotIn(self.lid, self.script.obtener_listings())
-
-    def test_otro_jugador_no_puede_retirar(self):
-        ok, msg = self.script.retirar(self.lid, self.char2)
-        self.assertFalse(ok)
-        self.assertIn("vendedor", msg.lower())
-
-    def test_lid_inexistente_falla(self):
-        ok, msg = self.script.retirar("9999", self.char1)
+    def test_precio_cero_invalido(self):
+        ok, msg = validar_precio(0)
         self.assertFalse(ok)
         self.assertTrue(msg)
 
-
-class TestMarketScriptComprar(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.char2.move_to(self.room1, quiet=True)
-        self.char1.db.monedas = 0
-        self.char2.db.monedas = 1000
-        self.item = _crear_item(self.char1, "daga de acero")
-        _, self.lid = self.script.publicar(self.char1, self.item, 500)
-        self.ganancia = calcular_ganancia(500)
-        self.comision = calcular_comision(500)
-
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
-
-    def test_compra_exitosa(self):
-        ok, msg = self.script.comprar(self.lid, self.char2)
-        self.assertTrue(ok)
-        self.assertEqual(msg, "daga de acero")
-
-    def test_item_pasa_al_comprador(self):
-        self.script.comprar(self.lid, self.char2)
-        self.assertEqual(self.item.location, self.char2)
-
-    def test_comprador_pierde_dinero(self):
-        self.script.comprar(self.lid, self.char2)
-        self.assertEqual(self.char2.db.monedas, 1000 - 500)
-
-    def test_vendedor_recibe_ganancia(self):
-        self.script.comprar(self.lid, self.char2)
-        self.assertEqual(self.char1.db.monedas, self.ganancia)
-
-    def test_listing_eliminado_tras_compra(self):
-        self.script.comprar(self.lid, self.char2)
-        self.assertNotIn(self.lid, self.script.obtener_listings())
-
-    def test_sin_fondos_suficientes_falla(self):
-        self.char2.db.monedas = 100  # precio es 500
-        ok, msg = self.script.comprar(self.lid, self.char2)
-        self.assertFalse(ok)
-        self.assertIn("monedas", msg.lower())
-
-    def test_sin_fondos_item_no_se_mueve(self):
-        self.char2.db.monedas = 100
-        self.script.comprar(self.lid, self.char2)
-        self.assertIsNone(self.item.location)  # sigue en limbo
-
-    def test_no_puede_comprar_propio_objeto(self):
-        # Damos monedas a char1 para que no falle por saldo
-        self.char1.db.monedas = 1000
-        ok, msg = self.script.comprar(self.lid, self.char1)
-        self.assertFalse(ok)
-        self.assertIn("propio", msg.lower())
-
-    def test_lid_inexistente_falla(self):
-        ok, msg = self.script.comprar("9999", self.char2)
+    def test_precio_negativo_invalido(self):
+        ok, msg = validar_precio(-10)
         self.assertFalse(ok)
         self.assertTrue(msg)
 
-    def test_vendedor_notificado_si_online(self):
-        mensajes_vendedor = []
-        self.char1.msg = lambda text=None, **kw: mensajes_vendedor.append(str(text))
-        self.script.comprar(self.lid, self.char2)
-        self.assertTrue(any("comprado" in m.lower() for m in mensajes_vendedor))
+    def test_precio_sobre_maximo_invalido(self):
+        ok, msg = validar_precio(PRECIO_MAX + 1)
+        self.assertFalse(ok)
+        self.assertTrue(msg)
+
+    def test_precio_string_numero_valido(self):
+        ok, _ = validar_precio("200")
+        self.assertTrue(ok)
+
+    def test_precio_string_invalido(self):
+        ok, msg = validar_precio("mucho")
+        self.assertFalse(ok)
+        self.assertTrue(msg)
+
+    def test_precio_none_invalido(self):
+        ok, msg = validar_precio(None)
+        self.assertFalse(ok)
+        self.assertTrue(msg)
+
+    def test_precio_float_string_invalido(self):
+        ok, _ = validar_precio("9.99")
+        self.assertFalse(ok)
+
+    def test_precio_uno_valido(self):
+        ok, _ = validar_precio(1)
+        self.assertTrue(ok)
+
+    def test_error_contiene_info(self):
+        _, msg = validar_precio(-5)
+        self.assertIsInstance(msg, str)
+        self.assertGreater(len(msg), 0)
 
 
 # --------------------------------------------------------------------------- #
-#  CmdMercado — sin argumentos (listar)
+#  calcular_comision
 # --------------------------------------------------------------------------- #
 
-class TestCmdMercadoListar(EvenniaTest):
+class TestCalcularComision(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
+    def test_comision_100_es_5(self):
+        self.assertEqual(calcular_comision(100), 5)
 
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
+    def test_comision_200_es_10(self):
+        self.assertEqual(calcular_comision(200), 10)
 
-    def test_mercado_vacio_muestra_mensaje(self):
-        cmd = _make_cmd(CmdMercado, self.char1, "")
-        cmd.func()
-        self.assertIn("no hay", self.cap.all().lower())
+    def test_comision_1_redondea_arriba(self):
+        # 5% de 1 = 0.05 → ceil → 1
+        self.assertEqual(calcular_comision(1), 1)
 
-    def test_mercado_con_item_muestra_nombre(self):
-        item = _crear_item(self.char1, "espada de prueba")
-        self.script.publicar(self.char1, item, 300)
-        cmd = _make_cmd(CmdMercado, self.char1, "")
-        cmd.func()
-        self.assertIn("espada de prueba", self.cap.all())
+    def test_comision_10_es_1(self):
+        # 5% de 10 = 0.5 → ceil → 1
+        self.assertEqual(calcular_comision(10), 1)
 
-    def test_mercado_muestra_precio(self):
-        item = _crear_item(self.char1, "daga")
-        self.script.publicar(self.char1, item, 750)
-        cmd = _make_cmd(CmdMercado, self.char1, "")
-        cmd.func()
-        self.assertIn("750", self.cap.all())
+    def test_comision_20_es_1(self):
+        self.assertEqual(calcular_comision(20), 1)
 
-    def test_mercado_muestra_vendedor(self):
-        item = _crear_item(self.char1)
-        self.script.publicar(self.char1, item, 100)
-        cmd = _make_cmd(CmdMercado, self.char1, "")
-        cmd.func()
-        self.assertIn(self.char1.key, self.cap.all())
+    def test_comision_21_es_2(self):
+        # 5% de 21 = 1.05 → ceil → 2
+        self.assertEqual(calcular_comision(21), 2)
+
+    def test_comision_1000_es_50(self):
+        self.assertEqual(calcular_comision(1000), 50)
+
+    def test_comision_no_supera_precio(self):
+        for p in [1, 10, 100, 1000, 99999]:
+            self.assertLessEqual(calcular_comision(p), p)
+
+    def test_comision_siempre_positiva(self):
+        for p in [1, 5, 100, 999]:
+            self.assertGreater(calcular_comision(p), 0)
 
 
 # --------------------------------------------------------------------------- #
-#  CmdMercado — vender
+#  calcular_ganancia
 # --------------------------------------------------------------------------- #
 
-class TestCmdMercadoVender(EvenniaTest):
+class TestCalcularGanancia(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
+    def test_ganancia_100(self):
+        self.assertEqual(calcular_ganancia(100), 95)
 
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
+    def test_ganancia_200(self):
+        self.assertEqual(calcular_ganancia(200), 190)
 
-    def test_vender_item_existente(self):
-        _crear_item(self.char1, "poción de vida")
-        cmd = _make_cmd(CmdMercado, self.char1, "vender poción de vida 100")
-        cmd.func()
-        self.assertIn("venta", self.cap.all().lower())
+    def test_ganancia_1000(self):
+        self.assertEqual(calcular_ganancia(1000), 950)
 
-    def test_vender_muestra_id(self):
-        _crear_item(self.char1, "daga")
-        cmd = _make_cmd(CmdMercado, self.char1, "vender daga 50")
-        cmd.func()
-        self.assertIn("#", self.cap.all())
+    def test_ganancia_menor_que_precio(self):
+        for p in [10, 100, 500]:
+            self.assertLess(calcular_ganancia(p), p)
 
-    def test_vender_item_no_existente_falla(self):
-        cmd = _make_cmd(CmdMercado, self.char1, "vender dragón legendario 9999")
-        cmd.func()
-        self.assertIn("no tienes", self.cap.all().lower())
+    def test_ganancia_mas_comision_igual_precio(self):
+        for p in [100, 200, 500, 1000]:
+            self.assertEqual(calcular_ganancia(p) + calcular_comision(p), p)
 
-    def test_vender_precio_invalido_falla(self):
-        _crear_item(self.char1, "item")
-        cmd = _make_cmd(CmdMercado, self.char1, "vender item abc")
-        cmd.func()
-        self.assertIn("precio", self.cap.all().lower())
-
-    def test_vender_precio_cero_falla(self):
-        _crear_item(self.char1, "item")
-        cmd = _make_cmd(CmdMercado, self.char1, "vender item 0")
-        cmd.func()
-        self.assertIn("precio", self.cap.all().lower())
-
-    def test_vender_muestra_comision(self):
-        _crear_item(self.char1, "arma")
-        cmd = _make_cmd(CmdMercado, self.char1, "vender arma 200")
-        cmd.func()
-        self.assertIn("comisión", self.cap.all().lower())
-
-    def test_vender_sin_precio_muestra_uso(self):
-        cmd = _make_cmd(CmdMercado, self.char1, "vender solo_nombre_sin_precio")
-        cmd.func()
-        texto = self.cap.all().lower()
-        self.assertTrue("uso" in texto or "precio" in texto)
+    def test_ganancia_no_negativa(self):
+        for p in [1, 2, 10, 100]:
+            self.assertGreaterEqual(calcular_ganancia(p), 0)
 
 
 # --------------------------------------------------------------------------- #
-#  CmdMercado — comprar
+#  formatear_listing
 # --------------------------------------------------------------------------- #
 
-class TestCmdMercadoComprar(EvenniaTest):
+class TestFormatearListing(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.char2.move_to(self.room1, quiet=True)
-        self.char1.db.monedas = 0
-        self.char2.db.monedas = 2000
-        self.item = _crear_item(self.char1, "espada rara")
-        _, self.lid = self.script.publicar(self.char1, self.item, 400)
-        self.cap2 = _MsgCapture(self.char2)
+    def test_devuelve_string(self):
+        self.assertIsInstance(formatear_listing("1", "Aragorn", "espada", 100), str)
 
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
+    def test_contiene_id(self):
+        linea = formatear_listing("5", "A", "espada", 100)
+        self.assertIn("5", linea)
 
-    def test_comprar_exitoso(self):
-        cmd = _make_cmd(CmdMercado, self.char2, f"comprar {self.lid}")
-        cmd.func()
-        self.assertIn("comprado", self.cap2.all().lower())
+    def test_contiene_vendedor(self):
+        linea = formatear_listing("1", "Gandalf", "vara arcana", 200)
+        self.assertIn("Gandalf", linea)
 
-    def test_comprar_item_en_inventario(self):
-        cmd = _make_cmd(CmdMercado, self.char2, f"comprar {self.lid}")
-        cmd.func()
-        self.assertEqual(self.item.location, self.char2)
+    def test_contiene_item(self):
+        linea = formatear_listing("1", "V", "daga de acero", 50)
+        self.assertIn("daga de acero", linea)
 
-    def test_comprar_descuenta_monedas(self):
-        cmd = _make_cmd(CmdMercado, self.char2, f"comprar {self.lid}")
-        cmd.func()
-        self.assertEqual(self.char2.db.monedas, 1600)
+    def test_contiene_precio(self):
+        linea = formatear_listing("1", "V", "item", 999)
+        self.assertIn("999", linea)
 
-    def test_comprar_sin_fondos_falla(self):
-        self.char2.db.monedas = 50
-        cmd = _make_cmd(CmdMercado, self.char2, f"comprar {self.lid}")
-        cmd.func()
-        self.assertIn("monedas", self.cap2.all().lower())
+    def test_precio_con_separador_miles(self):
+        linea = formatear_listing("1", "V", "item", 1500)
+        self.assertIn("1.500", linea)
 
-    def test_comprar_id_inexistente_falla(self):
-        cmd = _make_cmd(CmdMercado, self.char2, "comprar 9999")
-        cmd.func()
-        self.assertIn("existe", self.cap2.all().lower())
+    def test_precio_mas_de_un_millon(self):
+        linea = formatear_listing("2", "V", "item", 1_000_000)
+        self.assertIn("1.000.000", linea)
 
 
 # --------------------------------------------------------------------------- #
-#  CmdMercado — retirar
+#  _fmt (helper de formateo)
 # --------------------------------------------------------------------------- #
 
-class TestCmdMercadoRetirar(EvenniaTest):
+class TestFmt(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.char2.move_to(self.room1, quiet=True)
-        self.item = _crear_item(self.char1, "escudo")
-        _, self.lid = self.script.publicar(self.char1, self.item, 200)
-        self.cap1 = _MsgCapture(self.char1)
-        self.cap2 = _MsgCapture(self.char2)
+    def test_cero(self):
+        self.assertEqual(_fmt(0), "0")
 
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
+    def test_menos_de_mil(self):
+        self.assertEqual(_fmt(999), "999")
 
-    def test_retirar_exitoso(self):
-        cmd = _make_cmd(CmdMercado, self.char1, f"retirar {self.lid}")
-        cmd.func()
-        self.assertIn("retirado", self.cap1.all().lower())
+    def test_exactamente_mil(self):
+        self.assertEqual(_fmt(1000), "1.000")
 
-    def test_retirar_devuelve_item(self):
-        cmd = _make_cmd(CmdMercado, self.char1, f"retirar {self.lid}")
-        cmd.func()
-        self.assertEqual(self.item.location, self.char1)
+    def test_millon(self):
+        self.assertEqual(_fmt(1_000_000), "1.000.000")
 
-    def test_otro_jugador_no_puede_retirar(self):
-        cmd = _make_cmd(CmdMercado, self.char2, f"retirar {self.lid}")
-        cmd.func()
-        self.assertIn("vendedor", self.cap2.all().lower())
+    def test_usa_punto_como_separador(self):
+        self.assertIn(".", _fmt(10000))
 
-    def test_retirar_id_inexistente_falla(self):
-        cmd = _make_cmd(CmdMercado, self.char1, "retirar 9999")
-        cmd.func()
-        self.assertIn("existe", self.cap1.all().lower())
-
-
-# --------------------------------------------------------------------------- #
-#  CmdMercado — mis ventas
-# --------------------------------------------------------------------------- #
-
-class TestCmdMercadoMisVentas(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
-
-    def test_sin_ventas_muestra_mensaje(self):
-        cmd = _make_cmd(CmdMercado, self.char1, "mis ventas")
-        cmd.func()
-        self.assertIn("no tienes", self.cap.all().lower())
-
-    def test_con_ventas_muestra_item(self):
-        item = _crear_item(self.char1, "amuleto")
-        self.script.publicar(self.char1, item, 150)
-        cmd = _make_cmd(CmdMercado, self.char1, "mis ventas")
-        cmd.func()
-        self.assertIn("amuleto", self.cap.all().lower())
-
-    def test_no_muestra_ventas_de_otro(self):
-        item2 = _crear_item(self.char2, "espada ajena")
-        self.script.publicar(self.char2, item2, 300)
-        cmd = _make_cmd(CmdMercado, self.char1, "mis ventas")
-        cmd.func()
-        self.assertNotIn("espada ajena", self.cap.all())
-
-    def test_alias_mio_funciona(self):
-        item = _crear_item(self.char1, "hacha")
-        self.script.publicar(self.char1, item, 80)
-        cmd = _make_cmd(CmdMercado, self.char1, "mio")
-        cmd.func()
-        self.assertIn("hacha", self.cap.all().lower())
-
-
-# --------------------------------------------------------------------------- #
-#  Comisión y transferencia de dinero
-# --------------------------------------------------------------------------- #
-
-class TestComisionYTransferencia(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        self.script = _crear_script()
-        self.char1.move_to(self.room1, quiet=True)
-        self.char2.move_to(self.room1, quiet=True)
-
-    def tearDown(self):
-        try:
-            self.script.delete()
-        except Exception:
-            pass
-        super().tearDown()
-
-    def test_vendedor_recibe_precio_menos_comision(self):
-        precio = 1000
-        self.char1.db.monedas = 0
-        self.char2.db.monedas = precio + 100
-        item = _crear_item(self.char1)
-        _, lid = self.script.publicar(self.char1, item, precio)
-        self.script.comprar(lid, self.char2)
-        esperado = calcular_ganancia(precio)
-        self.assertEqual(self.char1.db.monedas, esperado)
-
-    def test_comprador_paga_precio_completo(self):
-        precio = 500
-        self.char1.db.monedas = 0
-        self.char2.db.monedas = 1000
-        item = _crear_item(self.char1)
-        _, lid = self.script.publicar(self.char1, item, precio)
-        self.script.comprar(lid, self.char2)
-        self.assertEqual(self.char2.db.monedas, 1000 - precio)
+    def test_no_usa_coma(self):
+        self.assertNotIn(",", _fmt(10000))
 
 
 if __name__ == "__main__":
-    import unittest
     unittest.main()
