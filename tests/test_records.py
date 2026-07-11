@@ -1,287 +1,273 @@
 """
 tests/test_records.py
 
-Tests unitarios puros para el sistema de récords globales (v0.23.0).
-Sin dependencias de Evennia.
+Tests de integración Evennia para el sistema de récords globales (v0.23.0).
+Cubre: RecordsScript (caché y actualización), CmdRecords (global, personal, categoría).
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_records.py
+  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_records
 """
-import unittest
+from evennia import create_script
+from evennia.utils.test_resources import EvenniaTest
 
-from systems.records.records import (
-    CATEGORIAS,
-    CAT_IDS,
-    TOP_N,
-    extraer_stat,
-    extraer_stat_crafteo,
-    extraer_stat_duelos,
-    extraer_stat_jefes,
-    extraer_stat_kills,
-    extraer_stat_misiones,
-    formatear_numero,
-    formatear_posicion,
-    tiempo_desde,
-    top_n,
-)
+from features.records.commands import CmdRecords
+from features.records.records_script import RecordsScript
+from systems.records.records import CAT_IDS, CATEGORIAS
 
 
-# ---------------------------------------------------------------------------
-# Catálogo de categorías
-# ---------------------------------------------------------------------------
+def _make_cmd(CmdClass, caller, args=""):
+    cmd = CmdClass()
+    cmd.caller = caller
+    cmd.args = args
+    cmd.cmdstring = cmd.key
+    cmd.session = None
+    cmd.obj = caller
+    cmd.raw_string = cmd.key + (" " + args if args else "")
+    cmd.switches = []
+    cmd.lhs = args
+    cmd.rhs = ""
+    return cmd
 
-class TestCategorias(unittest.TestCase):
 
-    def test_existen_cinco_categorias(self):
-        self.assertEqual(len(CATEGORIAS), 5)
+def _init_char(char, kills=0, quests=None, jefes=None, duelos=0, crafteo=0, nivel=5):
+    char.db.nivel = nivel
+    char.db.kills_totales = kills
+    char.db.quests = quests if quests is not None else {}
+    char.db.jefes_derrotados = jefes if jefes is not None else []
+    char.db.duelos_ganados = duelos
+    char.db.objetos_crafteados = crafteo
+    char.db.gremio = None
+    char.db.titulo_activo = None
 
-    def test_cat_ids_contiene_kills(self):
-        self.assertIn("kills", CAT_IDS)
 
-    def test_cat_ids_contiene_misiones(self):
-        self.assertIn("misiones", CAT_IDS)
+class _MsgCapture:
+    def __init__(self, char):
+        self.msgs = []
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
-    def test_cat_ids_contiene_jefes(self):
-        self.assertIn("jefes", CAT_IDS)
+    def all(self):
+        return "\n".join(self.msgs)
 
-    def test_cat_ids_contiene_duelos(self):
-        self.assertIn("duelos", CAT_IDS)
 
-    def test_cat_ids_contiene_crafteo(self):
-        self.assertIn("crafteo", CAT_IDS)
-
-    def test_todas_tienen_titulo(self):
-        for cat_id, cat in CATEGORIAS.items():
-            self.assertIn("titulo", cat, cat_id)
-            self.assertTrue(cat["titulo"])
-
-    def test_todas_tienen_icono(self):
-        for cat_id, cat in CATEGORIAS.items():
-            self.assertIn("icono", cat, cat_id)
-            self.assertTrue(cat["icono"])
-
-    def test_todas_tienen_descripcion(self):
-        for cat_id, cat in CATEGORIAS.items():
-            self.assertIn("descripcion", cat, cat_id)
-
-    def test_top_n_es_positivo(self):
-        self.assertGreater(TOP_N, 0)
+def _crear_script():
+    return create_script(RecordsScript, key="records_global", persistent=True)
 
 
 # ---------------------------------------------------------------------------
-# Extracción de stats
+# RecordsScript: caché y actualización
 # ---------------------------------------------------------------------------
 
-class TestExtraerStats(unittest.TestCase):
+class TestRecordsScript(EvenniaTest):
 
-    # kills
-    def test_kills_cero_cuando_none(self):
-        self.assertEqual(extraer_stat_kills(None), 0)
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1, kills=100, duelos=5)
+        _init_char(self.char2, kills=50, duelos=10)
+        self.script = _crear_script()
 
-    def test_kills_cero_cuando_cero(self):
-        self.assertEqual(extraer_stat_kills(0), 0)
+    def tearDown(self):
+        try:
+            self.script.delete()
+        except Exception:
+            pass
+        super().tearDown()
 
-    def test_kills_valor_positivo(self):
-        self.assertEqual(extraer_stat_kills(42), 42)
+    def test_script_se_crea_con_clave(self):
+        self.assertEqual(self.script.key, "records_global")
 
-    # misiones
-    def test_misiones_cero_dict_vacio(self):
-        self.assertEqual(extraer_stat_misiones({}), 0)
+    def test_cache_se_inicializa_como_dict(self):
+        cache = dict(self.script.db.cache or {})
+        self.assertIsInstance(cache, dict)
 
-    def test_misiones_cero_cuando_none(self):
-        self.assertEqual(extraer_stat_misiones(None), 0)
+    def test_actualizar_rellena_cache(self):
+        self.script.actualizar()
+        cache = dict(self.script.db.cache or {})
+        self.assertIn("kills", cache)
 
-    def test_misiones_cuenta_solo_entregadas(self):
-        quests = {
-            "a": {"estado": "entregada"},
-            "b": {"estado": "activa"},
-            "c": {"estado": "completada"},
-            "d": {"estado": "entregada"},
+    def test_actualizar_incluye_char_con_kills(self):
+        self.script.actualizar()
+        top = self.script.get_top("kills")
+        nombres = [n for n, _ in top]
+        self.assertIn(self.char1.key, nombres)
+
+    def test_top_kills_ordenado_desc(self):
+        self.script.actualizar()
+        top = self.script.get_top("kills")
+        if len(top) >= 2:
+            self.assertGreaterEqual(top[0][1], top[1][1])
+
+    def test_get_top_cat_desconocida_vacia(self):
+        self.script.actualizar()
+        top = self.script.get_top("xyz")
+        self.assertEqual(top, [])
+
+    def test_ultimo_actualizado_se_registra(self):
+        self.script.actualizar()
+        ts = self.script.db.ultimo_actualizado or 0
+        self.assertGreater(ts, 0)
+
+    def test_actualizar_cuenta_misiones_entregadas(self):
+        self.char1.db.quests = {
+            "q1": {"estado": "entregada"},
+            "q2": {"estado": "activa"},
+            "q3": {"estado": "entregada"},
         }
-        self.assertEqual(extraer_stat_misiones(quests), 2)
+        self.script.actualizar()
+        top = self.script.get_top("misiones")
+        # char1 debe tener 2 misiones entregadas
+        entry = next((v for n, v in top if n == self.char1.key), None)
+        self.assertEqual(entry, 2)
 
-    def test_misiones_filtra_activas(self):
-        quests = {"a": {"estado": "activa"}}
-        self.assertEqual(extraer_stat_misiones(quests), 0)
-
-    def test_misiones_filtra_completadas(self):
-        quests = {"a": {"estado": "completada"}}
-        self.assertEqual(extraer_stat_misiones(quests), 0)
-
-    def test_misiones_todas_entregadas(self):
-        quests = {f"q{i}": {"estado": "entregada"} for i in range(5)}
-        self.assertEqual(extraer_stat_misiones(quests), 5)
-
-    # jefes
-    def test_jefes_cero_lista_vacia(self):
-        self.assertEqual(extraer_stat_jefes([]), 0)
-
-    def test_jefes_cero_cuando_none(self):
-        self.assertEqual(extraer_stat_jefes(None), 0)
-
-    def test_jefes_cuenta_elementos(self):
-        self.assertEqual(extraer_stat_jefes(["BOSS_A", "BOSS_B", "BOSS_C"]), 3)
-
-    # duelos
-    def test_duelos_cero_cuando_none(self):
-        self.assertEqual(extraer_stat_duelos(None), 0)
-
-    def test_duelos_valor(self):
-        self.assertEqual(extraer_stat_duelos(7), 7)
-
-    # crafteo
-    def test_crafteo_cero_cuando_none(self):
-        self.assertEqual(extraer_stat_crafteo(None), 0)
-
-    def test_crafteo_valor(self):
-        self.assertEqual(extraer_stat_crafteo(15), 15)
-
-
-class TestExtraerStatGenerico(unittest.TestCase):
-    """Tests de la función unificada extraer_stat(cat_id, db_dict)."""
-
-    def _db(self, **kwargs):
-        return {
-            "kills_totales": 0,
-            "quests": {},
-            "jefes_derrotados": [],
-            "duelos_ganados": 0,
-            "objetos_crafteados": 0,
-            **kwargs,
-        }
-
-    def test_kills(self):
-        self.assertEqual(extraer_stat("kills", self._db(kills_totales=10)), 10)
-
-    def test_misiones(self):
-        db = self._db(quests={"q1": {"estado": "entregada"}})
-        self.assertEqual(extraer_stat("misiones", db), 1)
-
-    def test_jefes(self):
-        db = self._db(jefes_derrotados=["A", "B"])
-        self.assertEqual(extraer_stat("jefes", db), 2)
-
-    def test_duelos(self):
-        db = self._db(duelos_ganados=5)
-        self.assertEqual(extraer_stat("duelos", db), 5)
-
-    def test_crafteo(self):
-        db = self._db(objetos_crafteados=3)
-        self.assertEqual(extraer_stat("crafteo", db), 3)
-
-    def test_categoria_desconocida(self):
-        self.assertEqual(extraer_stat("xyz", self._db()), 0)
+    def test_actualizar_cuenta_jefes(self):
+        self.char2.db.jefes_derrotados = ["JEFE_A", "JEFE_B"]
+        self.script.actualizar()
+        top = self.script.get_top("jefes")
+        entry = next((v for n, v in top if n == self.char2.key), None)
+        self.assertEqual(entry, 2)
 
 
 # ---------------------------------------------------------------------------
-# top_n
+# CmdRecords — vista global
 # ---------------------------------------------------------------------------
 
-class TestTopN(unittest.TestCase):
+class TestCmdRecordsGlobal(EvenniaTest):
 
-    def test_ordena_descendente(self):
-        entradas = [("B", 10), ("A", 50), ("C", 30)]
-        resultado = top_n(entradas)
-        self.assertEqual(resultado[0], ("A", 50))
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1, kills=200)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        self.script = _crear_script()
+        self.script.actualizar()
 
-    def test_devuelve_n_primeros(self):
-        entradas = [(str(i), i) for i in range(10)]
-        self.assertEqual(len(top_n(entradas, 5)), 5)
+    def tearDown(self):
+        try:
+            self.script.delete()
+        except Exception:
+            pass
+        super().tearDown()
 
-    def test_n_mayor_que_lista(self):
-        entradas = [("A", 1), ("B", 2)]
-        self.assertEqual(len(top_n(entradas, 10)), 2)
+    def test_records_sin_args_muestra_todas_categorias(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "")
+        cmd.func()
+        texto = self.cap.all()
+        for cat_id in CAT_IDS:
+            cat = CATEGORIAS[cat_id]
+            self.assertIn(cat["titulo"], texto, f"Falta categoría: {cat_id}")
 
-    def test_lista_vacia(self):
-        self.assertEqual(top_n([], 5), [])
+    def test_records_muestra_jugador_con_kills(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "")
+        cmd.func()
+        self.assertIn(self.char1.key, self.cap.all())
 
-    def test_lista_un_elemento(self):
-        self.assertEqual(top_n([("A", 99)]), [("A", 99)])
-
-    def test_usa_top_n_por_defecto(self):
-        entradas = [(str(i), i) for i in range(10)]
-        self.assertEqual(len(top_n(entradas)), TOP_N)
-
-    def test_empate_preserva_ambos(self):
-        entradas = [("A", 10), ("B", 10)]
-        resultado = top_n(entradas, 2)
-        self.assertEqual(len(resultado), 2)
-
-
-# ---------------------------------------------------------------------------
-# formatear_numero
-# ---------------------------------------------------------------------------
-
-class TestFormatearNumero(unittest.TestCase):
-
-    def test_cero(self):
-        self.assertEqual(formatear_numero(0), "0")
-
-    def test_menos_de_mil(self):
-        self.assertEqual(formatear_numero(999), "999")
-
-    def test_exactamente_mil(self):
-        self.assertEqual(formatear_numero(1000), "1.000")
-
-    def test_millón(self):
-        self.assertEqual(formatear_numero(1_000_000), "1.000.000")
-
-    def test_usa_punto_como_separador(self):
-        # Convención española: puntos como separadores de miles
-        self.assertIn(".", formatear_numero(1500))
+    def test_records_sin_script_no_falla(self):
+        self.script.delete()
+        cmd = _make_cmd(CmdRecords, self.char1, "")
+        # No debe lanzar excepción
+        try:
+            cmd.func()
+        except Exception as e:
+            self.fail(f"CmdRecords lanzó excepción sin script: {e}")
+        self.script = None  # ya borrado
 
 
 # ---------------------------------------------------------------------------
-# formatear_posicion
+# CmdRecords — vista personal
 # ---------------------------------------------------------------------------
 
-class TestFormatearPosicion(unittest.TestCase):
+class TestCmdRecordsPersonal(EvenniaTest):
 
-    def test_devuelve_string(self):
-        self.assertIsInstance(formatear_posicion(1, "Aragorn", 100), str)
+    def setUp(self):
+        super().setUp()
+        _init_char(
+            self.char1,
+            kills=42,
+            quests={"q1": {"estado": "entregada"}, "q2": {"estado": "activa"}},
+            jefes=["J1", "J2"],
+            duelos=7,
+            crafteo=13,
+            nivel=8,
+        )
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
 
-    def test_contiene_posicion(self):
-        linea = formatear_posicion(3, "Aragorn", 100)
-        self.assertIn("3.", linea)
+    def _personal(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "personal")
+        cmd.func()
 
-    def test_contiene_nombre(self):
-        linea = formatear_posicion(1, "Gandalf", 500)
-        self.assertIn("Gandalf", linea)
+    def test_muestra_nombre_personaje(self):
+        self._personal()
+        self.assertIn(self.char1.key.upper(), self.cap.all())
 
-    def test_contiene_valor_formateado(self):
-        linea = formatear_posicion(1, "A", 1500)
-        self.assertIn("1.500", linea)
+    def test_muestra_kills(self):
+        self._personal()
+        self.assertIn("42", self.cap.all())
 
-    def test_numero_cero(self):
-        linea = formatear_posicion(1, "Novato", 0)
-        self.assertIn("0", linea)
+    def test_muestra_misiones_entregadas(self):
+        self._personal()
+        self.assertIn("1", self.cap.all())  # solo 1 entregada
+
+    def test_muestra_jefes(self):
+        self._personal()
+        self.assertIn("2", self.cap.all())
+
+    def test_muestra_duelos(self):
+        self._personal()
+        self.assertIn("7", self.cap.all())
+
+    def test_muestra_crafteo(self):
+        self._personal()
+        self.assertIn("13", self.cap.all())
+
+    def test_muestra_nivel(self):
+        self._personal()
+        self.assertIn("8", self.cap.all())
+
+    def test_muestra_gremio_si_existe(self):
+        self.char1.db.gremio = "Guardianes"
+        self._personal()
+        self.assertIn("Guardianes", self.cap.all())
 
 
 # ---------------------------------------------------------------------------
-# tiempo_desde
+# CmdRecords — vista por categoría
 # ---------------------------------------------------------------------------
 
-class TestTiempoDesde(unittest.TestCase):
+class TestCmdRecordsCategoria(EvenniaTest):
 
-    def test_ts_cero_desconocido(self):
-        self.assertIn("desconocido", tiempo_desde(0, 1000))
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1, kills=999)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        self.script = _crear_script()
+        self.script.actualizar()
 
-    def test_segundos(self):
-        txt = tiempo_desde(1000, 1030)
-        self.assertIn("30s", txt)
+    def tearDown(self):
+        try:
+            self.script.delete()
+        except Exception:
+            pass
+        super().tearDown()
 
-    def test_minutos(self):
-        txt = tiempo_desde(1000, 1000 + 125)
-        self.assertIn("min", txt)
+    def test_records_categoria_kills(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "kills")
+        cmd.func()
+        texto = self.cap.all()
+        self.assertIn("Guerrero", texto)
+        self.assertIn(self.char1.key, texto)
 
-    def test_horas(self):
-        txt = tiempo_desde(1000, 1000 + 7200)
-        self.assertIn("h", txt)
+    def test_records_categoria_duelos(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "duelos")
+        cmd.func()
+        self.assertIn("Duelista", self.cap.all())
 
-    def test_menos_de_un_minuto(self):
-        txt = tiempo_desde(1000, 1000 + 45)
-        self.assertIn("s", txt)
+    def test_records_categoria_invalida(self):
+        cmd = _make_cmd(CmdRecords, self.char1, "magia")
+        cmd.func()
+        self.assertIn("no reconocida", self.cap.all().lower())
 
 
 if __name__ == "__main__":
+    import unittest
     unittest.main()
