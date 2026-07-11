@@ -25,7 +25,7 @@ def _obtener_script_expedicion(jugador):
     if not script_id:
         return None
     from evennia import search_script
-    resultados = search_script(f"#{script_id}", exact=False)
+    resultados = search_script(f"#{script_id}")
     if resultados:
         return resultados[0]
     # Fallback: buscar por id directamente
@@ -127,23 +127,18 @@ class CmdExpedicion(Command):
             )
             return
 
-        # Verificar que es líder de grupo
-        lider_dbref = getattr(caller.db, "lider_partido", None)
-        miembros_dbrefs = list(getattr(caller.db, "miembros_partido", []) or [])
-
-        if lider_dbref and lider_dbref != caller.dbref:
+        # Verificar que es líder de grupo. db.lider_partido guarda el objeto
+        # Character del líder (no un dbref), así que se compara por
+        # identidad de objeto, no como string.
+        lider = getattr(caller.db, "lider_partido", None)
+        if lider and lider != caller:
             caller.msg("|rSolo el líder del grupo puede iniciar una expedición.|n")
             return
 
-        # Recopilar miembros del grupo (incluyendo al líder)
-        if miembros_dbrefs:
-            from evennia import search_object
-            miembros = []
-            for dbref in [caller.dbref] + miembros_dbrefs:
-                resultados = search_object(dbref)
-                if resultados:
-                    miembros.append(resultados[0])
-        else:
+        # Recopilar miembros del grupo (incluyendo al líder). db.miembros_partido
+        # ya contiene objetos Character reales (solo se puebla en el líder).
+        miembros = list(getattr(caller.db, "miembros_partido", []) or [])
+        if not miembros:
             miembros = [caller]
 
         niveles = [getattr(m.db, "nivel", 1) or 1 for m in miembros]
