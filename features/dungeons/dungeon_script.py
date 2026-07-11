@@ -35,6 +35,7 @@ class MazmorraScript(DefaultScript):
         self.key = "mazmorra_script"
         self.desc = "Instancia de mazmorra activa"
         self.interval = 3600
+        self.start_delay = True
         self.persistent = True
         self.db.mazmorra_id = None
         self.db.dificultad = "normal"
@@ -155,6 +156,14 @@ class MazmorraScript(DefaultScript):
             jugador.msg("|yHas abandonado la mazmorra sin recompensa.|n")
         else:
             jugador.msg("|rNo se encontró el vestíbulo de salida.|n")
+
+        # Ya no cuenta como miembro activo: no recibirá recompensas si el
+        # resto del grupo completa la mazmorra después.
+        dbrefs = list(self.db.jugadores or [])
+        if jugador.dbref in dbrefs:
+            dbrefs.remove(jugador.dbref)
+        self.db.jugadores = dbrefs
+
         # Si ya no quedan jugadores activos, limpiar
         restantes = self._jugadores_dentro()
         if not restantes:

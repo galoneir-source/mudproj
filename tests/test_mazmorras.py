@@ -1,0 +1,228 @@
+"""
+tests/test_mazmorras.py
+
+Tests de integración Evennia para el sistema de mazmorras instanciadas (v0.38.0).
+Cubre: CmdMazmorra (entrar/estado/salir), CmdAvanzar, MazmorraScript
+(iniciar/avanzar/_completar/salir), soporte de grupo vía party y el fix de
+creación del script (start_delay).
+
+Ejecutar con:
+  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_mazmorras
+"""
+from evennia import create_script
+from evennia.utils.test_resources import EvenniaTest
+
+from features.dungeons.commands import (
+    CmdAvanzar,
+    CmdMazmorra,
+    DungeonCmdSet,
+    _instancia_del_jugador,
+)
+from features.dungeons.dungeon_script import MazmorraScript
+from features.party.commands import _añadir_miembro, _crear_partido
+from systems.dungeons.dungeons import SALA_PORTAL
+from typeclasses.characters import Character
+from typeclasses.rooms import Room
+
+
+def _make_cmd(CmdClass, caller, args=""):
+    cmd = CmdClass()
+    cmd.caller = caller
+    cmd.args = args
+    cmd.cmdstring = cmd.key
+    cmd.session = None
+    cmd.obj = caller
+    cmd.raw_string = cmd.key + (" " + args if args else "")
+    cmd.switches = []
+    cmd.lhs = args
+    cmd.rhs = ""
+    return cmd
+
+
+def _init_char(char, nivel=5):
+    char.db.nivel = nivel
+    char.db.experiencia = 0
+    char.db.monedas = 0
+    char.msg = lambda text=None, **kw: None
+
+
+class MazmorrasTestBase(EvenniaTest):
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        self.vestibulo = self._crear_vestibulo()
+        _init_char(self.char1)
+        _init_char(self.char2)
+        self.char1.move_to(self.vestibulo, quiet=True)
+        self.char2.move_to(self.vestibulo, quiet=True)
+
+    def tearDown(self):
+        # Limpiar cualquier instancia/script residual creado durante el test.
+        for char in (self.char1, self.char2):
+            instancia = _instancia_del_jugador(char)
+            if instancia:
+                try:
+                    instancia.salir(char)
+                except Exception:
+                    pass
+        super().tearDown()
+
+    def _crear_vestibulo(self):
+        from evennia import search_object
+        existentes = search_object(SALA_PORTAL, typeclass="typeclasses.rooms.Room")
+        if existentes:
+            return existentes[0]
+        from evennia.utils import create
+        return create.create_object(Room, key=SALA_PORTAL)
+
+
+# --------------------------------------------------------------------------- #
+#  Creación del script: regresión del bug de auto-eliminación inmediata
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraScriptCreation(MazmorrasTestBase):
+    def test_create_script_no_devuelve_none(self):
+        """
+        Regresión: sin start_delay=True, el primer at_repeat() (pensado como
+        timeout a 3600s) se disparaba de inmediato al crear el script, que se
+        autoeliminaba durante su propio create_script() -> create_script()
+        devolvía None y toda entrada a mazmorra fallaba con AttributeError.
+        """
+        script = create_script(
+            "features.dungeons.dungeon_script.MazmorraScript",
+            key="mazmorra_test_creation",
+            obj=None,
+            persistent=True,
+            autostart=True,
+        )
+        self.assertIsNotNone(script)
+        self.assertTrue(script.id)
+        script.delete()
+
+
+# --------------------------------------------------------------------------- #
+#  CmdMazmorra: entrada en solitario (compatibilidad hacia atrás)
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraEntradaSolo(MazmorrasTestBase):
+    def test_entrar_solo_crea_instancia_y_teleporta(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+        self.assertIsNotNone(instancia)
+        self.assertEqual(self.char1.location.key, "Entrada de la Cripta")
+
+    def test_entrar_fuera_del_vestibulo_falla(self):
+        self.char1.move_to(self.room1, quiet=True)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+
+    def test_entrar_bajo_nivel_falla(self):
+        self.char1.db.nivel = 1
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+
+    def test_salir_teleporta_al_vestibulo(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        _make_cmd(CmdMazmorra, self.char1, "salir").func()
+        self.assertEqual(self.char1.location, self.vestibulo)
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+
+
+# --------------------------------------------------------------------------- #
+#  CmdMazmorra: entrada en grupo
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraEntradaGrupo(MazmorrasTestBase):
+    def setUp(self):
+        super().setUp()
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+
+    def test_lider_entra_arrastra_al_grupo(self):
+        # El miembro está en otra sala; debe ser teleportado igualmente.
+        self.char2.move_to(self.room1, quiet=True)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+
+        inst_lider = _instancia_del_jugador(self.char1)
+        inst_miembro = _instancia_del_jugador(self.char2)
+        self.assertIsNotNone(inst_lider)
+        self.assertIs(inst_lider, inst_miembro)
+        self.assertEqual(self.char1.location, self.char2.location)
+        self.assertEqual(set(inst_lider.db.jugadores), {self.char1.dbref, self.char2.dbref})
+
+    def test_no_lider_no_puede_iniciar(self):
+        _make_cmd(CmdMazmorra, self.char2, "entrar cripta_ceniza").func()
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+        self.assertIsNone(_instancia_del_jugador(self.char2))
+
+    def test_miembro_bajo_nivel_bloquea_a_todo_el_grupo(self):
+        self.char2.db.nivel = 1
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+
+    def test_salir_de_un_miembro_no_afecta_al_resto(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+        instancia.salir(self.char2)
+        self.assertIsNone(_instancia_del_jugador(self.char2))
+        self.assertIsNotNone(_instancia_del_jugador(self.char1))
+        self.assertEqual(instancia.db.jugadores, [self.char1.dbref])
+
+
+# --------------------------------------------------------------------------- #
+#  MazmorraScript: avance y finalización
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraCompletar(MazmorrasTestBase):
+    def _entrar_solo(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        return _instancia_del_jugador(self.char1)
+
+    def _limpiar_sala_actual(self, instancia):
+        """Elimina cualquier NPC vivo de la sala actual para poder avanzar."""
+        sala = instancia.db.salas[instancia.db.sala_actual]
+        for obj in list(sala.contents):
+            if type(obj).__name__ == "NPC":
+                obj.delete()
+
+    def test_completar_reparte_recompensas_solo_a_jugadores_activos(self):
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+
+        # El miembro abandona antes de terminar -> no debería cobrar recompensa.
+        instancia.salir(self.char2)
+        xp_char2_antes = self.char2.db.experiencia
+
+        # Avanzar manualmente hasta el jefe y completar.
+        while instancia.db.estado == "activa":
+            self._limpiar_sala_actual(instancia)
+            instancia.avanzar(self.char1)
+
+        self.assertEqual(self.char2.db.experiencia, xp_char2_antes)
+        self.assertGreater(self.char1.db.experiencia, 0)
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+
+    def test_completar_marca_mazmorra_completada_en_char(self):
+        instancia = self._entrar_solo()
+        while instancia.db.estado == "activa":
+            self._limpiar_sala_actual(instancia)
+            instancia.avanzar(self.char1)
+        self.assertEqual(
+            dict(self.char1.db.mazmorras_completadas or {}).get("cripta_ceniza"), 1
+        )
+
+
+# --------------------------------------------------------------------------- #
+#  DungeonCmdSet: sin colisiones con otros comandos
+# --------------------------------------------------------------------------- #
+
+class TestDungeonCmdSet(MazmorrasTestBase):
+    def test_cmdset_se_construye_sin_error(self):
+        cs = DungeonCmdSet()
+        cs.at_cmdset_creation()
+        keys = {cmd.key for cmd in cs.commands}
+        self.assertIn("mazmorra", keys)
+        self.assertIn("avanzar", keys)

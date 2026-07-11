@@ -183,6 +183,35 @@ def puede_entrar(nivel: int, mazmorra_id: str) -> tuple[bool, str]:
     return True, ""
 
 
+def puede_entrar_grupo(mazmorra_id: str, num_jugadores: int, niveles: list[int]) -> tuple[bool, str]:
+    """
+    Verifica si un grupo (1 o más jugadores) puede entrar a la mazmorra.
+
+    mazmorra_id   — ID de la mazmorra
+    num_jugadores — número de jugadores en el grupo (incluido el líder)
+    niveles       — lista de niveles de todos los miembros
+    """
+    maz = MAZMORRAS.get(mazmorra_id)
+    if not maz:
+        return False, "Mazmorra desconocida."
+
+    max_j = maz.get("jugadores_max", 4)
+    if num_jugadores > max_j:
+        return False, (
+            f"La mazmorra '|w{maz['nombre']}|n' admite máximo |w{max_j} jugadores|n."
+        )
+
+    nivel_min = maz.get("nivel_min", 1)
+    bajo_nivel = [n for n in niveles if n < nivel_min]
+    if bajo_nivel:
+        return False, (
+            f"Todos los miembros del grupo deben ser nivel |w{nivel_min}|n o superior "
+            f"para entrar a esta mazmorra."
+        )
+
+    return True, ""
+
+
 def calcular_recompensas(mazmorra_id: str, dificultad: str) -> tuple[int, int]:
     """Devuelve (xp_bonus, monedas_bonus) escalados por dificultad."""
     maz = MAZMORRAS.get(mazmorra_id, {})

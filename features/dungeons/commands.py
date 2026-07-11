@@ -20,7 +20,7 @@ from systems.dungeons.dungeons import (
     MAZMORRAS,
     DIFICULTADES,
     buscar_mazmorra,
-    puede_entrar,
+    puede_entrar_grupo,
     formatear_lista,
     formatear_info,
     NOMBRES_DIFICULTAD,
@@ -49,7 +49,7 @@ def _instancia_del_jugador(char):
 
 def _buscar_vestibulo():
     """Devuelve la sala 'Vestíbulo del Portal' o None."""
-    resultados = search_object(SALA_PORTAL, typeclass="typeclasses.rooms.Room", quiet=True)
+    resultados = search_object(SALA_PORTAL, typeclass="typeclasses.rooms.Room")
     return resultados[0] if resultados else None
 
 
@@ -158,20 +158,38 @@ class CmdMazmorra(Command):
                 )
                 return
 
-            # Verificar si ya está en una instancia
-            if _instancia_del_jugador(caller):
-                caller.msg("|rYa estás dentro de una mazmorra. Usa |wmazmorra salir|r primero.|n")
+            # Solo el líder del grupo puede iniciar la mazmorra.
+            # db.lider_partido guarda el objeto Character del líder (no un
+            # dbref), así que se compara por identidad de objeto.
+            lider = getattr(caller.db, "lider_partido", None)
+            if lider and lider != caller:
+                caller.msg("|rSolo el líder del grupo puede entrar a una mazmorra.|n")
                 return
 
-            # Verificar nivel mínimo
-            nivel = getattr(caller.db, "nivel", 1) or 1
-            ok, motivo = puede_entrar(nivel, mid)
+            # Recopilar miembros del grupo (incluyendo al líder). db.miembros_partido
+            # ya contiene objetos Character reales (solo se puebla en el líder).
+            miembros = list(getattr(caller.db, "miembros_partido", []) or [])
+            if not miembros:
+                miembros = [caller]
+
+            # Verificar que ningún miembro esté ya en una instancia
+            for m in miembros:
+                if _instancia_del_jugador(m):
+                    caller.msg(
+                        f"|r{m.key} ya está dentro de una mazmorra. "
+                        f"Usa |wmazmorra salir|r primero.|n"
+                    )
+                    return
+
+            # Verificar tamaño de grupo y nivel mínimo de todos los miembros
+            niveles = [getattr(m.db, "nivel", 1) or 1 for m in miembros]
+            ok, motivo = puede_entrar_grupo(mid, len(miembros), niveles)
             if not ok:
                 caller.msg(f"|r{motivo}|n")
                 return
 
             # Crear instancia
-            self._crear_instancia(caller, mid, dificultad, vestibulo)
+            self._crear_instancia(miembros, mid, dificultad, vestibulo)
             return
 
         caller.msg(
@@ -180,19 +198,20 @@ class CmdMazmorra(Command):
             "|wmazmorra estado|r, |wmazmorra salir|r.|n"
         )
 
-    def _crear_instancia(self, caller, mid, dificultad, vestibulo):
+    def _crear_instancia(self, jugadores, mid, dificultad, vestibulo):
         from evennia import create_script
+        lider = jugadores[0]
         try:
             script = create_script(
                 "features.dungeons.dungeon_script.MazmorraScript",
-                key=f"mazmorra_{mid}_{caller.id}",
+                key=f"mazmorra_{mid}_{lider.id}",
                 obj=None,
                 persistent=True,
                 autostart=True,
             )
-            script.iniciar(mid, dificultad, [caller], vestibulo)
+            script.iniciar(mid, dificultad, jugadores, vestibulo)
         except Exception as err:
-            caller.msg(f"|rError al iniciar la mazmorra: {err}|n")
+            lider.msg(f"|rError al iniciar la mazmorra: {err}|n")
             from evennia.utils import logger
             logger.log_err(f"CmdMazmorra: error creando instancia: {err}")
 
