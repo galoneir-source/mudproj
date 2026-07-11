@@ -2,8 +2,8 @@
 features/guilds/commands.py
 
 Comandos del sistema de gremios de jugadores:
-  crear gremio, gremio, invitar, aceptar gremio, rechazar gremio,
-  salir gremio, expulsar, promover, degradar, gbanco, disolver gremio
+  crear gremio, gremio, invitar gremio, aceptar gremio, rechazar gremio,
+  salir gremio, expulsar gremio, promover, degradar, gbanco, disolver gremio
 """
 import time
 
@@ -210,12 +210,12 @@ class CmdInvitar(Command):
     Invitar a un jugador a unirse al gremio.
 
     Uso:
-      invitar <jugador>
+      invitar gremio <jugador>
 
     El jugador debe estar en la misma sala. Tiene 2 minutos para responder.
     """
-    key = "invitar"
-    aliases = ["invite"]
+    key = "invitar gremio"
+    aliases = ["invite guild"]
     locks = "cmd:all()"
     help_category = "Gremios"
 
@@ -238,7 +238,7 @@ class CmdInvitar(Command):
 
         nombre_obj = self.args.strip()
         if not nombre_obj:
-            caller.msg("Uso: |winvitar <jugador>|n")
+            caller.msg("Uso: |winvitar gremio <jugador>|n")
             return
 
         objetivo = caller.search(nombre_obj, location=caller.location)
@@ -439,13 +439,13 @@ class CmdExpulsar(Command):
     Expulsar a un miembro del gremio.
 
     Uso:
-      expulsar <jugador>
+      expulsar gremio <jugador>
 
     El Líder puede expulsar a Oficiales y Miembros.
     El Oficial solo puede expulsar a Miembros.
     """
-    key = "expulsar"
-    aliases = ["kick"]
+    key = "expulsar gremio"
+    aliases = ["kick guild"]
     locks = "cmd:all()"
     help_category = "Gremios"
 
@@ -460,7 +460,7 @@ class CmdExpulsar(Command):
         rango_caller = guild.get_rango(caller)
         nombre_obj = self.args.strip()
         if not nombre_obj:
-            caller.msg("Uso: |wexpulsar <jugador>|n")
+            caller.msg("Uso: |wexpulsar gremio <jugador>|n")
             return
 
         objetivo, rango_obj = _buscar_miembro(guild, nombre_obj)
