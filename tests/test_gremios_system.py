@@ -1,11 +1,11 @@
 """
-tests/test_gremios.py
+tests/test_gremios_system.py
 
 Tests unitarios puros para el sistema de gremios (v0.22.0).
 Sin dependencias de Evennia.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_gremios.py
+  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_gremios_system.py
 """
 import unittest
 

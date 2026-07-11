@@ -1,12 +1,12 @@
 """
-tests/test_gremios_system.py
+tests/test_gremios.py
 
 Tests de integración Evennia para el sistema de gremios (v0.22.0).
 Cubre: crear, invitar, aceptar/rechazar, salir, expulsar, promover,
 degradar, banco del gremio y disolución.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_gremios_system
+  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_gremios
 """
 import time
 
