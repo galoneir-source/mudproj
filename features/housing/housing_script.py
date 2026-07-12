@@ -21,12 +21,11 @@ def obtener_gestor_script():
     """Devuelve el GestorViviendasScript global, creándolo si no existe."""
     scripts = ScriptDB.objects.filter(db_key="gestor_viviendas")
     for s in scripts:
-        try:
-            return s.typeclass_instance
-        except Exception:
-            pass
+        return s
     import evennia
-    return evennia.create_script(GestorViviendasScript, persistent=True, autostart=True)
+    return evennia.create_script(
+        GestorViviendasScript, key="gestor_viviendas", persistent=True, autostart=True
+    )
 
 
 def _buscar_barrio() -> object | None:
