@@ -374,6 +374,28 @@ class TestCmdTablonEntregarKill(EvenniaTest):
         cmd.func()
         self.assertIn("completado", self.cap.all().lower())
 
+    def test_kill_completado_comprueba_logros(self):
+        """
+        Regresión: _dar_recompensa() importaba
+        'features.achievements.hooks.comprobar_y_notificar' — ese módulo no
+        existe (el real es 'features.achievements.commands'). El
+        ImportError quedaba silenciado por un except Exception genérico,
+        así que completar un contrato nunca disparaba la comprobación de
+        logros (p.ej. subir de nivel o cruzar un umbral de monedas vía la
+        recompensa del contrato no se notificaba hasta la siguiente acción
+        no relacionada que sí llamara a comprobar_y_notificar).
+        """
+        from unittest.mock import patch
+
+        self.char1.db.kills_totales = 10
+        self.char1.db.contrato_activo = _contrato_kill(5, kills_al_aceptar=0)
+        with patch(
+            "features.achievements.commands.comprobar_y_notificar"
+        ) as mock_comprobar:
+            cmd = _make_cmd(CmdTablon, self.char1, "entregar")
+            cmd.func()
+            mock_comprobar.assert_called_once_with(self.char1)
+
     def test_kill_faltan_indica_cuantos(self):
         self.char1.db.kills_totales = 2
         self.char1.db.contrato_activo = _contrato_kill(5, kills_al_aceptar=0)

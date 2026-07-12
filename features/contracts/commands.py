@@ -248,7 +248,7 @@ class CmdTablon(Command):
 
         # Logros
         try:
-            from features.achievements.hooks import comprobar_y_notificar
+            from features.achievements.commands import comprobar_y_notificar
             comprobar_y_notificar(caller)
         except Exception:
             pass
