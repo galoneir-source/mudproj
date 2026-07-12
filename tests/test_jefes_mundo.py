@@ -2,8 +2,9 @@
 tests/test_jefes_mundo.py
 
 Tests de integración Evennia para el sistema de jefes de mundo (v0.41.0).
-Cubre: distribuir_recompensas_jefe_mundo() y el límite de reparto total
-cuando participan muchos jugadores.
+Cubre: distribuir_recompensas_jefe_mundo(), el límite de reparto total
+cuando participan muchos jugadores, y que _buscar_sala_zona() encuentre
+la sala real (de la que depende el spawn de los jefes).
 
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_jefes_mundo
@@ -11,9 +12,36 @@ Ejecutar con:
 from evennia.utils import create
 from evennia.utils.test_resources import EvenniaTest
 
-from features.world_bosses.world_boss_script import distribuir_recompensas_jefe_mundo
+from features.world_bosses.world_boss_script import (
+    WorldBossScript,
+    distribuir_recompensas_jefe_mundo,
+)
 from systems.world_bosses.world_bosses import JEFES_MUNDO
 from typeclasses.characters import Character
+
+
+class TestBuscarSalaZona(EvenniaTest):
+    def test_encuentra_sala_real_por_zona(self):
+        """
+        Regresión: _buscar_sala_zona() llamaba a search_object(typeclass=...,
+        attribute_name=..., attribute_value=..., quiet=True) — ni
+        'attribute_value' ni 'quiet' son kwargs válidos de
+        ObjectDBManager.search_object() -> TypeError sin capturar en cada
+        intento de spawnear un jefe. _spawnear_boss() atrapa la excepción
+        y solo la registra en el log del servidor, así que ningún jefe de
+        mundo ha podido aparecer nunca, en silencio, desde v0.41.0.
+        """
+        sala = create.create_object("typeclasses.rooms.Room", key="Pantano de prueba")
+        sala.db.zona = "pantano_cenagoso"
+
+        script = create.create_script(
+            WorldBossScript, key="wb_test_sala", persistent=True, autostart=False
+        )
+        try:
+            self.assertEqual(script._buscar_sala_zona("pantano_cenagoso"), sala)
+            self.assertIsNone(script._buscar_sala_zona("zona_inexistente"))
+        finally:
+            script.delete()
 
 
 class JugadorDePrueba(Character):

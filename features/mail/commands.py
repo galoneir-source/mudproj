@@ -39,7 +39,7 @@ from systems.mail.mail import (
 def _buscar_destinatario(nombre: str):
     """Busca un Character por nombre (en línea o en DB). Devuelve (char, error)."""
     from evennia import search_object
-    resultados = search_object(nombre, typeclass="typeclasses.characters.Character", quiet=True)
+    resultados = search_object(nombre, typeclass="typeclasses.characters.Character")
     if not resultados:
         return None, f"|rNo se encontró ningún jugador con el nombre '{nombre}'.|n"
     if len(resultados) > 1:

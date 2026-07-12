@@ -110,11 +110,14 @@ def at_server_cold_start():
     shutdown or a reset.
     """
     try:
-        from evennia import search_object
+        from evennia.objects.models import ObjectDB
         from evennia.utils import logger
-        salas_temp = search_object(
-            typeclass="typeclasses.rooms.Room", attribute_name="es_mazmorra", attribute_value=True
-        )
+        salas_temp = [
+            sala for sala in ObjectDB.objects.filter(
+                db_typeclass_path__contains="rooms.Room"
+            )
+            if getattr(sala.db, "es_mazmorra", False)
+        ]
         for sala in salas_temp:
             try:
                 sala.delete()

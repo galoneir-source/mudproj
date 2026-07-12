@@ -226,3 +226,30 @@ class TestDungeonCmdSet(MazmorrasTestBase):
         keys = {cmd.key for cmd in cs.commands}
         self.assertIn("mazmorra", keys)
         self.assertIn("avanzar", keys)
+
+
+# --------------------------------------------------------------------------- #
+#  at_server_cold_start: limpieza de salas huérfanas
+# --------------------------------------------------------------------------- #
+
+class TestLimpiezaColdStart(MazmorrasTestBase):
+    def test_limpia_salas_de_mazmorra_huerfanas(self):
+        """
+        Regresión: at_server_cold_start() llamaba a search_object(typeclass=...,
+        attribute_name=..., attribute_value=True) — 'attribute_value' no es
+        un kwarg válido de ObjectDBManager.search_object() -> TypeError,
+        atrapada por un try/except Exception: pass que envuelve toda la
+        función. La limpieza de salas de mazmorra huérfanas tras un reinicio
+        en frío nunca ha hecho nada, en silencio, desde que se escribió.
+        """
+        from evennia.utils import create
+        from server.conf.at_server_startstop import at_server_cold_start
+
+        sala_huerfana = create.create_object(Room, key="Mazmorra huérfana de prueba")
+        sala_huerfana.db.es_mazmorra = True
+
+        at_server_cold_start()
+
+        from evennia import search_object
+        self.assertEqual(len(search_object("Mazmorra huérfana de prueba")), 0)
+        self.assertEqual(len(search_object(self.vestibulo.key)), 1)

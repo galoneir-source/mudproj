@@ -112,14 +112,12 @@ class WorldBossScript(DefaultScript):
 
     def _buscar_sala_zona(self, zona_id: str):
         """Busca la primera sala con db.zona == zona_id."""
-        from evennia import search_object
-        salas = search_object(
-            typeclass="typeclasses.rooms.Room",
-            attribute_name="zona",
-            attribute_value=zona_id,
-            quiet=True,
-        )
-        return salas[0] if salas else None
+        from evennia.objects.models import ObjectDB
+        salas_db = ObjectDB.objects.filter(db_typeclass_path__contains="rooms.Room")
+        for sala in salas_db:
+            if getattr(sala.db, "zona", None) == zona_id:
+                return sala
+        return None
 
     def _anunciar_global(self, mensaje: str):
         """Envía un mensaje a todos los jugadores conectados."""
