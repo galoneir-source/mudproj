@@ -203,8 +203,24 @@ def distribuir_recompensas_jefe_mundo(npc, tracker: dict, sala, boss_id: str | N
     participantes.sort(key=lambda x: x[1], reverse=True)
     top_jugador = participantes[0][0]
 
-    for jugador, dano in participantes:
-        xp, monedas = calcular_recompensas_participante(boss_id, dano, dano_total)
+    # calcular_recompensas_participante() garantiza un mínimo del 10% del
+    # pool a cada participante. Con muchos participantes esos mínimos se
+    # solapan y suman más del 100% del pool (p.ej. 20 participantes al 5%
+    # cada uno reparten un 200% del pool nominal) — se reescala el conjunto
+    # para no superar xp_total/monedas_total, conservando la proporción
+    # relativa entre participantes.
+    brutas = [
+        (jugador, dano, *calcular_recompensas_participante(boss_id, dano, dano_total))
+        for jugador, dano in participantes
+    ]
+    xp_bruto_total = sum(xp for _, _, xp, _ in brutas)
+    mon_bruto_total = sum(mon for _, _, _, mon in brutas)
+    escala_xp = min(1.0, datos["xp_total"] / xp_bruto_total) if xp_bruto_total > 0 else 1.0
+    escala_mon = min(1.0, datos["monedas_total"] / mon_bruto_total) if mon_bruto_total > 0 else 1.0
+
+    for jugador, dano, xp_bruto, mon_bruto in brutas:
+        xp = max(1, int(xp_bruto * escala_xp))
+        monedas = max(1, int(mon_bruto * escala_mon))
         pct = int(dano / dano_total * 100)
 
         jugador.db.experiencia = (jugador.db.experiencia or 0) + xp
