@@ -21,9 +21,8 @@ def _zonas_a_dbref() -> dict:
     salas_db = ObjectDB.objects.filter(
         db_typeclass_path__contains="rooms.Room"
     )
-    for sala_db in salas_db:
+    for sala in salas_db:
         try:
-            sala = sala_db.typeclass_instance
             if getattr(sala.db, "es_mazmorra", False):
                 continue
             if getattr(sala.db, "es_vivienda", False):

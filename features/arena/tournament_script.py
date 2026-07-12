@@ -25,10 +25,7 @@ def obtener_torneo_activo():
     from evennia.scripts.models import ScriptDB
     scripts = ScriptDB.objects.filter(db_key="torneo_arena")
     for s in scripts:
-        try:
-            return s.typeclass_instance
-        except Exception:
-            pass
+        return s
     return None
 
 
@@ -39,8 +36,7 @@ def notificar_resultado_torneo(torneo_script_id: int, ganador, perdedor):
     """
     try:
         from evennia.scripts.models import ScriptDB
-        script_db = ScriptDB.objects.get(id=torneo_script_id)
-        torneo = script_db.typeclass_instance
+        torneo = ScriptDB.objects.get(id=torneo_script_id)
         torneo.registrar_resultado(ganador, perdedor)
     except Exception as err:
         logger.log_err(f"notificar_resultado_torneo: {err}")
@@ -53,6 +49,7 @@ class TorneoScript(DefaultScript):
         self.desc = "Torneo activo de la Arena"
         self.persistent = False
         self.interval = TIMEOUT_INSCRIPCION
+        self.start_delay = True
         self.db.estado     = "inscripcion"
         self.db.inscritos  = []   # lista de dbrefs
         self.db.nombres    = {}   # {dbref: nombre}
