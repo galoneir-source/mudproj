@@ -39,6 +39,7 @@ class TradeSession(DefaultScript):
         self.desc = "Sesión de intercambio activa"
         self.persistent = False   # Se limpia en reload
         self.interval = 120       # Auto-cancela tras 2 min de inactividad
+        self.start_delay = True
         self.db.jugador_a = None  # dbref del iniciador
         self.db.jugador_b = None  # dbref del otro
         self.db.lado_a = nuevo_lado()
@@ -91,6 +92,7 @@ class TradeSession(DefaultScript):
             jugador.msg(f"|r{err}|n")
             return
         self._guardar_lado(jugador, lado)
+        self._desconfirmar_otro(jugador)
         otro = self._otro(jugador)
         nombre_oferta = formatear_oferta_simple(lado)
         if otro:
@@ -107,6 +109,7 @@ class TradeSession(DefaultScript):
             jugador.msg(f"|r{err}|n")
             return
         self._guardar_lado(jugador, lado)
+        self._desconfirmar_otro(jugador)
         otro = self._otro(jugador)
         if otro:
             otro.msg(f"|y{jugador.name}|n retira |w{obj.key}|n de su oferta.")
@@ -125,6 +128,7 @@ class TradeSession(DefaultScript):
             jugador.msg(f"|r{err}|n")
             return
         self._guardar_lado(jugador, lado)
+        self._desconfirmar_otro(jugador)
         otro = self._otro(jugador)
         if otro:
             otro.msg(f"|y{jugador.name}|n ajusta su oferta de monedas a |w{cantidad}|n.")
@@ -169,8 +173,10 @@ class TradeSession(DefaultScript):
         for char in (a, b):
             if char:
                 char.msg(mensaje)
-                # Limpiar referencia al script
+                # Limpiar referencias al script (una propuesta pendiente aún
+                # no aceptada solo tiene trade_pending, no trade_session).
                 char.ndb.trade_session = None
+                char.ndb.trade_pending = None
         self.delete()
 
     # ---------------------------------------------------------------------- #
@@ -295,6 +301,24 @@ class TradeSession(DefaultScript):
             self.db.lado_a = lado
         else:
             self.db.lado_b = lado
+
+    def _desconfirmar_otro(self, jugador):
+        """
+        Si el otro jugador ya había confirmado, se desconfirma: los términos
+        del intercambio acaban de cambiar y no debe ejecutarse sobre una
+        confirmación dada a una oferta distinta.
+        """
+        if jugador.dbref == self.db.jugador_a:
+            otro_lado = self.db.lado_b
+        else:
+            otro_lado = self.db.lado_a
+        if not otro_lado.get("confirmado"):
+            return
+        otro_lado["confirmado"] = False
+        if jugador.dbref == self.db.jugador_a:
+            self.db.lado_b = otro_lado
+        else:
+            self.db.lado_a = otro_lado
 
     def _mostrar_estado_a_ambos(self):
         a, b = self._chars()

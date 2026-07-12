@@ -111,7 +111,7 @@ class CmdIntercambiar(Command):
 
         # --- cancelar ---
         if lower in ("cancelar", "cancel"):
-            sesion = _sesion_activa(caller)
+            sesion = _sesion_activa(caller) or getattr(caller.ndb, "trade_pending", None)
             if not sesion:
                 caller.msg("|xNo tienes ningún intercambio activo.|n")
                 return
