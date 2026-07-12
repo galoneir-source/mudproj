@@ -192,3 +192,28 @@ class TestCmdRetirar(EvenniaTest):
         item = self._depositar("poción de vida mayor")
         _make_cmd(CmdRetirar, self.char1, "poción").func()
         self.assertIn(item, self.char1.contents)
+
+    def test_retirar_exacto_prioriza_sobre_parcial_aunque_llegue_despues(self):
+        """
+        Regresión: el matching original solo hacía substring
+        (args_lower in it.key.lower()) y devolvía el primer resultado en
+        orden de lista, sin priorizar una coincidencia exacta. Si el
+        objeto de nombre más largo se depositaba primero, "retirar poción
+        de vida" devolvía "poción de vida mayor" en su lugar — el jugador
+        pedía un objeto exacto y recibía uno distinto (más valioso o no)
+        según el orden de depósito, no según lo que escribió.
+        """
+        mayor = self._depositar("poción de vida mayor")
+        normal = self._depositar("poción de vida")
+        _make_cmd(CmdRetirar, self.char1, "poción de vida").func()
+        self.assertIn(normal, self.char1.contents)
+        self.assertNotIn(mayor, self.char1.contents)
+
+    def test_retirar_ambiguo_sin_coincidencia_exacta_avisa_y_no_retira(self):
+        mayor = self._depositar("poción de vida mayor")
+        suprema = self._depositar("poción de vida suprema")
+        _make_cmd(CmdRetirar, self.char1, "poción de vida").func()
+        banco = list(self.char1.db.banco or [])
+        self.assertEqual(len(banco), 2)
+        self.assertNotIn(mayor, self.char1.contents)
+        self.assertNotIn(suprema, self.char1.contents)

@@ -182,10 +182,24 @@ class CmdRetirar(Command):
             return
 
         args_lower = args.lower()
-        item = next(
-            (it for it in banco if args_lower in it.key.lower()),
-            None,
-        )
+
+        # Coincidencia exacta primero (evita que un nombre parcial ambiguo
+        # devuelva el objeto equivocado según el orden de la lista, p.ej.
+        # "retirar poción de vida" con "poción de vida mayor" también en
+        # el banco).
+        exactas = [it for it in banco if it.key.lower() == args_lower]
+        if len(exactas) == 1:
+            item = exactas[0]
+        else:
+            parciales = [it for it in banco if args_lower in it.key.lower()]
+            if len(parciales) > 1:
+                nombres = ", ".join(it.key for it in parciales)
+                caller.msg(
+                    f"Nombre ambiguo: {nombres}. Sé más específico."
+                )
+                return
+            item = parciales[0] if parciales else None
+
         if not item:
             caller.msg(
                 f"No tienes '{args}' en el banco. "
