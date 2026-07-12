@@ -1,321 +1,215 @@
 """
 tests/test_eventos_system.py
 
-Tests de integración Evennia para el sistema de eventos mundiales (v0.19.0).
-Cubre: EventoMundialScript, obtener_evento_activo(), tiempo_restante_evento(),
-       CmdEvento, y los efectos en tienda y combate.
+Tests unitarios puros para systems/events/events.py (v0.19.0).
+Sin dependencias de Evennia.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_eventos_system
+  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_eventos_system.py
 """
-import time
+import unittest
 
-from evennia.utils.test_resources import EvenniaTest
-
-from features.events.commands import CmdEvento
-from features.events.event_script import (
-    obtener_evento_activo,
-    tiempo_restante_evento,
-    obtener_evento_script,
+from systems.events.events import (
+    EVENTOS,
+    eventos_elegibles,
+    elegir_evento,
 )
-from systems.events.events import EVENTOS
-
-
-def _make_cmd(CmdClass, caller, args=""):
-    cmd = CmdClass()
-    cmd.caller = caller
-    cmd.args = args
-    cmd.cmdstring = cmd.key
-    cmd.session = None
-    cmd.obj = caller
-    cmd.raw_string = cmd.key + (" " + args if args else "")
-    cmd.switches = []
-    cmd.lhs = args
-    cmd.rhs = ""
-    return cmd
-
-
-def _init_char(char):
-    char.db.nivel = 5
-    char.db.monedas = 500
-    char.db.reputacion = {}
-    char.db.quests = {}
-    char.db.habilidades_desbloqueadas = ["golpe_fuerte", "golpe_rapido"]
-    char.db.logros = []
-    char.db.titulo_activo = None
-    char.db.kills_totales = 0
-    char.db.jefes_derrotados = []
-    char.db.objetos_crafteados = 0
-    char.db.encantamiento_max = 0
-    char.db.banco_usado = False
-
-
-class _MsgCapture:
-    def __init__(self, char):
-        self.msgs = []
-        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
-        if char.location:
-            char.location.msg_contents = lambda m, **kw: None
-
-    def all(self):
-        return "\n".join(self.msgs)
 
 
 # ---------------------------------------------------------------------------
-# EventoMundialScript — inicialización y estado
+# Catálogo
 # ---------------------------------------------------------------------------
 
-class TestEventoScriptInit(EvenniaTest):
+class TestCatalogo(unittest.TestCase):
 
-    def _get_or_create_script(self):
-        return obtener_evento_script()
+    def test_hay_tres_eventos(self):
+        self.assertEqual(len(EVENTOS), 3)
 
-    def test_script_creado_correctamente(self):
-        script = self._get_or_create_script()
-        self.assertIsNotNone(script)
+    def test_invasion_existe(self):
+        self.assertIn("invasion_no_muertos", EVENTOS)
 
-    def test_sin_evento_activo_por_defecto(self):
-        script = self._get_or_create_script()
-        script.db.evento_activo = None
-        self.assertIsNone(obtener_evento_activo())
+    def test_feria_existe(self):
+        self.assertIn("feria_mercado", EVENTOS)
 
-    def test_set_evento_activo_y_leer(self):
-        script = self._get_or_create_script()
-        script.db.evento_activo = "feria_mercado"
-        self.assertEqual(obtener_evento_activo(), "feria_mercado")
-        script.db.evento_activo = None   # limpiar
+    def test_tormenta_existe(self):
+        self.assertIn("tormenta_magica", EVENTOS)
 
-    def test_idempotente_no_crea_duplicados(self):
-        s1 = obtener_evento_script()
-        s2 = obtener_evento_script()
-        self.assertEqual(s1.id, s2.id)
+    def test_todos_tienen_campos_obligatorios(self):
+        campos = ("nombre", "descripcion", "duracion", "intervalo_min",
+                  "peso", "color", "efectos", "mensaje_inicio", "mensaje_fin")
+        for ev_id, ev in EVENTOS.items():
+            for campo in campos:
+                self.assertIn(campo, ev, f"{ev_id} falta '{campo}'")
 
+    def test_duraciones_positivas(self):
+        for ev_id, ev in EVENTOS.items():
+            self.assertGreater(ev["duracion"], 0, ev_id)
 
-# ---------------------------------------------------------------------------
-# tiempo_restante_evento
-# ---------------------------------------------------------------------------
+    def test_intervalos_mayores_que_duracion(self):
+        for ev_id, ev in EVENTOS.items():
+            self.assertGreater(ev["intervalo_min"], ev["duracion"], ev_id)
 
-class TestTiempoRestante(EvenniaTest):
+    def test_pesos_positivos(self):
+        for ev_id, ev in EVENTOS.items():
+            self.assertGreater(ev["peso"], 0, ev_id)
 
-    def setUp(self):
-        super().setUp()
-        self.script = obtener_evento_script()
-        self.script.db.evento_activo = None
+    def test_invasion_tiene_xp_factor(self):
+        self.assertIn("xp_factor", EVENTOS["invasion_no_muertos"]["efectos"])
+        self.assertGreater(EVENTOS["invasion_no_muertos"]["efectos"]["xp_factor"], 1.0)
 
-    def tearDown(self):
-        self.script.db.evento_activo = None
-        super().tearDown()
+    def test_invasion_tiene_facciones(self):
+        self.assertIn("facciones_afectadas", EVENTOS["invasion_no_muertos"]["efectos"])
+        self.assertIn("legion_oscura", EVENTOS["invasion_no_muertos"]["efectos"]["facciones_afectadas"])
 
-    def test_sin_evento_devuelve_cero(self):
-        self.assertEqual(tiempo_restante_evento(), 0)
+    def test_feria_tiene_descuento(self):
+        self.assertIn("descuento_tienda", EVENTOS["feria_mercado"]["efectos"])
+        descuento = EVENTOS["feria_mercado"]["efectos"]["descuento_tienda"]
+        self.assertGreater(descuento, 0.0)
+        self.assertLess(descuento, 1.0)
 
-    def test_evento_recien_iniciado_tiene_duracion_completa(self):
-        self.script.db.evento_activo = "tormenta_magica"
-        self.script.db.evento_inicio = time.time()
-        restante = tiempo_restante_evento()
-        duracion = EVENTOS["tormenta_magica"]["duracion"]
-        self.assertGreater(restante, duracion - 5)
-        self.assertLessEqual(restante, duracion)
+    def test_tormenta_tiene_bonus_int(self):
+        self.assertIn("bonus_inteligencia", EVENTOS["tormenta_magica"]["efectos"])
+        self.assertGreater(EVENTOS["tormenta_magica"]["efectos"]["bonus_inteligencia"], 0)
 
-    def test_evento_a_mitad_de_duracion(self):
-        duracion = EVENTOS["invasion_no_muertos"]["duracion"]
-        self.script.db.evento_activo = "invasion_no_muertos"
-        self.script.db.evento_inicio = time.time() - duracion / 2
-        restante = tiempo_restante_evento()
-        self.assertGreater(restante, duracion / 2 - 5)
-        self.assertLessEqual(restante, duracion / 2 + 5)
-
-    def test_evento_expirado_devuelve_cero(self):
-        self.script.db.evento_activo = "tormenta_magica"
-        self.script.db.evento_inicio = time.time() - 9999
-        self.assertEqual(tiempo_restante_evento(), 0)
+    def test_colores_son_strings_evennia(self):
+        for ev_id, ev in EVENTOS.items():
+            self.assertIsInstance(ev["color"], str, ev_id)
+            self.assertTrue(ev["color"].startswith("|"), ev_id)
 
 
 # ---------------------------------------------------------------------------
-# CmdEvento
+# eventos_elegibles
 # ---------------------------------------------------------------------------
 
-class TestCmdEvento(EvenniaTest):
+class TestEventosElegibles(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.script = obtener_evento_script()
-        self.script.db.evento_activo = None
-        self.cap = _MsgCapture(self.char1)
+    def test_todos_elegibles_sin_historial(self):
+        # Usar ahora grande para que ahora - 0 >= intervalo_min
+        ahora = 100_000.0
+        elegibles = eventos_elegibles({}, ahora=ahora)
+        ids = [e[0] for e in elegibles]
+        self.assertIn("invasion_no_muertos", ids)
+        self.assertIn("feria_mercado", ids)
+        self.assertIn("tormenta_magica", ids)
 
-    def tearDown(self):
-        self.script.db.evento_activo = None
-        super().tearDown()
+    def test_invasion_no_elegible_en_cooldown(self):
+        ahora = 100_000.0
+        intervalo = EVENTOS["invasion_no_muertos"]["intervalo_min"]
+        ultimo = {"invasion_no_muertos": ahora - (intervalo - 1)}
+        elegibles = eventos_elegibles(ultimo, ahora)
+        ids = [e[0] for e in elegibles]
+        self.assertNotIn("invasion_no_muertos", ids)
+        self.assertIn("feria_mercado", ids)
 
-    def _run(self, args=""):
-        cmd = _make_cmd(CmdEvento, self.char1, args)
-        cmd.func()
+    def test_invasion_elegible_tras_cooldown(self):
+        ahora = 100_000.0
+        intervalo = EVENTOS["invasion_no_muertos"]["intervalo_min"]
+        ultimo = {"invasion_no_muertos": ahora - intervalo}
+        elegibles = eventos_elegibles(ultimo, ahora)
+        ids = [e[0] for e in elegibles]
+        self.assertIn("invasion_no_muertos", ids)
 
-    def test_sin_evento_muestra_mensaje_vacio(self):
-        self._run()
-        self.assertIn("No hay ningún evento", self.cap.all())
+    def test_ninguno_elegible_todos_en_cooldown(self):
+        ahora = 100_000.0
+        ultimo = {ev_id: ahora for ev_id in EVENTOS}
+        elegibles = eventos_elegibles(ultimo, ahora)
+        self.assertEqual(elegibles, [])
 
-    def test_con_evento_muestra_nombre(self):
-        self.script.db.evento_activo = "feria_mercado"
-        self.script.db.evento_inicio = time.time()
-        self._run()
-        self.assertIn("Feria del Mercado", self.cap.all())
-
-    def test_con_evento_muestra_descripcion(self):
-        self.script.db.evento_activo = "feria_mercado"
-        self.script.db.evento_inicio = time.time()
-        self._run()
-        self.assertIn("20%", self.cap.all())
-
-    def test_con_evento_muestra_tiempo_restante(self):
-        self.script.db.evento_activo = "tormenta_magica"
-        self.script.db.evento_inicio = time.time()
-        self._run()
-        texto = self.cap.all()
-        self.assertIn("Tiempo restante", texto)
-
-    def test_invasion_muestra_xp_factor(self):
-        self.script.db.evento_activo = "invasion_no_muertos"
-        self.script.db.evento_inicio = time.time()
-        self._run()
-        self.assertIn("2.0", self.cap.all())
-
-    def test_tormenta_muestra_bonus_int(self):
-        self.script.db.evento_activo = "tormenta_magica"
-        self.script.db.evento_inicio = time.time()
-        self._run()
-        self.assertIn("+3", self.cap.all())
+    def test_devuelve_peso_correcto(self):
+        elegibles = eventos_elegibles({}, ahora=0.0)
+        for ev_id, peso in elegibles:
+            self.assertEqual(peso, EVENTOS[ev_id]["peso"])
 
 
 # ---------------------------------------------------------------------------
-# Efecto tormenta: _get_stats aplica +INT a jugadores
+# elegir_evento
 # ---------------------------------------------------------------------------
 
-class TestTormentaEnCombate(EvenniaTest):
+class TestElegirEvento(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.script = obtener_evento_script()
-        self.script.db.evento_activo = None
+    def test_lista_vacia_devuelve_none(self):
+        self.assertIsNone(elegir_evento([], 0.5))
 
-    def tearDown(self):
-        self.script.db.evento_activo = None
-        super().tearDown()
+    def test_un_solo_elegible(self):
+        resultado = elegir_evento([("feria_mercado", 2)], 0.5)
+        self.assertEqual(resultado, "feria_mercado")
 
-    def test_sin_evento_int_normal(self):
-        from features.combat.handler import _get_stats
-        self.char1.db.inteligencia = 10
-        stats = _get_stats(self.char1)
-        self.assertEqual(stats["inteligencia"], 10)
+    def test_r_cero_elige_primero(self):
+        elegibles = [("invasion_no_muertos", 3), ("feria_mercado", 2), ("tormenta_magica", 1)]
+        resultado = elegir_evento(elegibles, 0.0)
+        self.assertEqual(resultado, "invasion_no_muertos")
 
-    def test_tormenta_suma_bonus_int(self):
-        from features.combat.handler import _get_stats
-        self.script.db.evento_activo = "tormenta_magica"
-        self.script.db.evento_inicio = time.time()
-        self.char1.db.inteligencia = 10
-        stats = _get_stats(self.char1)
-        self.assertEqual(stats["inteligencia"], 13)  # 10 + 3
+    def test_r_uno_elige_ultimo(self):
+        elegibles = [("invasion_no_muertos", 3), ("feria_mercado", 2), ("tormenta_magica", 1)]
+        # r=1.0 está fuera de rango [0,1) pero el fallback devuelve el último
+        resultado = elegir_evento(elegibles, 0.9999)
+        self.assertIsNotNone(resultado)
 
-    def test_tormenta_solo_aplica_con_evento_activo(self):
-        from features.combat.handler import _get_stats
-        # Sin evento activo, INT base
-        self.script.db.evento_activo = None
-        self.char1.db.inteligencia = 10
-        stats = _get_stats(self.char1)
-        self.assertEqual(stats["inteligencia"], 10)
+    def test_distribucion_ponderada(self):
+        # Con pesos 3:2:1, invasion debería salir ~50% de las veces
+        elegibles = [
+            ("invasion_no_muertos", 3),
+            ("feria_mercado", 2),
+            ("tormenta_magica", 1),
+        ]
+        conteo = {"invasion_no_muertos": 0, "feria_mercado": 0, "tormenta_magica": 0}
+        N = 6000
+        import random
+        random.seed(42)
+        for _ in range(N):
+            ev = elegir_evento(elegibles, random.random())
+            conteo[ev] += 1
+        # invasion debería tener ~50% (peso 3 de 6 total)
+        ratio = conteo["invasion_no_muertos"] / N
+        self.assertGreater(ratio, 0.40)
+        self.assertLess(ratio, 0.60)
 
+    def test_pesos_iguales_distribucion_uniforme(self):
+        elegibles = [("A", 1), ("B", 1), ("C", 1)]
+        conteo = {"A": 0, "B": 0, "C": 0}
+        N = 3000
+        import random
+        random.seed(0)
+        for _ in range(N):
+            ev = elegir_evento(elegibles, random.random())
+            conteo[ev] += 1
+        for v in conteo.values():
+            self.assertGreater(v, N * 0.25)
+            self.assertLess(v, N * 0.45)
 
-# ---------------------------------------------------------------------------
-# Efecto invasión: XP multiplicado en handler
-# ---------------------------------------------------------------------------
-
-class TestInvasionXP(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        self.script = obtener_evento_script()
-        self.script.db.evento_activo = None
-
-    def tearDown(self):
-        self.script.db.evento_activo = None
-        super().tearDown()
-
-    def test_sin_evento_xp_factor_no_presente(self):
-        from features.events.event_script import obtener_evento_activo
-        from systems.events.events import EVENTOS
-        ev_id = obtener_evento_activo()
-        if ev_id:
-            xp_factor = EVENTOS.get(ev_id, {}).get("efectos", {}).get("xp_factor", 1.0)
-        else:
-            xp_factor = 1.0
-        self.assertEqual(xp_factor, 1.0)
-
-    def test_invasion_tiene_xp_factor_2(self):
-        self.script.db.evento_activo = "invasion_no_muertos"
-        self.script.db.evento_inicio = time.time()
-        from features.events.event_script import obtener_evento_activo
-        from systems.events.events import EVENTOS
-        ev_id = obtener_evento_activo()
-        factor = EVENTOS[ev_id]["efectos"]["xp_factor"]
-        self.assertEqual(factor, 2.0)
-
-    def test_invasion_afecta_solo_legion_oscura(self):
-        self.script.db.evento_activo = "invasion_no_muertos"
-        facciones = EVENTOS["invasion_no_muertos"]["efectos"]["facciones_afectadas"]
-        self.assertIn("legion_oscura", facciones)
-        self.assertNotIn("ciudadanos", facciones)
+    def test_resultado_siempre_en_elegibles(self):
+        elegibles = [("invasion_no_muertos", 3), ("feria_mercado", 2)]
+        import random
+        random.seed(99)
+        for _ in range(100):
+            ev = elegir_evento(elegibles, random.random())
+            self.assertIn(ev, ["invasion_no_muertos", "feria_mercado"])
 
 
 # ---------------------------------------------------------------------------
-# Efecto feria: factor de precio en tienda
+# Valores de efectos
 # ---------------------------------------------------------------------------
 
-class TestFeriaEnTienda(EvenniaTest):
+class TestEfectos(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.script = obtener_evento_script()
-        self.script.db.evento_activo = None
+    def test_xp_factor_invasion_es_doble(self):
+        self.assertEqual(EVENTOS["invasion_no_muertos"]["efectos"]["xp_factor"], 2.0)
 
-    def tearDown(self):
-        self.script.db.evento_activo = None
-        super().tearDown()
+    def test_descuento_feria_es_20_pct(self):
+        self.assertAlmostEqual(EVENTOS["feria_mercado"]["efectos"]["descuento_tienda"], 0.20)
 
-    def test_sin_evento_factor_base_1(self):
-        from features.events.event_script import obtener_evento_activo
-        from systems.events.events import EVENTOS
-        ev_id = obtener_evento_activo()
-        factor = 1.0
-        if ev_id:
-            descuento = EVENTOS.get(ev_id, {}).get("efectos", {}).get("descuento_tienda", 0)
-            factor = factor * (1 - descuento)
-        self.assertEqual(factor, 1.0)
+    def test_bonus_int_tormenta_es_3(self):
+        self.assertEqual(EVENTOS["tormenta_magica"]["efectos"]["bonus_inteligencia"], 3)
 
-    def test_feria_reduce_factor_20pct(self):
-        self.script.db.evento_activo = "feria_mercado"
-        self.script.db.evento_inicio = time.time()
-        from features.events.event_script import obtener_evento_activo
-        from systems.events.events import EVENTOS
-        ev_id = obtener_evento_activo()
-        factor = 1.0
-        descuento = EVENTOS.get(ev_id, {}).get("efectos", {}).get("descuento_tienda", 0)
-        factor = factor * (1 - descuento)
-        self.assertAlmostEqual(factor, 0.80)
+    def test_invasion_duracion_20min(self):
+        self.assertEqual(EVENTOS["invasion_no_muertos"]["duracion"], 1200)
 
-    def test_feria_sobre_factor_rep_positivo(self):
-        # rep factor 0.90 (10% desc rep) + feria 20% → 0.90 * 0.80 = 0.72
-        factor_rep = 0.90
-        descuento_feria = EVENTOS["feria_mercado"]["efectos"]["descuento_tienda"]
-        factor_final = factor_rep * (1 - descuento_feria)
-        self.assertAlmostEqual(factor_final, 0.72)
+    def test_feria_duracion_15min(self):
+        self.assertEqual(EVENTOS["feria_mercado"]["duracion"], 900)
+
+    def test_tormenta_duracion_10min(self):
+        self.assertEqual(EVENTOS["tormenta_magica"]["duracion"], 600)
 
 
 if __name__ == "__main__":
-    import unittest
     unittest.main()

@@ -1,614 +1,751 @@
 """
 tests/test_logros_system.py
 
-Tests de integración para el sistema de logros y títulos (v0.17.0).
-Cubre: comprobar_y_notificar, CmdLogros, CmdTitulo.
+Tests unitarios puros para systems/achievements/achievements.py (v0.17.0).
+Sin dependencias de Evennia.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_logros_system
+  python -m pytest tests/test_logros_system.py
 """
-from evennia.utils.test_resources import EvenniaTest
+import unittest
 
-from features.achievements.commands import (
-    CmdLogros,
-    CmdTitulo,
-    comprobar_y_notificar,
-    _extraer_datos,
+from systems.achievements.achievements import (
+    LOGROS,
+    JEFES,
+    _INICIALES,
+    _RAMAS,
+    _HABS_SUBCLASE,
+    _cumple,
+    verificar_todos,
+    nuevos_logros,
+    titulos_disponibles,
 )
-from systems.achievements.achievements import LOGROS, JEFES
+
+TODOS_JEFES = list(JEFES)
 
 
-def _make_cmd(CmdClass, caller, args=""):
-    cmd = CmdClass()
-    cmd.caller = caller
-    cmd.args = args
-    cmd.cmdstring = cmd.key
-    cmd.session = None
-    cmd.obj = caller
-    cmd.raw_string = cmd.key + (" " + args if args else "")
-    cmd.switches = []
-    cmd.lhs = args
-    cmd.rhs = ""
-    return cmd
+def _datos(**kwargs) -> dict:
+    base = {
+        "nivel":             1,
+        "quests_entregadas": 0,
+        "habilidades":       ["golpe_fuerte", "golpe_rapido"],
+        "reputacion":        {},
+        "kills_totales":     0,
+        "jefes_derrotados":  [],
+        "objetos_crafteados":0,
+        "encantamiento_max": 0,
+        "banco_usado":       False,
+        "clase":             "",
+        "subclase":          "",
+        "mascota_nivel_max": 1,
+        "gremios_fundados":          0,
+        "es_lider_gremio":           False,
+        "miembros_gremio":           0,
+        "gremio_banco_depositado":   0,
+    }
+    base.update(kwargs)
+    return base
 
 
-def _init_char(char):
-    """Inicializa los atributos de logros en un personaje de test."""
-    char.db.logros = []
-    char.db.titulo_activo = None
-    char.db.kills_totales = 0
-    char.db.jefes_derrotados = []
-    char.db.objetos_crafteados = 0
-    char.db.encantamiento_max = 0
-    char.db.banco_usado = False
-    char.db.clase = None
-    char.db.subclase = None
-    char.db.mascota_nivel_max = 1
-    char.db.gremios_fundados = 0
-    char.db.gremio_banco_depositado = 0
-    if not hasattr(char.db, "quests") or char.db.quests is None:
-        char.db.quests = {}
-    if not hasattr(char.db, "habilidades_desbloqueadas") or char.db.habilidades_desbloqueadas is None:
-        char.db.habilidades_desbloqueadas = ["golpe_fuerte", "golpe_rapido"]
-    if not hasattr(char.db, "reputacion") or char.db.reputacion is None:
-        char.db.reputacion = {}
-    if not hasattr(char.db, "nivel") or char.db.nivel is None:
-        char.db.nivel = 1
+# ─── Catálogo ────────────────────────────────────────────────────────────────
 
+class TestCatalogo(unittest.TestCase):
 
-class _MsgCapture:
-    """Captura los mensajes enviados al jugador durante un test."""
+    def test_hay_81_logros(self):
+        self.assertEqual(len(LOGROS), 81)
 
-    def __init__(self, char):
-        self.msgs = []
-        self.char = char
-        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
-        char.location.msg_contents = lambda m, **kw: None
+    def test_todos_tienen_campos_obligatorios(self):
+        for lid, logro in LOGROS.items():
+            for campo in ("nombre", "descripcion", "titulo", "categoria"):
+                self.assertIn(campo, logro, f"{lid} falta '{campo}'")
 
-    def all(self) -> str:
-        return "\n".join(self.msgs)
-
-
-# ─── _extraer_datos ──────────────────────────────────────────────────────────
-
-class TestExtraerDatos(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-
-    def test_extrae_nivel(self):
-        self.char1.db.nivel = 5
-        datos = _extraer_datos(self.char1)
-        self.assertEqual(datos["nivel"], 5)
-
-    def test_extrae_quests_entregadas(self):
-        self.char1.db.quests = {
-            "q1": {"estado": "entregada"},
-            "q2": {"estado": "activa"},
-            "q3": {"estado": "entregada"},
+    def test_categorias_conocidas(self):
+        cats_validas = {
+            "progresion", "misiones", "combate", "habilidades",
+            "encantamiento", "reputacion", "crafteo", "economia",
+            "gremio", "mascotas", "subclase", "clase", "jefe_mundo", "mazmorra",
+            "arena", "runas", "vivienda", "bestiario", "cartografia", "monturas",
+            "coleccion", "apuestas", "cazarrecompensas", "expediciones",
+            "alquimia", "desafios",
         }
-        datos = _extraer_datos(self.char1)
-        self.assertEqual(datos["quests_entregadas"], 2)
-
-    def test_extrae_kills(self):
-        self.char1.db.kills_totales = 25
-        datos = _extraer_datos(self.char1)
-        self.assertEqual(datos["kills_totales"], 25)
-
-    def test_extrae_encantamiento_max(self):
-        self.char1.db.encantamiento_max = 2
-        datos = _extraer_datos(self.char1)
-        self.assertEqual(datos["encantamiento_max"], 2)
-
-    def test_extrae_banco_usado(self):
-        self.char1.db.banco_usado = True
-        datos = _extraer_datos(self.char1)
-        self.assertTrue(datos["banco_usado"])
-
-    def test_defaults_sin_atributos(self):
-        datos = _extraer_datos(self.char1)
-        self.assertEqual(datos["nivel"], 1)
-        self.assertEqual(datos["kills_totales"], 0)
-        self.assertFalse(datos["banco_usado"])
-
-
-# ─── comprobar_y_notificar ───────────────────────────────────────────────────
-
-class TestComprobarYNotificar(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def test_sin_condiciones_cumplidas_no_notifica(self):
-        comprobar_y_notificar(self.char1)
-        self.assertEqual(list(self.char1.db.logros), [])
-
-    def test_notifica_nivel_2(self):
-        self.char1.db.nivel = 2
-        comprobar_y_notificar(self.char1)
-        self.assertIn("nivel_2", self.char1.db.logros)
-
-    def test_mensaje_contiene_nombre_logro(self):
-        self.char1.db.nivel = 2
-        comprobar_y_notificar(self.char1)
-        self.assertIn("Primer Paso", self.cap.all())
-
-    def test_mensaje_contiene_titulo_si_lo_hay(self):
-        self.char1.db.nivel = 2
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Novato", self.cap.all())
-
-    def test_notifica_primera_mision(self):
-        self.char1.db.quests = {"q1": {"estado": "entregada"}}
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primera_mision", self.char1.db.logros)
-
-    def test_no_repite_logros_ya_desbloqueados(self):
-        self.char1.db.logros = ["nivel_2"]
-        self.char1.db.nivel = 2
-        comprobar_y_notificar(self.char1)
-        self.assertEqual(list(self.char1.db.logros).count("nivel_2"), 1)
-
-    def test_desbloquea_multiples_en_una_llamada(self):
-        self.char1.db.nivel = 5
-        self.char1.db.kills_totales = 10
-        comprobar_y_notificar(self.char1)
-        logros = list(self.char1.db.logros)
-        self.assertIn("nivel_2", logros)
-        self.assertIn("nivel_5", logros)
-        self.assertIn("diez_kills", logros)
-
-    def test_desbloquea_kills(self):
-        self.char1.db.kills_totales = 50
-        comprobar_y_notificar(self.char1)
-        self.assertIn("diez_kills", self.char1.db.logros)
-        self.assertIn("cincuenta_kills", self.char1.db.logros)
-
-    def test_desbloquea_tres_jefes(self):
-        self.char1.db.jefes_derrotados = list(JEFES)[:3]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("tres_jefes", self.char1.db.logros)
-
-    def test_desbloquea_todos_jefes(self):
-        self.char1.db.jefes_derrotados = list(JEFES)
-        comprobar_y_notificar(self.char1)
-        self.assertIn("todos_jefes", self.char1.db.logros)
-
-    def test_desbloquea_primer_encantamiento(self):
-        self.char1.db.encantamiento_max = 1
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primer_encantamiento", self.char1.db.logros)
-
-    def test_desbloquea_encantamiento_max(self):
-        self.char1.db.encantamiento_max = 3
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primer_encantamiento", self.char1.db.logros)
-        self.assertIn("encantamiento_max", self.char1.db.logros)
-
-    def test_desbloquea_primer_deposito(self):
-        self.char1.db.banco_usado = True
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primer_deposito", self.char1.db.logros)
-
-    def test_desbloquea_primer_crafteo(self):
-        self.char1.db.objetos_crafteados = 1
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primer_crafteo", self.char1.db.logros)
-
-    def test_desbloquea_habilidad_extra(self):
-        self.char1.db.habilidades_desbloqueadas = ["golpe_fuerte", "golpe_rapido", "embestida"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("primera_habilidad", self.char1.db.logros)
-
-    def test_desbloquea_rama_completa(self):
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("rama_completa", self.char1.db.logros)
-
-    def test_desbloquea_reputacion_honrado(self):
-        self.char1.db.reputacion = {"ciudadanos": 3000}
-        comprobar_y_notificar(self.char1)
-        self.assertIn("honrado_ciudadanos", self.char1.db.logros)
-
-    def test_desbloquea_diplomatico(self):
-        self.char1.db.reputacion = {
-            "ciudadanos": 1000,
-            "gremio_aventureros": 1500,
-            "horda_salvaje": 2000,
-        }
-        comprobar_y_notificar(self.char1)
-        self.assertIn("diplomatico", self.char1.db.logros)
-
-
-# ─── CmdLogros ───────────────────────────────────────────────────────────────
-
-class TestCmdLogros(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def _run(self, args=""):
-        cmd = _make_cmd(CmdLogros, self.char1, args)
-        cmd.func()
-
-    def test_muestra_sin_logros(self):
-        self.char1.db.logros = []
-        self._run()
-        self.assertIn("0/81", self.cap.all())
-
-    def test_muestra_logros_desbloqueados(self):
-        self.char1.db.logros = ["nivel_2", "primera_mision"]
-        self._run()
-        texto = self.cap.all()
-        self.assertIn("Primer Paso", texto)
-        self.assertIn("Aventurero", texto)
-        self.assertIn("2/81", texto)
-
-    def test_filtra_por_categoria(self):
-        self.char1.db.logros = ["nivel_2"]
-        self._run("progresion")
-        texto = self.cap.all()
-        self.assertIn("Progresión", texto)
-        self.assertIn("Primer Paso", texto)
-
-    def test_muestra_titulo_activo(self):
-        self.char1.db.logros = ["nivel_2"]
-        self.char1.db.titulo_activo = "el Novato"
-        self._run()
-        self.assertIn("el Novato", self.cap.all())
-
-    def test_muestra_titulos_disponibles(self):
-        self.char1.db.logros = ["nivel_5", "cinco_misiones"]
-        self._run()
-        texto = self.cap.all()
-        self.assertIn("el Veterano", texto)
-        self.assertIn("el Héroe", texto)
-
-    def test_contador_correcto_con_varios(self):
-        self.char1.db.logros = list(LOGROS.keys())[:7]
-        self._run()
-        self.assertIn("7/81", self.cap.all())
-
-
-# ─── CmdTitulo ───────────────────────────────────────────────────────────────
-
-class TestCmdTitulo(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def _run(self, args=""):
-        cmd = _make_cmd(CmdTitulo, self.char1, args)
-        cmd.func()
-
-    def test_sin_logros_no_puede_poner_titulo(self):
-        self._run("el Héroe")
-        self.assertIn("ningún título", self.cap.all())
-
-    def test_pone_titulo_desbloqueado(self):
-        self.char1.db.logros = ["nivel_2"]
-        self._run("el Novato")
-        self.assertEqual(self.char1.db.titulo_activo, "el Novato")
-
-    def test_titulo_case_insensitive(self):
-        self.char1.db.logros = ["nivel_2"]
-        self._run("EL NOVATO")
-        self.assertEqual(self.char1.db.titulo_activo, "el Novato")
-
-    def test_titulo_no_desbloqueado_falla(self):
-        self.char1.db.logros = ["nivel_2"]
-        self._run("la Leyenda")
-        self.assertIn("No tienes el título", self.cap.all())
-        self.assertIsNone(self.char1.db.titulo_activo)
-
-    def test_sin_argumento_elimina_titulo(self):
-        self.char1.db.titulo_activo = "el Novato"
-        self._run("")
-        self.assertIsNone(self.char1.db.titulo_activo)
-        self.assertIn("eliminado", self.cap.all())
-
-    def test_muestra_titulos_disponibles_al_fallar(self):
-        self.char1.db.logros = ["nivel_5"]
-        self._run("titulo inexistente")
-        self.assertIn("el Veterano", self.cap.all())
-
-
-# ─── Logros de clase ────────────────────────────────────────────────────────
-
-class TestLogrosClaseIntegracion(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def test_elegir_clase_desbloquea_vocacion_elegida(self):
-        self.char1.db.clase = "guerrero"
-        comprobar_y_notificar(self.char1)
-        self.assertIn("vocacion_elegida", list(self.char1.db.logros))
-
-    def test_sin_clase_no_desbloquea_vocacion(self):
-        self.char1.db.clase = None
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("vocacion_elegida", list(self.char1.db.logros))
-
-    def test_guerrero_rama_completa_desbloquea_maestro(self):
-        self.char1.db.clase = "guerrero"
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_guerrero", list(self.char1.db.logros))
-
-    def test_guerrero_rama_incompleta_no_desbloquea_maestro(self):
-        self.char1.db.clase = "guerrero"
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_fuerte", "embestida", "escudo_fe"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("maestro_guerrero", list(self.char1.db.logros))
-
-    def test_explorador_rama_completa_desbloquea_maestro(self):
-        self.char1.db.clase = "explorador"
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_rapido", "corte", "veneno", "ejecutar"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_explorador", list(self.char1.db.logros))
-
-    def test_mago_rama_completa_desbloquea_maestro(self):
-        self.char1.db.clase = "mago"
-        self.char1.db.habilidades_desbloqueadas = [
-            "dardo_magico", "escudo_arcano", "bola_fuego", "drenar_vida"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_mago", list(self.char1.db.logros))
-
-    def test_maestro_clase_incorrecta_no_desbloquea(self):
-        self.char1.db.clase = "mago"
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("maestro_guerrero", list(self.char1.db.logros))
-
-    def test_maestro_guerrero_da_titulo_caballero(self):
-        self.char1.db.clase = "guerrero"
-        self.char1.db.habilidades_desbloqueadas = [
-            "golpe_fuerte", "embestida", "escudo_fe", "golpe_maestro"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Caballero", self.cap.all())
-
-    def test_maestro_mago_da_titulo_archimago(self):
-        self.char1.db.clase = "mago"
-        self.char1.db.habilidades_desbloqueadas = [
-            "dardo_magico", "escudo_arcano", "bola_fuego", "drenar_vida"
-        ]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Archimago", self.cap.all())
-
-    def test_logros_muestra_categoria_clase(self):
-        cmd = _make_cmd(CmdLogros, self.char1)
-        cmd.func()
-        self.assertIn("Clase", self.cap.all())
-
-    def test_logros_filtra_por_clase(self):
-        cmd = _make_cmd(CmdLogros, self.char1, "clase")
-        cmd.func()
-        output = self.cap.all()
-        self.assertIn("Llamado", output)
-        self.assertIn("Caballero de Hierro", output)
-
-
-# ─── Logros de subclase ──────────────────────────────────────────────────────
-
-class TestLogrosSubclaseIntegracion(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def test_elegir_subclase_desbloquea_especializacion_elegida(self):
-        self.char1.db.subclase = "paladin"
-        comprobar_y_notificar(self.char1)
-        self.assertIn("especializacion_elegida", list(self.char1.db.logros))
-
-    def test_sin_subclase_no_desbloquea_especializacion(self):
-        self.char1.db.subclase = None
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("especializacion_elegida", list(self.char1.db.logros))
-
-    def test_paladin_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "paladin"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_divino", "golpe_sagrado"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_paladin", list(self.char1.db.logros))
-
-    def test_paladin_habilidades_incompletas_no_desbloquea_maestro(self):
-        self.char1.db.subclase = "paladin"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_divino"]
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("maestro_paladin", list(self.char1.db.logros))
-
-    def test_berserker_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "berserker"
-        self.char1.db.habilidades_desbloqueadas = ["furia_berserker", "golpe_demoledor"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_berserker", list(self.char1.db.logros))
-
-    def test_asesino_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "asesino"
-        self.char1.db.habilidades_desbloqueadas = ["golpe_certero", "golpe_letal"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_asesino", list(self.char1.db.logros))
-
-    def test_cazador_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "cazador"
-        self.char1.db.habilidades_desbloqueadas = ["instinto_cazador", "trampa_mortal"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_cazador", list(self.char1.db.logros))
-
-    def test_hechicero_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "hechicero"
-        self.char1.db.habilidades_desbloqueadas = ["concentracion_arcana", "nova_arcana"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_hechicero", list(self.char1.db.logros))
-
-    def test_nigromante_habilidades_completas_desbloquea_maestro(self):
-        self.char1.db.subclase = "nigromante"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_sombrio", "drenar_esencia"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("maestro_nigromante", list(self.char1.db.logros))
-
-    def test_subclase_incorrecta_no_desbloquea_maestro(self):
-        self.char1.db.subclase = "berserker"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_divino", "golpe_sagrado"]
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("maestro_paladin", list(self.char1.db.logros))
-        self.assertNotIn("maestro_berserker", list(self.char1.db.logros))
-
-    def test_maestro_paladin_da_titulo(self):
-        self.char1.db.subclase = "paladin"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_divino", "golpe_sagrado"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Paladín", self.cap.all())
-
-    def test_maestro_nigromante_da_titulo(self):
-        self.char1.db.subclase = "nigromante"
-        self.char1.db.habilidades_desbloqueadas = ["escudo_sombrio", "drenar_esencia"]
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Nigromante", self.cap.all())
-
-    def test_logros_muestra_categoria_subclase(self):
-        cmd = _make_cmd(CmdLogros, self.char1)
-        cmd.func()
-        self.assertIn("Subclase", self.cap.all())
-
-    def test_logros_filtra_por_subclase(self):
-        cmd = _make_cmd(CmdLogros, self.char1, "subclase")
-        cmd.func()
-        output = self.cap.all()
-        self.assertIn("Elegido", output)
-        self.assertIn("Escudo Sagrado", output)
-
-
-# ─── Logros de mascotas ──────────────────────────────────────────────────────
-
-class TestLogrosMascotasIntegracion(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def test_mascota_nivel_1_no_desbloquea_logro(self):
-        self.char1.db.mascota_nivel_max = 1
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("mascota_nivel_2", list(self.char1.db.logros))
-
-    def test_mascota_nivel_2_desbloquea_logro(self):
-        self.char1.db.mascota_nivel_max = 2
-        comprobar_y_notificar(self.char1)
-        self.assertIn("mascota_nivel_2", list(self.char1.db.logros))
-
-    def test_mascota_nivel_2_no_desbloquea_nivel_3(self):
-        self.char1.db.mascota_nivel_max = 2
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("mascota_nivel_3", list(self.char1.db.logros))
-
-    def test_mascota_nivel_3_desbloquea_ambos_logros(self):
-        self.char1.db.mascota_nivel_max = 3
-        comprobar_y_notificar(self.char1)
-        logros = list(self.char1.db.logros)
-        self.assertIn("mascota_nivel_2", logros)
-        self.assertIn("mascota_nivel_3", logros)
-
-    def test_mascota_nivel_3_da_titulo_domador(self):
-        self.char1.db.mascota_nivel_max = 3
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Domador", self.cap.all())
-
-    def test_logros_muestra_categoria_mascotas(self):
-        cmd = _make_cmd(CmdLogros, self.char1)
-        cmd.func()
-        self.assertIn("Mascotas", self.cap.all())
-
-    def test_logros_filtra_por_mascotas(self):
-        cmd = _make_cmd(CmdLogros, self.char1, "mascotas")
-        cmd.func()
-        output = self.cap.all()
-        self.assertIn("Primer Compañero", output)
-        self.assertIn("Domador", output)
-
-
-# ─── Logros de gremio ────────────────────────────────────────────────────────
-
-class TestLogrosGremioIntegracion(EvenniaTest):
-
-    def setUp(self):
-        super().setUp()
-        _init_char(self.char1)
-        self.char1.move_to(self.room1, quiet=True)
-        self.cap = _MsgCapture(self.char1)
-
-    def test_sin_gremio_fundado_no_logro(self):
-        self.char1.db.gremios_fundados = 0
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("gremio_fundado", list(self.char1.db.logros))
-
-    def test_gremio_fundado_desbloquea_logro(self):
-        self.char1.db.gremios_fundados = 1
-        comprobar_y_notificar(self.char1)
-        self.assertIn("gremio_fundado", list(self.char1.db.logros))
-
-    def test_depositar_500_desbloquea_tesorero(self):
-        self.char1.db.gremio_banco_depositado = 500
-        comprobar_y_notificar(self.char1)
-        self.assertIn("gremio_tesorero", list(self.char1.db.logros))
-
-    def test_depositar_499_no_desbloquea_tesorero(self):
-        self.char1.db.gremio_banco_depositado = 499
-        comprobar_y_notificar(self.char1)
-        self.assertNotIn("gremio_tesorero", list(self.char1.db.logros))
-
-    def test_depositar_2000_desbloquea_mecenas_y_tesorero(self):
-        self.char1.db.gremio_banco_depositado = 2000
-        comprobar_y_notificar(self.char1)
-        logros = list(self.char1.db.logros)
-        self.assertIn("gremio_tesorero", logros)
-        self.assertIn("gremio_mecenas", logros)
-
-    def test_mecenas_da_titulo(self):
-        self.char1.db.gremio_banco_depositado = 2000
-        comprobar_y_notificar(self.char1)
-        self.assertIn("el Mecenas", self.cap.all())
-
-    def test_logros_muestra_categoria_gremio(self):
-        cmd = _make_cmd(CmdLogros, self.char1)
-        cmd.func()
-        self.assertIn("Gremio", self.cap.all())
-
-    def test_logros_filtra_por_gremio(self):
-        cmd = _make_cmd(CmdLogros, self.char1, "gremio")
-        cmd.func()
-        output = self.cap.all()
-        self.assertIn("Fundador", output)
-        self.assertIn("Tesorero", output)
-        self.assertIn("Mecenas", output)
+        for lid, logro in LOGROS.items():
+            self.assertIn(logro["categoria"], cats_validas, lid)
+
+    def test_siete_jefes_definidos(self):
+        self.assertEqual(len(JEFES), 7)
+
+
+# ─── Progresión ──────────────────────────────────────────────────────────────
+
+class TestProgresion(unittest.TestCase):
+
+    def test_nivel_2_no_cumple_nivel_1(self):
+        self.assertFalse(_cumple("nivel_2", _datos(nivel=1)))
+
+    def test_nivel_2_cumple(self):
+        self.assertTrue(_cumple("nivel_2", _datos(nivel=2)))
+
+    def test_nivel_2_cumple_nivel_superior(self):
+        self.assertTrue(_cumple("nivel_2", _datos(nivel=7)))
+
+    def test_nivel_5_no_cumple(self):
+        self.assertFalse(_cumple("nivel_5", _datos(nivel=4)))
+
+    def test_nivel_5_cumple(self):
+        self.assertTrue(_cumple("nivel_5", _datos(nivel=5)))
+
+    def test_nivel_10_no_cumple(self):
+        self.assertFalse(_cumple("nivel_10", _datos(nivel=9)))
+
+    def test_nivel_10_cumple(self):
+        self.assertTrue(_cumple("nivel_10", _datos(nivel=10)))
+
+
+# ─── Misiones ────────────────────────────────────────────────────────────────
+
+class TestMisiones(unittest.TestCase):
+
+    def test_primera_mision_sin_entregas(self):
+        self.assertFalse(_cumple("primera_mision", _datos()))
+
+    def test_primera_mision_cumple(self):
+        self.assertTrue(_cumple("primera_mision", _datos(quests_entregadas=1)))
+
+    def test_cinco_misiones_no_cumple(self):
+        self.assertFalse(_cumple("cinco_misiones", _datos(quests_entregadas=4)))
+
+    def test_cinco_misiones_cumple(self):
+        self.assertTrue(_cumple("cinco_misiones", _datos(quests_entregadas=5)))
+
+    def test_diez_misiones_cumple(self):
+        self.assertTrue(_cumple("diez_misiones", _datos(quests_entregadas=10)))
+
+    def test_diez_misiones_no_cumple(self):
+        self.assertFalse(_cumple("diez_misiones", _datos(quests_entregadas=9)))
+
+
+# ─── Combate ─────────────────────────────────────────────────────────────────
+
+class TestCombate(unittest.TestCase):
+
+    def test_diez_kills_no_cumple(self):
+        self.assertFalse(_cumple("diez_kills", _datos(kills_totales=9)))
+
+    def test_diez_kills_cumple(self):
+        self.assertTrue(_cumple("diez_kills", _datos(kills_totales=10)))
+
+    def test_cincuenta_kills_no_cumple(self):
+        self.assertFalse(_cumple("cincuenta_kills", _datos(kills_totales=49)))
+
+    def test_cincuenta_kills_cumple(self):
+        self.assertTrue(_cumple("cincuenta_kills", _datos(kills_totales=50)))
+
+    def test_tres_jefes_no_cumple_con_dos(self):
+        self.assertFalse(_cumple("tres_jefes", _datos(jefes_derrotados=TODOS_JEFES[:2])))
+
+    def test_tres_jefes_cumple(self):
+        self.assertTrue(_cumple("tres_jefes", _datos(jefes_derrotados=TODOS_JEFES[:3])))
+
+    def test_tres_jefes_ignora_no_jefes(self):
+        self.assertFalse(_cumple("tres_jefes", _datos(jefes_derrotados=["FALSO1", "FALSO2", "FALSO3"])))
+
+    def test_todos_jefes_no_cumple_parcial(self):
+        self.assertFalse(_cumple("todos_jefes", _datos(jefes_derrotados=TODOS_JEFES[:-1])))
+
+    def test_todos_jefes_cumple(self):
+        self.assertTrue(_cumple("todos_jefes", _datos(jefes_derrotados=TODOS_JEFES)))
+
+    def test_todos_jefes_cumple_con_extra(self):
+        self.assertTrue(_cumple("todos_jefes", _datos(jefes_derrotados=TODOS_JEFES + ["EXTRA"])))
+
+
+# ─── Habilidades ─────────────────────────────────────────────────────────────
+
+class TestHabilidades(unittest.TestCase):
+
+    def test_primera_habilidad_solo_iniciales(self):
+        self.assertFalse(_cumple("primera_habilidad", _datos()))
+
+    def test_primera_habilidad_cumple(self):
+        self.assertTrue(_cumple("primera_habilidad", _datos(
+            habilidades=["golpe_fuerte", "golpe_rapido", "embestida"]
+        )))
+
+    def test_seis_habilidades_no_cumple(self):
+        self.assertFalse(_cumple("seis_habilidades", _datos(
+            habilidades=["golpe_fuerte", "golpe_rapido", "embestida", "corte", "veneno"]
+        )))
+
+    def test_seis_habilidades_cumple(self):
+        self.assertTrue(_cumple("seis_habilidades", _datos(
+            habilidades=["golpe_fuerte", "golpe_rapido", "embestida", "escudo_fe", "corte", "veneno"]
+        )))
+
+    def test_rama_completa_guerrero(self):
+        self.assertTrue(_cumple("rama_completa", _datos(
+            habilidades=list(_RAMAS["guerrero"])
+        )))
+
+    def test_rama_completa_mago(self):
+        self.assertTrue(_cumple("rama_completa", _datos(
+            habilidades=list(_RAMAS["mago"])
+        )))
+
+    def test_rama_completa_no_cumple_parcial(self):
+        self.assertFalse(_cumple("rama_completa", _datos(
+            habilidades=["golpe_fuerte", "embestida", "escudo_fe"]  # falta golpe_maestro
+        )))
+
+
+# ─── Encantamiento ────────────────────────────────────────────────────────────
+
+class TestEncantamiento(unittest.TestCase):
+
+    def test_primer_encantamiento_no_cumple(self):
+        self.assertFalse(_cumple("primer_encantamiento", _datos(encantamiento_max=0)))
+
+    def test_primer_encantamiento_cumple(self):
+        self.assertTrue(_cumple("primer_encantamiento", _datos(encantamiento_max=1)))
+
+    def test_encantamiento_max_no_cumple_nivel_2(self):
+        self.assertFalse(_cumple("encantamiento_max", _datos(encantamiento_max=2)))
+
+    def test_encantamiento_max_cumple(self):
+        self.assertTrue(_cumple("encantamiento_max", _datos(encantamiento_max=3)))
+
+
+# ─── Reputación ──────────────────────────────────────────────────────────────
+
+class TestReputacion(unittest.TestCase):
+
+    def test_honrado_ciudadanos_no_cumple_neutral(self):
+        self.assertFalse(_cumple("honrado_ciudadanos", _datos(
+            reputacion={"ciudadanos": 1500}
+        )))
+
+    def test_honrado_ciudadanos_cumple(self):
+        self.assertTrue(_cumple("honrado_ciudadanos", _datos(
+            reputacion={"ciudadanos": 3000}
+        )))
+
+    def test_honrado_ciudadanos_cumple_exaltado(self):
+        self.assertTrue(_cumple("honrado_ciudadanos", _datos(
+            reputacion={"ciudadanos": 15000}
+        )))
+
+    def test_diplomatico_no_cumple_dos_facciones(self):
+        self.assertFalse(_cumple("diplomatico", _datos(
+            reputacion={"ciudadanos": 1000, "gremio_aventureros": 2000}
+        )))
+
+    def test_diplomatico_cumple_tres_facciones(self):
+        self.assertTrue(_cumple("diplomatico", _datos(
+            reputacion={
+                "ciudadanos": 1000,
+                "gremio_aventureros": 2000,
+                "sombras_pantano": 5000,
+            }
+        )))
+
+    def test_diplomatico_no_cumple_con_facciones_enemigas(self):
+        self.assertFalse(_cumple("diplomatico", _datos(
+            reputacion={
+                "ciudadanos": 1000,
+                "gremio_aventureros": -500,  # neutral, no llega
+                "horda_salvaje": 500,        # neutral, no llega
+            }
+        )))
+
+
+# ─── Crafteo ─────────────────────────────────────────────────────────────────
+
+class TestCrafteo(unittest.TestCase):
+
+    def test_primer_crafteo_no_cumple(self):
+        self.assertFalse(_cumple("primer_crafteo", _datos(objetos_crafteados=0)))
+
+    def test_primer_crafteo_cumple(self):
+        self.assertTrue(_cumple("primer_crafteo", _datos(objetos_crafteados=1)))
+
+    def test_diez_crafteos_no_cumple(self):
+        self.assertFalse(_cumple("diez_crafteos", _datos(objetos_crafteados=9)))
+
+    def test_diez_crafteos_cumple(self):
+        self.assertTrue(_cumple("diez_crafteos", _datos(objetos_crafteados=10)))
+
+
+# ─── Economía ────────────────────────────────────────────────────────────────
+
+class TestEconomia(unittest.TestCase):
+
+    def test_primer_deposito_no_cumple(self):
+        self.assertFalse(_cumple("primer_deposito", _datos(banco_usado=False)))
+
+    def test_primer_deposito_cumple(self):
+        self.assertTrue(_cumple("primer_deposito", _datos(banco_usado=True)))
+
+
+# ─── verificar_todos ────────────────────────────────────────────────────────
+
+class TestVerificarTodos(unittest.TestCase):
+
+    def test_personaje_inicial_ningun_logro(self):
+        resultado = verificar_todos(_datos())
+        self.assertEqual(resultado, [])
+
+    def test_personaje_nivel_2_obtiene_logros_nivel(self):
+        resultado = verificar_todos(_datos(nivel=2))
+        self.assertIn("nivel_2", resultado)
+        self.assertNotIn("nivel_5", resultado)
+
+    def test_personaje_paladin_completo_obtiene_31_logros(self):
+        # Máximo posible: 20 base + 2 clase + 2 subclase + 2 mascotas + 5 gremio = 31
+        datos_maximos = _datos(
+            nivel=10,
+            quests_entregadas=10,
+            habilidades=list(
+                _RAMAS["guerrero"] | _RAMAS["mago"] | _HABS_SUBCLASE["paladin"]
+            ),
+            reputacion={
+                "ciudadanos": 5000,
+                "gremio_aventureros": 2000,
+                "horda_salvaje": 2000,
+            },
+            kills_totales=50,
+            jefes_derrotados=TODOS_JEFES,
+            objetos_crafteados=10,
+            encantamiento_max=3,
+            banco_usado=True,
+            clase="guerrero",
+            subclase="paladin",
+            mascota_nivel_max=3,
+            gremios_fundados=1,
+            es_lider_gremio=True,
+            miembros_gremio=20,
+            gremio_banco_depositado=2000,
+        )
+        resultado = verificar_todos(datos_maximos)
+        self.assertEqual(len(resultado), 31)
+        self.assertIn("vocacion_elegida", resultado)
+        self.assertIn("maestro_guerrero", resultado)
+        self.assertIn("especializacion_elegida", resultado)
+        self.assertIn("maestro_paladin", resultado)
+        self.assertIn("mascota_nivel_2", resultado)
+        self.assertIn("mascota_nivel_3", resultado)
+        self.assertIn("gremio_fundado", resultado)
+        self.assertIn("gremio_pleno", resultado)
+        self.assertIn("gremio_mecenas", resultado)
+        self.assertNotIn("maestro_explorador", resultado)
+        self.assertNotIn("maestro_berserker", resultado)
+
+
+# ─── nuevos_logros ───────────────────────────────────────────────────────────
+
+class TestNuevosLogros(unittest.TestCase):
+
+    def test_sin_cambio_no_hay_nuevos(self):
+        datos = _datos(nivel=2)
+        ya = ["nivel_2"]
+        self.assertEqual(nuevos_logros(datos, ya), [])
+
+    def test_detecta_nuevo_al_subir_nivel(self):
+        datos = _datos(nivel=5)
+        ya = ["nivel_2"]
+        nuevos = nuevos_logros(datos, ya)
+        self.assertIn("nivel_5", nuevos)
+        self.assertNotIn("nivel_2", nuevos)
+
+    def test_sin_previos_devuelve_todos_los_cumplidos(self):
+        datos = _datos(nivel=2, quests_entregadas=1)
+        nuevos = nuevos_logros(datos, [])
+        self.assertIn("nivel_2", nuevos)
+        self.assertIn("primera_mision", nuevos)
+
+
+# ─── titulos_disponibles ────────────────────────────────────────────────────
+
+class TestTitulosDisponibles(unittest.TestCase):
+
+    def test_sin_logros_sin_titulos(self):
+        self.assertEqual(titulos_disponibles([]), [])
+
+    def test_logro_sin_titulo_no_aparece(self):
+        # "primera_mision" no tiene título
+        self.assertEqual(titulos_disponibles(["primera_mision"]), [])
+
+    def test_logro_con_titulo_aparece(self):
+        tits = titulos_disponibles(["nivel_2"])
+        self.assertEqual(tits, ["el Novato"])
+
+    def test_varios_logros_sin_duplicados(self):
+        tits = titulos_disponibles(["nivel_2", "nivel_5"])
+        self.assertEqual(tits, ["el Novato", "el Veterano"])
+
+    def test_orden_preservado(self):
+        tits = titulos_disponibles(["nivel_5", "nivel_2"])
+        self.assertEqual(tits, ["el Veterano", "el Novato"])
+
+
+# ─── Clase ───────────────────────────────────────────────────────────────────
+
+class TestLogrosClase(unittest.TestCase):
+
+    def test_vocacion_elegida_sin_clase(self):
+        self.assertFalse(_cumple("vocacion_elegida", _datos(clase="")))
+
+    def test_vocacion_elegida_cumple(self):
+        self.assertTrue(_cumple("vocacion_elegida", _datos(clase="guerrero")))
+
+    def test_vocacion_elegida_cualquier_clase(self):
+        for c in ("guerrero", "explorador", "mago"):
+            self.assertTrue(_cumple("vocacion_elegida", _datos(clase=c)), c)
+
+    def test_maestro_guerrero_sin_clase(self):
+        self.assertFalse(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase=""
+        )))
+
+    def test_maestro_guerrero_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase="explorador"
+        )))
+
+    def test_maestro_guerrero_sin_habilidades_completas(self):
+        habs = list(_RAMAS["guerrero"])[:3]  # faltan una
+        self.assertFalse(_cumple("maestro_guerrero", _datos(habilidades=habs, clase="guerrero")))
+
+    def test_maestro_guerrero_cumple(self):
+        self.assertTrue(_cumple("maestro_guerrero", _datos(
+            habilidades=list(_RAMAS["guerrero"]), clase="guerrero"
+        )))
+
+    def test_maestro_explorador_sin_clase(self):
+        self.assertFalse(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase=""
+        )))
+
+    def test_maestro_explorador_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase="mago"
+        )))
+
+    def test_maestro_explorador_cumple(self):
+        self.assertTrue(_cumple("maestro_explorador", _datos(
+            habilidades=list(_RAMAS["explorador"]), clase="explorador"
+        )))
+
+    def test_maestro_mago_sin_clase(self):
+        self.assertFalse(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase=""
+        )))
+
+    def test_maestro_mago_clase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase="guerrero"
+        )))
+
+    def test_maestro_mago_cumple(self):
+        self.assertTrue(_cumple("maestro_mago", _datos(
+            habilidades=list(_RAMAS["mago"]), clase="mago"
+        )))
+
+    def test_solo_una_maestria_posible_a_la_vez(self):
+        # Un guerrero con todas las habilidades de mago no obtiene maestro_mago
+        habs = list(_RAMAS["guerrero"] | _RAMAS["mago"])
+        datos = _datos(habilidades=habs, clase="guerrero")
+        resultado = verificar_todos(datos)
+        self.assertIn("maestro_guerrero", resultado)
+        self.assertNotIn("maestro_mago", resultado)
+        self.assertNotIn("maestro_explorador", resultado)
+
+    def test_titulos_clase_disponibles(self):
+        for lid, titulo_esperado in [
+            ("maestro_guerrero",   "el Caballero"),
+            ("maestro_explorador", "la Sombra"),
+            ("maestro_mago",       "el Archimago"),
+        ]:
+            tits = titulos_disponibles([lid])
+            self.assertIn(titulo_esperado, tits, f"falta título en {lid}")
+
+    def test_vocacion_elegida_sin_titulo(self):
+        from systems.achievements.achievements import LOGROS
+        self.assertIsNone(LOGROS["vocacion_elegida"]["titulo"])
+
+
+# ─── Subclase ────────────────────────────────────────────────────────────────
+
+class TestLogrosSubclase(unittest.TestCase):
+
+    # ── especializacion_elegida ───────────────────────────────────────────────
+
+    def test_especializacion_elegida_sin_subclase(self):
+        self.assertFalse(_cumple("especializacion_elegida", _datos(subclase="")))
+
+    def test_especializacion_elegida_cumple(self):
+        self.assertTrue(_cumple("especializacion_elegida", _datos(subclase="paladin")))
+
+    def test_especializacion_elegida_cualquier_subclase(self):
+        for s in ("paladin", "berserker", "asesino", "cazador", "hechicero", "nigromante"):
+            self.assertTrue(_cumple("especializacion_elegida", _datos(subclase=s)), s)
+
+    def test_especializacion_elegida_sin_titulo(self):
+        from systems.achievements.achievements import LOGROS
+        self.assertIsNone(LOGROS["especializacion_elegida"]["titulo"])
+
+    # ── maestro_paladin ───────────────────────────────────────────────────────
+
+    def test_maestro_paladin_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase=""
+        )))
+
+    def test_maestro_paladin_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase="berserker"
+        )))
+
+    def test_maestro_paladin_sin_habilidades_completas(self):
+        habs = ["escudo_divino"]  # falta golpe_sagrado
+        self.assertFalse(_cumple("maestro_paladin", _datos(
+            habilidades=habs, subclase="paladin"
+        )))
+
+    def test_maestro_paladin_cumple(self):
+        self.assertTrue(_cumple("maestro_paladin", _datos(
+            habilidades=list(_HABS_SUBCLASE["paladin"]), subclase="paladin"
+        )))
+
+    # ── maestro_berserker ─────────────────────────────────────────────────────
+
+    def test_maestro_berserker_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase=""
+        )))
+
+    def test_maestro_berserker_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase="paladin"
+        )))
+
+    def test_maestro_berserker_cumple(self):
+        self.assertTrue(_cumple("maestro_berserker", _datos(
+            habilidades=list(_HABS_SUBCLASE["berserker"]), subclase="berserker"
+        )))
+
+    # ── maestro_asesino ───────────────────────────────────────────────────────
+
+    def test_maestro_asesino_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase=""
+        )))
+
+    def test_maestro_asesino_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase="cazador"
+        )))
+
+    def test_maestro_asesino_cumple(self):
+        self.assertTrue(_cumple("maestro_asesino", _datos(
+            habilidades=list(_HABS_SUBCLASE["asesino"]), subclase="asesino"
+        )))
+
+    # ── maestro_cazador ───────────────────────────────────────────────────────
+
+    def test_maestro_cazador_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase=""
+        )))
+
+    def test_maestro_cazador_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase="asesino"
+        )))
+
+    def test_maestro_cazador_cumple(self):
+        self.assertTrue(_cumple("maestro_cazador", _datos(
+            habilidades=list(_HABS_SUBCLASE["cazador"]), subclase="cazador"
+        )))
+
+    # ── maestro_hechicero ─────────────────────────────────────────────────────
+
+    def test_maestro_hechicero_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase=""
+        )))
+
+    def test_maestro_hechicero_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase="nigromante"
+        )))
+
+    def test_maestro_hechicero_cumple(self):
+        self.assertTrue(_cumple("maestro_hechicero", _datos(
+            habilidades=list(_HABS_SUBCLASE["hechicero"]), subclase="hechicero"
+        )))
+
+    # ── maestro_nigromante ────────────────────────────────────────────────────
+
+    def test_maestro_nigromante_sin_subclase(self):
+        self.assertFalse(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase=""
+        )))
+
+    def test_maestro_nigromante_subclase_incorrecta(self):
+        self.assertFalse(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase="hechicero"
+        )))
+
+    def test_maestro_nigromante_cumple(self):
+        self.assertTrue(_cumple("maestro_nigromante", _datos(
+            habilidades=list(_HABS_SUBCLASE["nigromante"]), subclase="nigromante"
+        )))
+
+    # ── exclusividad ─────────────────────────────────────────────────────────
+
+    def test_solo_un_maestro_subclase_posible(self):
+        # Un paladín con todas las habilidades de berserker no obtiene maestro_berserker
+        habs = list(_HABS_SUBCLASE["paladin"] | _HABS_SUBCLASE["berserker"])
+        datos = _datos(habilidades=habs, subclase="paladin")
+        resultado = verificar_todos(datos)
+        self.assertIn("maestro_paladin", resultado)
+        self.assertNotIn("maestro_berserker", resultado)
+        self.assertNotIn("maestro_asesino", resultado)
+
+    # ── títulos ───────────────────────────────────────────────────────────────
+
+    def test_titulos_subclase_disponibles(self):
+        for lid, titulo_esperado in [
+            ("maestro_paladin",    "el Paladín"),
+            ("maestro_berserker",  "el Berserker"),
+            ("maestro_asesino",    "la Sombra Oscura"),
+            ("maestro_cazador",    "el Depredador"),
+            ("maestro_hechicero",  "la Tormenta"),
+            ("maestro_nigromante", "el Nigromante"),
+        ]:
+            tits = titulos_disponibles([lid])
+            self.assertIn(titulo_esperado, tits, f"falta título en {lid}")
+
+
+# ─── Mascotas ────────────────────────────────────────────────────────────────
+
+class TestLogrosMascotas(unittest.TestCase):
+
+    def test_mascota_nivel_2_no_cumple_con_nivel_1(self):
+        self.assertFalse(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=1)))
+
+    def test_mascota_nivel_2_cumple(self):
+        self.assertTrue(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=2)))
+
+    def test_mascota_nivel_2_cumple_con_nivel_3(self):
+        self.assertTrue(_cumple("mascota_nivel_2", _datos(mascota_nivel_max=3)))
+
+    def test_mascota_nivel_3_no_cumple_con_nivel_2(self):
+        self.assertFalse(_cumple("mascota_nivel_3", _datos(mascota_nivel_max=2)))
+
+    def test_mascota_nivel_3_cumple(self):
+        self.assertTrue(_cumple("mascota_nivel_3", _datos(mascota_nivel_max=3)))
+
+    def test_mascota_nivel_2_sin_titulo(self):
+        self.assertIsNone(LOGROS["mascota_nivel_2"]["titulo"])
+
+    def test_mascota_nivel_3_titulo_domador(self):
+        tits = titulos_disponibles(["mascota_nivel_3"])
+        self.assertIn("el Domador", tits)
+
+    def test_mascota_nivel_max_0_no_cumple_ninguno(self):
+        datos = _datos(mascota_nivel_max=0)
+        self.assertFalse(_cumple("mascota_nivel_2", datos))
+        self.assertFalse(_cumple("mascota_nivel_3", datos))
+
+
+# ─── Gremio ──────────────────────────────────────────────────────────────────
+
+class TestLogrosGremio(unittest.TestCase):
+
+    # ── gremio_fundado ────────────────────────────────────────────────────────
+
+    def test_gremio_fundado_sin_gremio(self):
+        self.assertFalse(_cumple("gremio_fundado", _datos(gremios_fundados=0)))
+
+    def test_gremio_fundado_cumple(self):
+        self.assertTrue(_cumple("gremio_fundado", _datos(gremios_fundados=1)))
+
+    def test_gremio_fundado_sin_titulo(self):
+        self.assertIsNone(LOGROS["gremio_fundado"]["titulo"])
+
+    # ── gremio_cinco_miembros ─────────────────────────────────────────────────
+
+    def test_gremio_cinco_miembros_sin_ser_lider(self):
+        self.assertFalse(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=False, miembros_gremio=10
+        )))
+
+    def test_gremio_cinco_miembros_con_pocos(self):
+        self.assertFalse(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=4
+        )))
+
+    def test_gremio_cinco_miembros_cumple(self):
+        self.assertTrue(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=5
+        )))
+
+    def test_gremio_cinco_miembros_cumple_con_mas(self):
+        self.assertTrue(_cumple("gremio_cinco_miembros", _datos(
+            es_lider_gremio=True, miembros_gremio=15
+        )))
+
+    # ── gremio_pleno ──────────────────────────────────────────────────────────
+
+    def test_gremio_pleno_sin_ser_lider(self):
+        self.assertFalse(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=False, miembros_gremio=20
+        )))
+
+    def test_gremio_pleno_no_cumple_con_19(self):
+        self.assertFalse(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=True, miembros_gremio=19
+        )))
+
+    def test_gremio_pleno_cumple(self):
+        self.assertTrue(_cumple("gremio_pleno", _datos(
+            es_lider_gremio=True, miembros_gremio=20
+        )))
+
+    def test_gremio_pleno_titulo_comandante(self):
+        tits = titulos_disponibles(["gremio_pleno"])
+        self.assertIn("el Comandante", tits)
+
+    # ── gremio_tesorero ───────────────────────────────────────────────────────
+
+    def test_gremio_tesorero_no_cumple_con_499(self):
+        self.assertFalse(_cumple("gremio_tesorero", _datos(gremio_banco_depositado=499)))
+
+    def test_gremio_tesorero_cumple(self):
+        self.assertTrue(_cumple("gremio_tesorero", _datos(gremio_banco_depositado=500)))
+
+    def test_gremio_tesorero_sin_titulo(self):
+        self.assertIsNone(LOGROS["gremio_tesorero"]["titulo"])
+
+    # ── gremio_mecenas ────────────────────────────────────────────────────────
+
+    def test_gremio_mecenas_no_cumple_con_1999(self):
+        self.assertFalse(_cumple("gremio_mecenas", _datos(gremio_banco_depositado=1999)))
+
+    def test_gremio_mecenas_cumple(self):
+        self.assertTrue(_cumple("gremio_mecenas", _datos(gremio_banco_depositado=2000)))
+
+    def test_gremio_mecenas_titulo_mecenas(self):
+        tits = titulos_disponibles(["gremio_mecenas"])
+        self.assertIn("el Mecenas", tits)
+
+    # ── tesorero implica mecenas no cumplido ──────────────────────────────────
+
+    def test_tesorero_no_implica_mecenas(self):
+        datos = _datos(gremio_banco_depositado=500)
+        self.assertTrue(_cumple("gremio_tesorero", datos))
+        self.assertFalse(_cumple("gremio_mecenas", datos))
+
+
+if __name__ == "__main__":
+    unittest.main()

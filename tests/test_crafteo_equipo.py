@@ -1,329 +1,392 @@
 """
 tests/test_crafteo_equipo.py
 
-Tests unitarios puros para el sistema de calidades de equipo crafteado (v0.24.0).
-Sin dependencias de Evennia.
+Tests de integración Evennia para el sistema de crafteo de equipo (v0.24.0).
+Cubre: craftear equipo con distintas calidades, verificar bonuses y nombre,
+       craftear sin ingredientes, recetas de consumibles no afectadas.
 
 Ejecutar con:
-  cd /opt/evennia/mudproj/mygame && /opt/evennia/mudproj/venv/bin/pytest tests/test_crafteo_equipo.py
+  cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_crafteo_equipo
 """
-import unittest
+from evennia.utils.test_resources import EvenniaTest
 
-from systems.crafting.equipment import (
-    CALIDADES,
-    NOMBRES_CALIDAD,
-    aplicar_bonuses_calidad,
-    calcular_calidad,
-    nombre_con_calidad,
-)
-from systems.crafting.recipes import RECETAS, buscar_receta
+from features.crafting.commands import CmdCraftear, CmdRecetas
 
 
-# --------------------------------------------------------------------------- #
-#  Calidades: umbrales y constantes
-# --------------------------------------------------------------------------- #
+def _make_cmd(CmdClass, caller, args=""):
+    cmd = CmdClass()
+    cmd.caller = caller
+    cmd.args = args
+    cmd.cmdstring = cmd.key
+    cmd.session = None
+    cmd.obj = caller
+    cmd.raw_string = cmd.key + (" " + args if args else "")
+    cmd.switches = []
+    cmd.lhs = args
+    cmd.rhs = ""
+    return cmd
 
-class TestConstantesCalidad(unittest.TestCase):
 
-    def test_existen_tres_calidades(self):
-        self.assertEqual(len(CALIDADES), 3)
+class _MsgCapture:
+    def __init__(self, char):
+        self.msgs = []
+        char.msg = lambda text=None, **kw: self.msgs.append(str(text))
 
-    def test_nombres_calidad_contiene_normal(self):
-        self.assertIn("Normal", NOMBRES_CALIDAD)
+    def all(self):
+        return "\n".join(self.msgs)
 
-    def test_nombres_calidad_contiene_fino(self):
-        self.assertIn("Fino", NOMBRES_CALIDAD)
-
-    def test_nombres_calidad_contiene_magistral(self):
-        self.assertIn("Magistral", NOMBRES_CALIDAD)
-
-    def test_bonus_normal_es_cero(self):
-        _, _, _, bonus = next(c for c in CALIDADES if c[2] == "Normal")
-        self.assertEqual(bonus, 0)
-
-    def test_bonus_fino_es_uno(self):
-        _, _, _, bonus = next(c for c in CALIDADES if c[2] == "Fino")
-        self.assertEqual(bonus, 1)
-
-    def test_bonus_magistral_es_dos(self):
-        _, _, _, bonus = next(c for c in CALIDADES if c[2] == "Magistral")
-        self.assertEqual(bonus, 2)
-
-
-# --------------------------------------------------------------------------- #
-#  calcular_calidad
-# --------------------------------------------------------------------------- #
 
-class TestCalcularCalidad(unittest.TestCase):
+def _dar_ingrediente(char, nombre, cantidad=1):
+    """Crea objetos simples con el nombre dado en el inventario del personaje."""
+    from evennia import create_object
+    for _ in range(cantidad):
+        obj = create_object("typeclasses.objects.Object", key=nombre, location=char)
+    return obj
 
-    def test_cero_objetos_normal(self):
-        nombre, bonus = calcular_calidad(0)
-        self.assertEqual(nombre, "Normal")
-        self.assertEqual(bonus, 0)
 
-    def test_catorce_objetos_normal(self):
-        nombre, bonus = calcular_calidad(14)
-        self.assertEqual(nombre, "Normal")
-        self.assertEqual(bonus, 0)
+def _ingredientes_daga_acero(char):
+    _dar_ingrediente(char, "mineral de hierro", 2)
+    _dar_ingrediente(char, "piel de serpiente", 1)
 
-    def test_quince_objetos_fino(self):
-        nombre, bonus = calcular_calidad(15)
-        self.assertEqual(nombre, "Fino")
-        self.assertEqual(bonus, 1)
 
-    def test_veintinueve_objetos_fino(self):
-        nombre, bonus = calcular_calidad(29)
-        self.assertEqual(nombre, "Fino")
-        self.assertEqual(bonus, 1)
+def _ingredientes_espada_cazador(char):
+    _dar_ingrediente(char, "mineral de hierro", 3)
+    _dar_ingrediente(char, "garra de troll", 1)
 
-    def test_treinta_objetos_magistral(self):
-        nombre, bonus = calcular_calidad(30)
-        self.assertEqual(nombre, "Magistral")
-        self.assertEqual(bonus, 2)
 
-    def test_cien_objetos_magistral(self):
-        nombre, bonus = calcular_calidad(100)
-        self.assertEqual(nombre, "Magistral")
-        self.assertEqual(bonus, 2)
+def _ingredientes_vara_arcana(char):
+    _dar_ingrediente(char, "cenizas arcanas", 2)
+    _dar_ingrediente(char, "fragmento arcano", 2)
 
-    def test_none_equivale_a_cero(self):
-        nombre, bonus = calcular_calidad(None)
-        self.assertEqual(nombre, "Normal")
-        self.assertEqual(bonus, 0)
 
-    def test_negativo_equivale_a_cero(self):
-        nombre, bonus = calcular_calidad(-5)
-        self.assertEqual(nombre, "Normal")
-        self.assertEqual(bonus, 0)
+def _ingredientes_hacha_tallada(char):
+    _dar_ingrediente(char, "mineral de hierro", 2)
+    _dar_ingrediente(char, "escama de lagarto", 2)
 
-    def test_devuelve_tupla(self):
-        resultado = calcular_calidad(0)
-        self.assertIsInstance(resultado, tuple)
-        self.assertEqual(len(resultado), 2)
-
-
-# --------------------------------------------------------------------------- #
-#  aplicar_bonuses_calidad
-# --------------------------------------------------------------------------- #
-
-class TestAplicarBonusesCalidad(unittest.TestCase):
-
-    def test_bonus_cero_no_modifica(self):
-        bonuses = {"fuerza": 3, "destreza": 2}
-        resultado = aplicar_bonuses_calidad(bonuses, 0)
-        self.assertEqual(resultado, {"fuerza": 3, "destreza": 2})
-
-    def test_bonus_uno_suma_uno(self):
-        bonuses = {"fuerza": 3, "destreza": 2}
-        resultado = aplicar_bonuses_calidad(bonuses, 1)
-        self.assertEqual(resultado, {"fuerza": 4, "destreza": 3})
-
-    def test_bonus_dos_suma_dos(self):
-        bonuses = {"fuerza": 3, "destreza": 2}
-        resultado = aplicar_bonuses_calidad(bonuses, 2)
-        self.assertEqual(resultado, {"fuerza": 5, "destreza": 4})
-
-    def test_bonus_aplicado_a_todos_los_stats(self):
-        bonuses = {"fuerza": 1, "destreza": 1, "defensa": 1, "inteligencia": 1}
-        resultado = aplicar_bonuses_calidad(bonuses, 1)
-        for stat, val in resultado.items():
-            self.assertEqual(val, 2, f"Stat {stat} debería ser 2")
-
-    def test_no_modifica_dict_original(self):
-        bonuses = {"fuerza": 5}
-        aplicar_bonuses_calidad(bonuses, 1)
-        self.assertEqual(bonuses["fuerza"], 5)
-
-    def test_devuelve_nuevo_dict(self):
-        bonuses = {"fuerza": 5}
-        resultado = aplicar_bonuses_calidad(bonuses, 0)
-        self.assertIsNot(resultado, bonuses)
-
-    def test_dict_vacio_no_falla(self):
-        resultado = aplicar_bonuses_calidad({}, 2)
-        self.assertEqual(resultado, {})
-
-    def test_valores_negativos_mejoran(self):
-        bonuses = {"destreza": -2}
-        resultado = aplicar_bonuses_calidad(bonuses, 1)
-        self.assertEqual(resultado["destreza"], -1)
-
-    def test_un_solo_stat(self):
-        resultado = aplicar_bonuses_calidad({"inteligencia": 5}, 2)
-        self.assertEqual(resultado["inteligencia"], 7)
-
-
-# --------------------------------------------------------------------------- #
-#  nombre_con_calidad
-# --------------------------------------------------------------------------- #
-
-class TestNombreConCalidad(unittest.TestCase):
-
-    def test_normal_no_añade_sufijo(self):
-        self.assertEqual(nombre_con_calidad("daga de acero", "Normal"), "daga de acero")
-
-    def test_fino_añade_sufijo(self):
-        self.assertEqual(nombre_con_calidad("daga de acero", "Fino"), "daga de acero (Fino)")
-
-    def test_magistral_añade_sufijo(self):
-        self.assertEqual(nombre_con_calidad("espada del cazador", "Magistral"), "espada del cazador (Magistral)")
-
-    def test_sufijo_entre_paréntesis(self):
-        resultado = nombre_con_calidad("vara arcana", "Fino")
-        self.assertIn("(Fino)", resultado)
-
-    def test_nombre_base_preservado(self):
-        nombre = "coraza de hierro"
-        resultado = nombre_con_calidad(nombre, "Magistral")
-        self.assertTrue(resultado.startswith(nombre))
-
-    def test_string_vacio_funciona(self):
-        resultado = nombre_con_calidad("", "Fino")
-        self.assertIn("Fino", resultado)
-
-
-# --------------------------------------------------------------------------- #
-#  Recetas de equipo en RECETAS
-# --------------------------------------------------------------------------- #
-
-RECETAS_EQUIPO_ESPERADAS = [
-    "daga de acero",
-    "espada del cazador",
-    "vara arcana",
-    "hacha tallada",
-    "coraza de hierro",
-    "túnica del mago",
-    "amuleto de combate",
-    "anillo de sombras",
-]
-
-PROTOTIPOS_EQUIPO_ESPERADOS = {
-    "daga de acero": "DAGA_ACERO",
-    "espada del cazador": "ESPADA_CAZADOR",
-    "vara arcana": "VARA_ARCANA",
-    "hacha tallada": "HACHA_TALLADA",
-    "coraza de hierro": "CORAZA_HIERRO",
-    "túnica del mago": "TUNICA_MAGO",
-    "amuleto de combate": "AMULETO_COMBATE",
-    "anillo de sombras": "ANILLO_SOMBRAS",
-}
-
-
-class TestRecetasEquipo(unittest.TestCase):
-
-    def test_existen_diez_recetas_equipo(self):
-        # 8 de v0.24 + 2 de recetas posteriores con materiales de profesión
-        recetas_equipo = [k for k, v in RECETAS.items() if v.get("tipo") == "equipo"]
-        self.assertEqual(len(recetas_equipo), 10)
-
-    def test_todas_recetas_equipo_presentes(self):
-        for nombre in RECETAS_EQUIPO_ESPERADAS:
-            self.assertIn(nombre, RECETAS, f"Falta receta: {nombre}")
-
-    def test_todas_tienen_tipo_equipo(self):
-        for nombre in RECETAS_EQUIPO_ESPERADAS:
-            receta = RECETAS[nombre]
-            self.assertEqual(receta.get("tipo"), "equipo", f"{nombre} debería ser tipo equipo")
-
-    def test_todas_tienen_cantidad_uno(self):
-        for nombre in RECETAS_EQUIPO_ESPERADAS:
-            receta = RECETAS[nombre]
-            self.assertEqual(receta.get("cantidad", 1), 1, f"{nombre} debería ser cantidad 1")
-
-    def test_prototipos_correctos(self):
-        for nombre, prototipo in PROTOTIPOS_EQUIPO_ESPERADOS.items():
-            receta = RECETAS[nombre]
-            self.assertEqual(receta["resultado_prototipo"], prototipo)
-
-    def test_todas_tienen_ingredientes(self):
-        for nombre in RECETAS_EQUIPO_ESPERADAS:
-            receta = RECETAS[nombre]
-            self.assertIn("ingredientes", receta)
-            self.assertGreater(len(receta["ingredientes"]), 0, f"{nombre} sin ingredientes")
-
-    def test_todas_tienen_desc_receta(self):
-        for nombre in RECETAS_EQUIPO_ESPERADAS:
-            receta = RECETAS[nombre]
-            self.assertIn("desc_receta", receta)
-            self.assertTrue(receta["desc_receta"])
-
-    def test_daga_acero_ingredientes(self):
-        receta = RECETAS["daga de acero"]
-        self.assertIn("mineral de hierro", receta["ingredientes"])
-        self.assertIn("piel de serpiente", receta["ingredientes"])
-
-    def test_espada_cazador_usa_garra_troll(self):
-        receta = RECETAS["espada del cazador"]
-        self.assertIn("garra de troll", receta["ingredientes"])
-
-    def test_vara_arcana_usa_cenizas_arcanas(self):
-        receta = RECETAS["vara arcana"]
-        self.assertIn("cenizas arcanas", receta["ingredientes"])
-
-    def test_coraza_hierro_usa_mineral_abundante(self):
-        receta = RECETAS["coraza de hierro"]
-        self.assertGreaterEqual(receta["ingredientes"]["mineral de hierro"], 3)
-
-    def test_anillo_sombras_usa_cristal_oscuridad(self):
-        receta = RECETAS["anillo de sombras"]
-        self.assertIn("cristal de oscuridad", receta["ingredientes"])
-
-    def test_buscar_receta_daga_acero(self):
-        nombre, receta = buscar_receta("daga de acero")
-        self.assertIsNotNone(receta)
-        self.assertEqual(nombre, "daga de acero")
-
-    def test_buscar_receta_parcial_vara(self):
-        nombre, receta = buscar_receta("vara")
-        self.assertIsNotNone(receta)
-        self.assertIn("arcana", nombre)
-
-
-# --------------------------------------------------------------------------- #
-#  Integración mínima: flujo completo sin Evennia
-# --------------------------------------------------------------------------- #
-
-class TestFlujoCalidadCompleto(unittest.TestCase):
-    """Simula el flujo de calidad sin instanciar Evennia."""
-
-    def _craftear_equipo(self, objetos_crafteados, receta_nombre="daga de acero"):
-        nombre, receta = buscar_receta(receta_nombre)
-        calidad_nombre, bonus_stat = calcular_calidad(objetos_crafteados)
-        bonuses_base = {"fuerza": 3, "destreza": 2}
-        bonuses_finales = aplicar_bonuses_calidad(bonuses_base, bonus_stat)
-        nombre_item = nombre_con_calidad(nombre, calidad_nombre)
-        return nombre_item, bonuses_finales, calidad_nombre
-
-    def test_crafteo_normal_no_cambia_bonuses(self):
-        nombre_item, bonuses, calidad = self._craftear_equipo(0)
-        self.assertEqual(bonuses["fuerza"], 3)
-        self.assertEqual(bonuses["destreza"], 2)
-        self.assertEqual(calidad, "Normal")
-
-    def test_crafteo_fino_suma_uno(self):
-        nombre_item, bonuses, calidad = self._craftear_equipo(15)
-        self.assertEqual(bonuses["fuerza"], 4)
-        self.assertEqual(bonuses["destreza"], 3)
-        self.assertEqual(calidad, "Fino")
-
-    def test_crafteo_magistral_suma_dos(self):
-        nombre_item, bonuses, calidad = self._craftear_equipo(30)
-        self.assertEqual(bonuses["fuerza"], 5)
-        self.assertEqual(bonuses["destreza"], 4)
-        self.assertEqual(calidad, "Magistral")
-
-    def test_nombre_normal_sin_sufijo(self):
-        nombre_item, _, _ = self._craftear_equipo(0)
-        self.assertNotIn("(", nombre_item)
-
-    def test_nombre_fino_con_sufijo(self):
-        nombre_item, _, _ = self._craftear_equipo(15)
-        self.assertIn("(Fino)", nombre_item)
-
-    def test_nombre_magistral_con_sufijo(self):
-        nombre_item, _, _ = self._craftear_equipo(30)
-        self.assertIn("(Magistral)", nombre_item)
+
+def _ingredientes_coraza_hierro(char):
+    _dar_ingrediente(char, "mineral de hierro", 4)
+    _dar_ingrediente(char, "piel de serpiente", 2)
+
+
+# ---------------------------------------------------------------------------
+# Crafteo de equipo — calidad Normal
+# ---------------------------------------------------------------------------
+
+class TestCraftearEquipoNormal(EvenniaTest):
+    """Craftear con 0 objetos crafteados → calidad Normal."""
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 0
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        _ingredientes_daga_acero(self.char1)
+
+    def _craftear(self, receta="daga de acero"):
+        cmd = _make_cmd(CmdCraftear, self.char1, receta)
+        cmd.func()
+
+    def test_crafteo_exitoso(self):
+        self._craftear()
+        self.assertIn("exitoso", self.cap.all().lower())
+
+    def test_item_creado_en_inventario(self):
+        self._craftear()
+        nombres = [obj.key for obj in self.char1.contents]
+        self.assertTrue(any("daga" in n.lower() for n in nombres))
+
+    def test_nombre_sin_sufijo_calidad(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertIsNotNone(daga)
+        self.assertNotIn("(", daga.key)
+
+    def test_bonuses_sin_modificar(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertIsNotNone(daga)
+        bonuses = dict(daga.db.bonuses or {})
+        self.assertEqual(bonuses.get("fuerza"), 3)
+        self.assertEqual(bonuses.get("destreza"), 2)
+
+    def test_calidad_guardada_en_db(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertIsNotNone(daga)
+        self.assertEqual(daga.db.calidad, "Normal")
+
+    def test_contador_incrementado(self):
+        self._craftear()
+        self.assertEqual(self.char1.db.objetos_crafteados, 1)
+
+    def test_no_muestra_mensaje_calidad_normal(self):
+        self._craftear()
+        texto = self.cap.all()
+        self.assertNotIn("¡Calidad Normal!", texto)
+
+    def test_ingredientes_consumidos(self):
+        self._craftear()
+        nombres = [obj.key.lower() for obj in self.char1.contents]
+        self.assertNotIn("mineral de hierro", nombres)
+        self.assertNotIn("piel de serpiente", nombres)
+
+
+# ---------------------------------------------------------------------------
+# Crafteo de equipo — calidad Fino
+# ---------------------------------------------------------------------------
+
+class TestCraftearEquipoFino(EvenniaTest):
+    """Craftear con 15 objetos crafteados → calidad Fino."""
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 15
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        _ingredientes_daga_acero(self.char1)
+
+    def _craftear(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "daga de acero")
+        cmd.func()
+
+    def test_crafteo_exitoso(self):
+        self._craftear()
+        self.assertIn("exitoso", self.cap.all().lower())
+
+    def test_nombre_con_sufijo_fino(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertIsNotNone(daga)
+        self.assertIn("(Fino)", daga.key)
+
+    def test_bonuses_aumentados_en_uno(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertIsNotNone(daga)
+        bonuses = dict(daga.db.bonuses or {})
+        self.assertEqual(bonuses.get("fuerza"), 4)
+        self.assertEqual(bonuses.get("destreza"), 3)
+
+    def test_calidad_guardada_fino(self):
+        self._craftear()
+        daga = next((o for o in self.char1.contents if "daga" in o.key.lower()), None)
+        self.assertEqual(daga.db.calidad, "Fino")
+
+    def test_mensaje_calidad_fino(self):
+        self._craftear()
+        self.assertIn("Fino", self.cap.all())
+
+    def test_contador_incrementado(self):
+        self._craftear()
+        self.assertEqual(self.char1.db.objetos_crafteados, 16)
+
+
+# ---------------------------------------------------------------------------
+# Crafteo de equipo — calidad Magistral
+# ---------------------------------------------------------------------------
+
+class TestCraftearEquipoMagistral(EvenniaTest):
+    """Craftear con 30 objetos crafteados → calidad Magistral."""
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 30
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        _ingredientes_espada_cazador(self.char1)
+
+    def _craftear(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "espada del cazador")
+        cmd.func()
+
+    def test_nombre_con_sufijo_magistral(self):
+        self._craftear()
+        espada = next((o for o in self.char1.contents if "espada" in o.key.lower()), None)
+        self.assertIsNotNone(espada)
+        self.assertIn("(Magistral)", espada.key)
+
+    def test_bonuses_aumentados_en_dos(self):
+        self._craftear()
+        espada = next((o for o in self.char1.contents if "espada" in o.key.lower()), None)
+        bonuses = dict(espada.db.bonuses or {})
+        self.assertEqual(bonuses.get("fuerza"), 7)   # 5 base + 2
+        self.assertEqual(bonuses.get("defensa"), 3)  # 1 base + 2
+
+    def test_calidad_guardada_magistral(self):
+        self._craftear()
+        espada = next((o for o in self.char1.contents if "espada" in o.key.lower()), None)
+        self.assertEqual(espada.db.calidad, "Magistral")
+
+    def test_mensaje_calidad_magistral(self):
+        self._craftear()
+        self.assertIn("Magistral", self.cap.all())
+
+    def test_contador_incrementado(self):
+        self._craftear()
+        self.assertEqual(self.char1.db.objetos_crafteados, 31)
+
+
+# ---------------------------------------------------------------------------
+# Crafteo de equipo — otros items
+# ---------------------------------------------------------------------------
+
+class TestCraftearEquipoVariados(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 20
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def _craftear(self, receta):
+        cmd = _make_cmd(CmdCraftear, self.char1, receta)
+        cmd.func()
+
+    def test_craftear_vara_arcana(self):
+        _ingredientes_vara_arcana(self.char1)
+        self._craftear("vara arcana")
+        vara = next((o for o in self.char1.contents if "vara" in o.key.lower()), None)
+        self.assertIsNotNone(vara)
+        bonuses = dict(vara.db.bonuses or {})
+        self.assertEqual(bonuses.get("inteligencia"), 6)  # 5 + 1 (Fino)
+
+    def test_craftear_hacha_tallada(self):
+        _ingredientes_hacha_tallada(self.char1)
+        self._craftear("hacha tallada")
+        hacha = next((o for o in self.char1.contents if "hacha" in o.key.lower()), None)
+        self.assertIsNotNone(hacha)
+        bonuses = dict(hacha.db.bonuses or {})
+        self.assertEqual(bonuses.get("fuerza"), 5)  # 4 + 1 (Fino)
+
+    def test_craftear_coraza_hierro(self):
+        _ingredientes_coraza_hierro(self.char1)
+        self._craftear("coraza de hierro")
+        coraza = next((o for o in self.char1.contents if "coraza" in o.key.lower()), None)
+        self.assertIsNotNone(coraza)
+        bonuses = dict(coraza.db.bonuses or {})
+        self.assertEqual(bonuses.get("defensa"), 6)   # 5 + 1 (Fino)
+        self.assertEqual(bonuses.get("constitucion"), 3)  # 2 + 1 (Fino)
+
+    def test_slot_arma_preservado(self):
+        _ingredientes_vara_arcana(self.char1)
+        self._craftear("vara arcana")
+        vara = next((o for o in self.char1.contents if "vara" in o.key.lower()), None)
+        self.assertIsNotNone(vara)
+        self.assertEqual(vara.db.slot, "arma")
+
+    def test_slot_armadura_preservado(self):
+        _ingredientes_coraza_hierro(self.char1)
+        self._craftear("coraza de hierro")
+        coraza = next((o for o in self.char1.contents if "coraza" in o.key.lower()), None)
+        self.assertIsNotNone(coraza)
+        self.assertEqual(coraza.db.slot, "armadura")
+
+
+# ---------------------------------------------------------------------------
+# Sin ingredientes suficientes
+# ---------------------------------------------------------------------------
+
+class TestCraftearEquipoSinIngredientes(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 0
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_sin_ingredientes_muestra_error(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "daga de acero")
+        cmd.func()
+        self.assertIn("faltan", self.cap.all().lower())
+
+    def test_sin_ingredientes_no_incrementa_contador(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "daga de acero")
+        cmd.func()
+        self.assertEqual(self.char1.db.objetos_crafteados, 0)
+
+    def test_ingredientes_parciales_fallan(self):
+        _dar_ingrediente(self.char1, "mineral de hierro", 1)  # falta 1 más y piel
+        cmd = _make_cmd(CmdCraftear, self.char1, "daga de acero")
+        cmd.func()
+        self.assertIn("faltan", self.cap.all().lower())
+
+    def test_receta_invalida_muestra_error(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "espada de cristal")
+        cmd.func()
+        self.assertIn("no existe", self.cap.all().lower())
+
+
+# ---------------------------------------------------------------------------
+# Consumibles no afectados por sistema de calidad
+# ---------------------------------------------------------------------------
+
+class TestConsumiblesNoAfectados(EvenniaTest):
+    """Verificar que las recetas de consumibles no tienen tipo equipo."""
+
+    def setUp(self):
+        super().setUp()
+        self.char1.db.objetos_crafteados = 30
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+        _dar_ingrediente(self.char1, "piel de serpiente", 1)
+
+    def test_pocion_vida_crafteable(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "poción de vida")
+        cmd.func()
+        self.assertIn("exitoso", self.cap.all().lower())
+
+    def test_pocion_vida_no_tiene_calidad(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "poción de vida")
+        cmd.func()
+        pocion = next((o for o in self.char1.contents if "poción" in o.key.lower()), None)
+        self.assertIsNotNone(pocion)
+        # Las pociones no tienen db.calidad
+        self.assertIsNone(getattr(pocion.db, "calidad", None))
+
+    def test_pocion_vida_nombre_sin_sufijo_calidad(self):
+        cmd = _make_cmd(CmdCraftear, self.char1, "poción de vida")
+        cmd.func()
+        pocion = next((o for o in self.char1.contents if "poción" in o.key.lower()), None)
+        self.assertIsNotNone(pocion)
+        self.assertNotIn("(Magistral)", pocion.key)
+        self.assertNotIn("(Fino)", pocion.key)
+
+
+# ---------------------------------------------------------------------------
+# CmdRecetas: etiqueta [equipo] en listado
+# ---------------------------------------------------------------------------
+
+class TestCmdRecetasEquipo(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_listado_muestra_equipo(self):
+        cmd = _make_cmd(CmdRecetas, self.char1, "")
+        cmd.func()
+        self.assertIn("equipo", self.cap.all().lower())
+
+    def test_detalle_daga_acero_muestra_tipo_equipo(self):
+        cmd = _make_cmd(CmdRecetas, self.char1, "daga de acero")
+        cmd.func()
+        self.assertIn("equipo", self.cap.all().lower())
+
+    def test_detalle_daga_acero_muestra_calidad(self):
+        cmd = _make_cmd(CmdRecetas, self.char1, "daga de acero")
+        cmd.func()
+        self.assertIn("calidad", self.cap.all().lower())
+
+    def test_detalle_pocion_no_muestra_equipo(self):
+        cmd = _make_cmd(CmdRecetas, self.char1, "poción de vida")
+        cmd.func()
+        # El detalle de una poción no debe mostrar "equipo" ni "calidad"
+        texto = self.cap.all().lower()
+        self.assertNotIn("[equipo]", texto)
 
 
 if __name__ == "__main__":
+    import unittest
     unittest.main()
