@@ -205,7 +205,36 @@ class TestCmdComprar(EvenniaTest):
     def test_compra_especificando_npc_por_nombre(self):
         cmd = _make_cmd(CmdComprar, self.jugador, args="pocion de vida de Mercader")
         cmd.func()
+
+    def test_nombre_exacto_prioriza_sobre_parcial(self):
+        """
+        Regresión: la búsqueda del artículo era un substring match que
+        devolvía el primer resultado del catálogo, sin priorizar una
+        coincidencia exacta. Si "poción de vida mayor" aparecía antes que
+        "poción de vida" en la lista, "comprar poción de vida" compraba
+        la versión "mayor" en su lugar (mismo defecto que tenía retirar
+        del banco, arreglado en 609bbea).
+        """
+        self.npc.db.tienda = [
+            {"key": "pocion de vida mayor", "precio": 30, "cantidad": -1, "valor": 30},
+            {"key": "pocion de vida",       "precio": 10, "cantidad": -1, "valor": 10},
+        ]
+        cmd = _make_cmd(CmdComprar, self.jugador, args="pocion de vida")
+        cmd.func()
+        nombres = [o.key for o in self.jugador.contents]
+        self.assertIn("pocion de vida", nombres)
+        self.assertNotIn("pocion de vida mayor", nombres)
         self.assertEqual(self.jugador.db.monedas, 40)
+
+    def test_ambiguo_sin_coincidencia_exacta_avisa(self):
+        self.npc.db.tienda = [
+            {"key": "pocion de vida mayor", "precio": 30, "cantidad": -1, "valor": 30},
+            {"key": "pocion de vida suprema", "precio": 60, "cantidad": -1, "valor": 60},
+        ]
+        cmd = _make_cmd(CmdComprar, self.jugador, args="pocion de vida")
+        cmd.func()
+        self.assertTrue(any("ambiguo" in m.lower() for m in self.msgs))
+        self.assertEqual(self.jugador.db.monedas, 50)
 
 
 # --------------------------------------------------------------------------- #

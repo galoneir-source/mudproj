@@ -213,10 +213,21 @@ class CmdComprar(Command):
         tienda = comerciante.db.tienda or []
         nombre_lower = nombre_item.lower()
 
-        entrada = next(
-            (e for e in tienda if nombre_lower in e.get("key", "").lower()),
-            None,
-        )
+        # Coincidencia exacta primero (evita que un nombre parcial ambiguo
+        # devuelva el artículo equivocado según el orden del catálogo, p.ej.
+        # "comprar poción de vida" si el comerciante también vende
+        # "poción de vida mayor").
+        exactas = [e for e in tienda if e.get("key", "").lower() == nombre_lower]
+        if len(exactas) == 1:
+            entrada = exactas[0]
+        else:
+            parciales = [e for e in tienda if nombre_lower in e.get("key", "").lower()]
+            if len(parciales) > 1:
+                nombres = ", ".join(e.get("key", "?") for e in parciales)
+                caller.msg(f"Nombre ambiguo: {nombres}. Sé más específico.")
+                return
+            entrada = parciales[0] if parciales else None
+
         if not entrada:
             caller.msg(f"{comerciante.key} no vende '{nombre_item}'. Usa |wtienda|n para ver el catálogo.")
             return
