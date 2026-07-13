@@ -261,7 +261,11 @@ class CmdInvitar(Command):
             caller.msg(f"|w{objetivo.key}|n ya pertenece a otro gremio.")
             return
 
-        if getattr(objetivo.db, "invitacion_gremio", None):
+        # Solo bloquea si la invitación pendiente sigue vigente: una
+        # invitación caducada y nunca aceptada/rechazada no debe impedir
+        # invitaciones futuras (de este u otro gremio) para siempre.
+        inv_existente = getattr(objetivo.db, "invitacion_gremio", None)
+        if inv_existente and (time.time() - inv_existente.get("timestamp", 0)) < INVITACION_TIMEOUT:
             caller.msg(f"|w{objetivo.key}|n ya tiene una invitación de gremio pendiente.")
             return
 
@@ -581,7 +585,7 @@ class CmdDegrading(Command):
 
         nombre_obj = self.args.strip()
         if not nombre_obj:
-            caller.msg("Uso: |wdegrading <jugador>|n")
+            caller.msg("Uso: |wdegradar <jugador>|n")
             return
 
         objetivo, rango_obj = _buscar_miembro(guild, nombre_obj)
