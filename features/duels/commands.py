@@ -31,6 +31,45 @@ def _limpiar_duelo(char):
     char.db.duelo_apuesta_pendiente = 0
 
 
+def _tiene_reto_saliente_vigente(char) -> bool:
+    """
+    True si `char` tiene un reto que él mismo lanzó y sigue vigente.
+    Si el reto ha caducado, limpia los atributos de ambos lados (él y
+    su retado) y devuelve False, en vez de bloquear para siempre.
+    """
+    pendiente = getattr(char.db, "duelo_pendiente", None)
+    if not pendiente:
+        return False
+    if reto_expirado(pendiente.get("timestamp", 0), time.time()):
+        retado = _buscar_por_dbref(pendiente.get("retado_dbref"))
+        _limpiar_duelo(char)
+        if retado:
+            _limpiar_duelo(retado)
+        return False
+    return True
+
+
+def _tiene_reto_entrante_vigente(objetivo) -> bool:
+    """
+    True si `objetivo` tiene un reto entrante vigente de otro jugador.
+    Si el retador ya no existe o su reto ha caducado, limpia los
+    atributos de ambos lados y devuelve False.
+    """
+    retador_dbref = getattr(objetivo.db, "duelo_retador_dbref", None)
+    if not retador_dbref:
+        return False
+    retador = _buscar_por_dbref(retador_dbref)
+    if not retador:
+        _limpiar_duelo(objetivo)
+        return False
+    pendiente = getattr(retador.db, "duelo_pendiente", None) or {}
+    if reto_expirado(pendiente.get("timestamp", 0), time.time()):
+        _limpiar_duelo(objetivo)
+        _limpiar_duelo(retador)
+        return False
+    return True
+
+
 # --------------------------------------------------------------------------- #
 #  retar
 # --------------------------------------------------------------------------- #
@@ -96,11 +135,11 @@ class CmdRetar(Command):
             caller.msg(f"|w{objetivo.key}|n ya está en combate.")
             return
 
-        if getattr(caller.db, "duelo_pendiente", None):
+        if _tiene_reto_saliente_vigente(caller):
             caller.msg("Ya tienes un reto pendiente. Espera a que expire o sea respondido.")
             return
 
-        if getattr(objetivo.db, "duelo_retador_dbref", None):
+        if _tiene_reto_entrante_vigente(objetivo):
             caller.msg(f"|w{objetivo.key}|n ya tiene un reto pendiente.")
             return
 

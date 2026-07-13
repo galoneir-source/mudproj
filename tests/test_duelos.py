@@ -149,14 +149,78 @@ class TestCmdRetar(EvenniaTest):
         self.assertIn("pendiente", self.cap1.all().lower())
 
     def test_retar_objetivo_ya_tiene_pendiente(self):
-        self.char2.db.duelo_retador_dbref = "#999"
+        import evennia
+        otro = evennia.create_object(
+            "typeclasses.characters.Character", key="Otro", location=self.room1
+        )
+        _init_char(otro)
+        otro.db.duelo_pendiente = {
+            "retado_dbref": self.char2.dbref,
+            "apuesta": 0,
+            "timestamp": time.time(),
+        }
+        self.char2.db.duelo_retador_dbref = otro.dbref
         self._retar(self.char2.key)
         self.assertIn("pendiente", self.cap1.all().lower())
+        otro.delete()
 
     def test_retar_sin_args_muestra_uso(self):
         cmd = _make_cmd(CmdRetar, self.char1, "")
         cmd.func()
         self.assertIn("Uso", self.cap1.all())
+
+    def test_retar_reto_saliente_caducado_permite_nuevo_reto(self):
+        """
+        Regresión: CmdRetar solo comprobaba si caller.db.duelo_pendiente
+        existía, sin mirar si ya había caducado (DUEL_TIMEOUT). Un
+        jugador que retaba y nunca era respondido (el otro ignoraba
+        aceptar/rechazar) quedaba bloqueado para retar a cualquiera,
+        para siempre.
+        """
+        self._retar(self.char2.key)
+        pendiente = dict(self.char1.db.duelo_pendiente)
+        pendiente["timestamp"] = time.time() - DUEL_TIMEOUT - 10
+        self.char1.db.duelo_pendiente = pendiente
+
+        self.cap1.msgs.clear()
+        import evennia
+        tercero = evennia.create_object(
+            "typeclasses.characters.Character", key="Tercero", location=self.room1
+        )
+        _init_char(tercero)
+        tercero.account = self.account2
+
+        cmd = _make_cmd(CmdRetar, self.char1, tercero.key)
+        cmd.func()
+        nuevo = self.char1.db.duelo_pendiente
+        self.assertIsNotNone(nuevo)
+        self.assertEqual(nuevo.get("retado_dbref"), tercero.dbref)
+        tercero.delete()
+
+    def test_retar_reto_entrante_caducado_permite_nuevo_reto(self):
+        """
+        Regresión: el mismo defecto, pero visto desde el retado. Si
+        alguien te retó y nunca respondiste ni el reto llegó a
+        aceptarse/rechazarse, cualquier otro jugador quedaba bloqueado
+        para retarte a ti para siempre, aunque el reto original ya
+        hubiera caducado hace tiempo.
+        """
+        import evennia
+        tercero = evennia.create_object(
+            "typeclasses.characters.Character", key="Tercero", location=self.room1
+        )
+        _init_char(tercero)
+        tercero.account = self.account2
+
+        self._retar(self.char2.key)  # char1 reta a char2
+        pendiente = dict(self.char1.db.duelo_pendiente)
+        pendiente["timestamp"] = time.time() - DUEL_TIMEOUT - 10
+        self.char1.db.duelo_pendiente = pendiente
+
+        cmd = _make_cmd(CmdRetar, tercero, self.char2.key)
+        cmd.func()
+        self.assertEqual(self.char2.db.duelo_retador_dbref, tercero.dbref)
+        tercero.delete()
 
 
 # ---------------------------------------------------------------------------
