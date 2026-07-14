@@ -408,6 +408,69 @@ class TestIntentarCaptura(EvenniaTest):
         self.assertEqual(mascota["nombre"], "Fang")
 
 
+# --------------------------------------------------------------------------- #
+#  CmdCapturar — despacho real vía CombatHandler (regresión)
+# --------------------------------------------------------------------------- #
+
+class TestCapturarDespachoReal(EvenniaTest):
+    """
+    Regresión: CmdCapturar.func() llama a handler.registrar_accion(caller,
+    "capturar"), que a su vez pasa por _resolver_turno(). Ese despacho
+    central no tenía ninguna rama para tipo == "capturar" (solo pasar /
+    atacar / habilidad / huir), así que el comando real nunca ejecutaba
+    _intentar_captura() — caía en silencio a "pasar turno". Los tests
+    anteriores de este archivo (TestIntentarCaptura) llaman al método
+    privado directamente y no detectaban el problema porque se saltan
+    _resolver_turno() por completo.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.char1.move_to(self.room1, quiet=True)
+        self.char1.db.mascota = None
+        self.char1.db.hp = 100
+        self.char1.db.hp_max = 100
+        self.char1.db.nivel = 5
+        self.char1.db.en_combate = True
+
+        # NPC debilitado al 10% de HP: apto para captura.
+        self.npc = _crear_npc(self.room1, hp=4, hp_max=40)
+        self.npc.db.en_combate = True
+
+        from features.combat.handler import CombatHandler
+        self.handler = create_script(CombatHandler, obj=self.room1, key="combat_handler")
+        self.handler.db.activo = True
+        self.handler.db.participantes = [self.char1, self.npc]
+        self.handler.db.turno_actual = 0
+        self.handler.db.acciones = {}
+        self.handler.db.turno_tiempo = 0
+        self.handler.db.modo_duelo = False
+
+        self.room1.msg_contents = lambda m, **kw: None
+        self.cap = _MsgCapture(self.char1)
+
+    def tearDown(self):
+        try:
+            self.handler.delete()
+        except Exception:
+            pass
+        super().tearDown()
+
+    def test_comando_capturar_real_asigna_mascota(self):
+        cmd = _make_cmd(CmdCapturar, self.char1, "")
+        cmd.func()
+        self.assertIsNotNone(
+            self.char1.db.mascota,
+            "CmdCapturar no capturó a través del despacho real de _resolver_turno",
+        )
+
+    def test_comando_capturar_real_elimina_al_npc(self):
+        cmd = _make_cmd(CmdCapturar, self.char1, "")
+        cmd.func()
+        from evennia.objects.models import ObjectDB
+        self.assertFalse(ObjectDB.objects.filter(id=self.npc.id).exists())
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

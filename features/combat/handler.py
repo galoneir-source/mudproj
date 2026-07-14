@@ -591,6 +591,10 @@ class CombatHandler(DefaultScript):
             self._intentar_huida(actor)
             return
 
+        elif tipo == "capturar":
+            self._intentar_captura(actor)
+            return
+
         # Avanzar al siguiente turno
         self._siguiente_turno()
 
@@ -912,10 +916,13 @@ class CombatHandler(DefaultScript):
         )
 
         self._limpiar_estado_combate(enemigo)
-        self.eliminar_participante(enemigo)
         from features.respawn.respawn import programar_respawn
         programar_respawn(sala, enemigo)
+        combate_continuaba = bool(self.db.activo)
+        self.eliminar_participante(enemigo)
         enemigo.delete()
+        if combate_continuaba and self.db.activo:
+            self._siguiente_turno()
 
     def _terminar_combate(self):
         sala = self.obj
