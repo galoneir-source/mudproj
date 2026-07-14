@@ -241,6 +241,42 @@ class TestPartyCmds(EvenniaTest):
         finally:
             char3.delete()
 
+    def test_expulsar_nombre_ambiguo_no_expulsa_a_nadie(self):
+        """
+        Regresión: la búsqueda de miembro por nombre en CmdExpulsar era un
+        substring sin desambiguar (mismo patrón ya corregido en banco/tienda
+        esta sesión) — un substring que coincide con más de un miembro
+        expulsaba al primero de la lista en vez de avisar de la ambigüedad.
+        "an" no coincide EXACTO con ninguna de las dos keys de abajo, solo
+        parcialmente con ambas.
+        """
+        char3 = create_object(Character, key="Anabel")
+        char3.msg = lambda text=None, **kw: None
+        self.char2.key = "Ana"
+        try:
+            _crear_partido(self.char1)
+            _añadir_miembro(self.char1, self.char2)
+            _añadir_miembro(self.char1, char3)
+            _cmd(CmdExpulsar, self.char1, "an")
+            self.assertTrue(esta_en_partido(self.char2))
+            self.assertTrue(esta_en_partido(char3))
+        finally:
+            char3.delete()
+
+    def test_expulsar_nombre_exacto_prioriza_coincidencia_exacta(self):
+        char3 = create_object(Character, key="Anabel")
+        char3.msg = lambda text=None, **kw: None
+        self.char2.key = "Ana"
+        try:
+            _crear_partido(self.char1)
+            _añadir_miembro(self.char1, self.char2)
+            _añadir_miembro(self.char1, char3)
+            _cmd(CmdExpulsar, self.char1, "Ana")
+            self.assertFalse(esta_en_partido(self.char2))
+            self.assertTrue(esta_en_partido(char3))
+        finally:
+            char3.delete()
+
     def test_unirse_sin_invitacion_no_falla(self):
         _cmd(CmdUnirse, self.char1)
         self.assertFalse(esta_en_partido(self.char1))

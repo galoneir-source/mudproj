@@ -363,11 +363,18 @@ class CmdExpulsar(Command):
             return
 
         nombre = self.args.strip().lower()
-        objetivo = None
-        for m in get_miembros(caller):
-            if m != caller and nombre in m.key.lower():
-                objetivo = m
-                break
+        candidatos = [m for m in get_miembros(caller) if m != caller]
+
+        exactos = [m for m in candidatos if m.key.lower() == nombre]
+        if len(exactos) == 1:
+            objetivo = exactos[0]
+        else:
+            parciales = [m for m in candidatos if nombre in m.key.lower()]
+            if len(parciales) > 1:
+                nombres = ", ".join(m.key for m in parciales)
+                caller.msg(f"Nombre ambiguo: {nombres}. Sé más específico.")
+                return
+            objetivo = parciales[0] if parciales else None
 
         if not objetivo:
             caller.msg(f"No hay ningún miembro llamado '{self.args.strip()}' en el grupo.")
