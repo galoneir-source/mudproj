@@ -688,15 +688,14 @@ class CombatHandler(DefaultScript):
         for obj in list(getattr(muerto, "contents", []) or []):
             obj.move_to(sala, quiet=True)
 
-        # Progreso de quests de kill
-        if asesino and getattr(asesino, "has_account", False):
-            from features.quests.hooks import on_npc_muerte
-            on_npc_muerte(asesino, muerto)
-
-        # Kill tracking, boss tracking y comprobación de logros
+        # Kill tracking, boss tracking, progreso de quests y comprobación de
+        # logros — para TODO el grupo participante en el combate, no solo
+        # quien remató (igual que kills_totales/bestiario/desafíos ya hacían;
+        # el progreso de quests de kill quedaba limitado solo al asesino).
         if asesino and getattr(asesino, "has_account", False):
             from systems.achievements.achievements import JEFES
             from features.achievements.commands import comprobar_y_notificar
+            from features.quests.hooks import on_npc_muerte
             proto = getattr(muerto.db, "npc_prototipo", None)
             is_boss = bool(proto and proto in JEFES)
             jugadores = [
@@ -705,6 +704,7 @@ class CombatHandler(DefaultScript):
             ]
             from systems.bestiary.bestiary import registrar_kill
             for j in jugadores:
+                on_npc_muerte(j, muerto)
                 j.db.kills_totales = (getattr(j.db, "kills_totales", 0) or 0) + 1
                 if is_boss:
                     jefes_list = list(getattr(j.db, "jefes_derrotados", []) or [])

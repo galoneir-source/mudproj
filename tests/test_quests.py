@@ -5,6 +5,8 @@ Tests de integración para features/quests/commands.py y features/quests/hooks.p
 Ejecutar con:
   cd /opt/evennia/mudproj && venv/bin/evennia test mygame.tests.test_quests
 """
+import evennia
+from evennia.server.serversession import ServerSession
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
 
@@ -323,3 +325,82 @@ class TestOnNpcMuerte(QuestTestBase):
         self.assertEqual(quests["problema_goblins"]["progreso"]["kills"], 1)
         # liche menor no coincide con "goblin"
         self.assertEqual(quests["amenaza_catacumbas"]["progreso"].get("kills", 0), 0)
+
+
+# --------------------------------------------------------------------------- #
+#  Progreso de quests en grupo (CombatHandler._procesar_muerte)
+# --------------------------------------------------------------------------- #
+
+class TestProgresoQuestGrupal(EvenniaTest):
+    """
+    Regresión: CombatHandler._procesar_muerte solo llamaba a on_npc_muerte()
+    para el `asesino` (quien remató al NPC), mientras que kills_totales,
+    bestiario y desafíos diarios ya recorrían TODOS los participantes con
+    cuenta (`jugadores`). En un combate de grupo real, un compañero que
+    también luchaba contra el mismo NPC pero no dio el golpe final se
+    quedaba sin ningún progreso en sus misiones de tipo "kill" — aunque sí
+    recibía XP, kills_totales, entradas de bestiario, etc.
+    """
+
+    def _login_char2(self):
+        """Simula una segunda sesión real conectada, puppeteando char2 (para
+        que has_account sea True también en char2, igual que en un combate
+        de grupo real donde ambos jugadores están conectados)."""
+        dummysession = ServerSession()
+        dummysession.init_session("telnet", ("localhost", "testmode"), evennia.SESSION_HANDLER)
+        dummysession.sessid = 2
+        evennia.SESSION_HANDLER.portal_connect(dummysession.get_sync_data())
+        session2 = evennia.SESSION_HANDLER.session_from_sessid(2)
+        evennia.SESSION_HANDLER.login(session2, self.account2, testmode=True)
+        self.char2.sessions.add(session2)
+        self.session2 = session2
+
+    def tearDown(self):
+        if hasattr(self, "session2"):
+            del evennia.SESSION_HANDLER[self.session2.sessid]
+        super().tearDown()
+
+    def _init_char(self, char):
+        char.db.nivel = 5
+        char.db.hp = 100
+        char.db.hp_max = 100
+        char.db.fuerza = 10
+        char.db.destreza = 10
+        char.db.constitucion = 10
+        char.db.inteligencia = 10
+        char.db.defensa = 5
+        char.db.experiencia = 0
+        char.db.monedas = 0
+        char.db.en_combate = False
+        char.db.habilidades_desbloqueadas = []
+        char.db.estados = {}
+        char.db.quests = {"problema_goblins": {"estado": "activa", "progreso": {}}}
+
+    def test_companero_de_grupo_recibe_credito_de_quest_por_kill_compartido(self):
+        from features.combat.handler import CombatHandler
+
+        self._init_char(self.char1)
+        self._init_char(self.char2)
+        self.char1.move_to(self.room1, quiet=True)
+        self.char2.move_to(self.room1, quiet=True)
+        self._login_char2()
+        self.char1.msg = lambda text=None, **kw: None
+        self.char2.msg = lambda text=None, **kw: None
+        self.room1.msg_contents = lambda m, **kw: None
+
+        goblin = create_object("typeclasses.npc.NPC", key="goblin", location=self.room1)
+        goblin.db.nivel = 1
+        goblin.db.hp = 1
+        goblin.db.hp_max = 10
+
+        handler = self.room1.scripts.add(CombatHandler)
+        handler.db.participantes = [self.char1, self.char2, goblin]
+        handler._procesar_muerte(goblin, asesino=self.char1)
+
+        kills_asesino = self.char1.db.quests["problema_goblins"]["progreso"].get("kills", 0)
+        kills_companero = self.char2.db.quests["problema_goblins"]["progreso"].get("kills", 0)
+        self.assertEqual(kills_asesino, 1)
+        self.assertEqual(
+            kills_companero, 1,
+            "el compañero de grupo (no remató) no recibió crédito de quest por el kill",
+        )
