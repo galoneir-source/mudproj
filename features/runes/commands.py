@@ -18,8 +18,10 @@ from systems.runes.runes import (
 
 
 def _get_runas(char) -> dict:
+    from collections.abc import MutableMapping
+
     runas = getattr(char.db, "runas_equipadas", None)
-    if not runas or not isinstance(runas, dict):
+    if not runas or not isinstance(runas, MutableMapping):
         runas = {s: None for s in SLOTS_VALIDOS}
         char.db.runas_equipadas = runas
     return runas

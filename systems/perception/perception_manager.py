@@ -67,12 +67,14 @@ class PerceptionManager:
               ...
           ]
         """
+        from collections.abc import MutableMapping
+
         detalles = getattr(room.db, "detalles_ocultos", None) or []
         nivel = self.nivel_percepcion(observer, hora=hora, clima=clima)
         return [
             d["texto"]
             for d in detalles
-            if isinstance(d, dict) and nivel >= d.get("req_percepcion", 0)
+            if isinstance(d, MutableMapping) and nivel >= d.get("req_percepcion", 0)
         ]
 
     # ------------------------------------------------------------------ #
