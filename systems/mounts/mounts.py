@@ -16,6 +16,11 @@ _REP_HONRADO = 3000
 # --------------------------------------------------------------------------- #
 #  bonus: dict {stat: valor} — se aplica pasivamente mientras está montado
 
+#  Agrupadas por "tipo" (orden ascendente de coste dentro de cada grupo):
+#  formatear_catalogo() imprime una cabecera de sección cada vez que el tipo
+#  cambia respecto a la entrada anterior, así que el orden de declaración
+#  aquí debe mantener juntas las entradas del mismo tipo o la cabecera se
+#  repite cada vez que el tipo "vuelve" a aparecer más adelante.
 MONTURAS: dict[str, dict] = {
     "poni_viejo": {
         "nombre":      "Poni Viejo",
@@ -41,6 +46,18 @@ MONTURAS: dict[str, dict] = {
         "bonus":       {"defensa": 2, "fuerza": 1},
         "raro":        False,
     },
+    "corcel_oscuro": {
+        "nombre":      "Corcel Oscuro",
+        "descripcion": "Nacido entre las sombras de la Ciudadela. Emana un poder inquietante.",
+        "tipo":        "caballo",
+        "coste":       2000,
+        "nivel_min":   8,
+        "faccion":     None,
+        "rep_min":     0,
+        "requisito_jefe": None,
+        "bonus":       {"fuerza": 3, "inteligencia": 1},
+        "raro":        True,
+    },
     "lobo_cazador": {
         "nombre":      "Lobo Cazador",
         "descripcion": "Ágil y silencioso. Favorito de los exploradores del norte.",
@@ -65,16 +82,16 @@ MONTURAS: dict[str, dict] = {
         "bonus":       {"destreza": 2, "defensa": 2},
         "raro":        True,
     },
-    "corcel_oscuro": {
-        "nombre":      "Corcel Oscuro",
-        "descripcion": "Nacido entre las sombras de la Ciudadela. Emana un poder inquietante.",
-        "tipo":        "caballo",
-        "coste":       2000,
-        "nivel_min":   8,
+    "grifo_real": {
+        "nombre":      "Grifo Real",
+        "descripcion": "La montura más codiciada del reino. Solo los más poderosos la doman.",
+        "tipo":        "bestia",
+        "coste":       3000,
+        "nivel_min":   10,
         "faccion":     None,
         "rep_min":     0,
         "requisito_jefe": None,
-        "bonus":       {"fuerza": 3, "inteligencia": 1},
+        "bonus":       {"defensa": 4, "destreza": 2},
         "raro":        True,
     },
     "dragon_ceniza": {
@@ -87,18 +104,6 @@ MONTURAS: dict[str, dict] = {
         "rep_min":     0,
         "requisito_jefe": "DRAGON_CENIZA",
         "bonus":       {"inteligencia": 3, "defensa": 2},
-        "raro":        True,
-    },
-    "grifo_real": {
-        "nombre":      "Grifo Real",
-        "descripcion": "La montura más codiciada del reino. Solo los más poderosos la doman.",
-        "tipo":        "bestia",
-        "coste":       3000,
-        "nivel_min":   10,
-        "faccion":     None,
-        "rep_min":     0,
-        "requisito_jefe": None,
-        "bonus":       {"defensa": 4, "destreza": 2},
         "raro":        True,
     },
 }

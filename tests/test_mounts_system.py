@@ -273,6 +273,22 @@ class TestFormatearCatalogo:
         txt = formatear_catalogo([], 1, {}, 9999, {})
         assert "10" in txt
 
+    def test_cabeceras_de_tipo_no_se_repiten(self):
+        """
+        Regresión: formatear_catalogo() imprime una cabecera "[Tipo]" cada
+        vez que el tipo cambia respecto a la entrada anterior. Si MONTURAS
+        no mantiene juntas las entradas del mismo tipo, la misma cabecera
+        ("[Caballo]", "[Bestia]"...) aparece repetida en vez de una sola
+        vez agrupando todas sus monturas.
+        """
+        txt = formatear_catalogo([], 1, {}, 9999, {"DRAGON_CENIZA": 1})
+        tipos = {m["tipo"].capitalize() for m in MONTURAS.values()}
+        for tipo in tipos:
+            cabecera = f"[{tipo}]"
+            assert txt.count(cabecera) == 1, (
+                f"la cabecera {cabecera!r} aparece {txt.count(cabecera)} veces, se esperaba 1"
+            )
+
 
 # --------------------------------------------------------------------------- #
 #  _bonus_texto
