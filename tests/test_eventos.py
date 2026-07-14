@@ -316,6 +316,66 @@ class TestFeriaEnTienda(EvenniaTest):
         self.assertAlmostEqual(factor_final, 0.72)
 
 
+# ---------------------------------------------------------------------------
+# EventoMundialScript.at_repeat() — ciclo de vida real
+#
+# Todos los tests anteriores manipulan db.evento_activo/db.evento_inicio a
+# mano; ninguno llama a at_repeat()/_intentar_iniciar()/_comprobar_fin()
+# directamente, así que un fallo en el propio disparador del ciclo (el
+# mismo tipo de bug que dejó "capturar" de mascotas o el spawn de mazmorras
+# sin funcionar nunca) no se habría detectado. Se fuerzan los rolls de
+# random.random() para ejercitar el camino real de inicio y fin.
+# ---------------------------------------------------------------------------
+
+from unittest.mock import patch
+
+
+class TestAtRepeatCicloReal(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        self.script = obtener_evento_script()
+        self.script.db.evento_activo = None
+        self.script.db.evento_inicio = 0.0
+        self.script.db.ultimo_por_evento = {}
+
+    def tearDown(self):
+        self.script.db.evento_activo = None
+        super().tearDown()
+
+    def test_at_repeat_inicia_evento_real(self):
+        with patch("random.random", side_effect=[0.0, 0.0]):
+            self.script.at_repeat()
+        self.assertIsNotNone(self.script.db.evento_activo)
+        self.assertIn(self.script.db.evento_activo, EVENTOS)
+
+    def test_at_repeat_no_inicia_si_roll_falla(self):
+        with patch("random.random", return_value=0.99):
+            self.script.at_repeat()
+        self.assertIsNone(self.script.db.evento_activo)
+
+    def test_at_repeat_termina_evento_expirado_y_registra_cooldown(self):
+        with patch("random.random", side_effect=[0.0, 0.0]):
+            self.script.at_repeat()
+        ev_id = self.script.db.evento_activo
+        duracion = EVENTOS[ev_id]["duracion"]
+        self.script.db.evento_inicio = time.time() - duracion - 10
+
+        self.script.at_repeat()
+
+        self.assertIsNone(self.script.db.evento_activo)
+        ultimo = dict(self.script.db.ultimo_por_evento or {})
+        self.assertIn(ev_id, ultimo)
+
+    def test_at_repeat_no_termina_evento_aun_vigente(self):
+        with patch("random.random", side_effect=[0.0, 0.0]):
+            self.script.at_repeat()
+        ev_id = self.script.db.evento_activo
+        # Evento recién iniciado: no debería expirar en el siguiente tick.
+        self.script.at_repeat()
+        self.assertEqual(self.script.db.evento_activo, ev_id)
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
