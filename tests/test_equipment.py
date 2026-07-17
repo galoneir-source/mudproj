@@ -225,6 +225,40 @@ class TestCmdDesequipar(EvenniaTest):
         cmd.func()
         self.assertTrue(any("no tienes equipado" in m.lower() for m in self.msgs))
 
+    def test_nombre_ambiguo_no_desequipa_nada(self):
+        armadura = create_object(
+            "typeclasses.objects.Equipo", key="armadura de hierro", location=self.char
+        )
+        armadura.db.slot = "armadura"
+        self.espada.key = "espada de hierro"
+        eq = _get_equipamiento(self.char)
+        eq["armadura"] = armadura
+        self.char.db.equipamiento = eq
+
+        cmd = _make_cmd(CmdDesequipar, self.char, args="hierro")
+        cmd.func()
+
+        self.assertTrue(any("ambiguo" in m.lower() for m in self.msgs))
+        self.assertIsNotNone(_get_equipamiento(self.char)["arma"])
+        self.assertIsNotNone(_get_equipamiento(self.char)["armadura"])
+
+    def test_nombre_exacto_prioriza_coincidencia_exacta(self):
+        armadura = create_object(
+            "typeclasses.objects.Equipo", key="armadura de hierro reforzada", location=self.char
+        )
+        armadura.db.slot = "armadura"
+        self.espada.key = "armadura de hierro"
+        eq = _get_equipamiento(self.char)
+        eq["armadura"] = armadura
+        eq["arma"] = self.espada
+        self.char.db.equipamiento = eq
+
+        cmd = _make_cmd(CmdDesequipar, self.char, args="armadura de hierro")
+        cmd.func()
+
+        self.assertIsNone(_get_equipamiento(self.char)["arma"])
+        self.assertIsNotNone(_get_equipamiento(self.char)["armadura"])
+
 
 # --------------------------------------------------------------------------- #
 #  CmdEquipo

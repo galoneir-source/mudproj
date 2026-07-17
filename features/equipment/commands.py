@@ -161,11 +161,25 @@ class CmdDesequipar(Command):
             self._desequipar_item(caller, item, arg, eq)
             return
 
-        # Intentar por nombre del objeto
-        for slot, item in eq.items():
-            if item and arg in item.key.lower():
-                self._desequipar_item(caller, item, slot, eq)
-                return
+        # Intentar por nombre del objeto: coincidencia exacta primero, y si
+        # hay varias parciales, avisar en vez de desequipar la primera que
+        # encuentre (mismo patrón ya corregido en banco/tienda/grupo).
+        equipados = [(slot, item) for slot, item in eq.items() if item]
+        exactos = [(slot, item) for slot, item in equipados if item.key.lower() == arg]
+        if len(exactos) == 1:
+            slot, item = exactos[0]
+            self._desequipar_item(caller, item, slot, eq)
+            return
+
+        parciales = [(slot, item) for slot, item in equipados if arg in item.key.lower()]
+        if len(parciales) > 1:
+            nombres = ", ".join(item.key for _slot, item in parciales)
+            caller.msg(f"Nombre ambiguo: {nombres}. Sé más específico.")
+            return
+        if len(parciales) == 1:
+            slot, item = parciales[0]
+            self._desequipar_item(caller, item, slot, eq)
+            return
 
         caller.msg(f"No tienes equipado ningún objeto llamado '{self.args.strip()}'.")
 
