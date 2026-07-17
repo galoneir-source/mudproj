@@ -701,6 +701,17 @@ class CombatHandler(DefaultScript):
             from features.achievements.commands import comprobar_y_notificar
             from features.quests.hooks import on_npc_muerte
             proto = getattr(muerto.db, "npc_prototipo", None)
+            if not proto:
+                # Jefes de mundo y enemigos de mazmorra ponen npc_prototipo a
+                # None a propósito para desactivar el respawn automático
+                # (ver features/respawn/respawn.py), pero eso también los
+                # dejaba fuera del bestiario para siempre. El tag que el
+                # spawner de Evennia añade automáticamente al crear el objeto
+                # sobrevive a ese None y sigue identificando su prototipo.
+                from evennia.prototypes.prototypes import PROTOTYPE_TAG_CATEGORY
+                tags = muerto.tags.get(category=PROTOTYPE_TAG_CATEGORY, return_list=True) or []
+                if tags:
+                    proto = tags[0].upper()
             is_boss = bool(proto and proto in JEFES)
             jugadores = [
                 p for p in (self.db.participantes or [])
