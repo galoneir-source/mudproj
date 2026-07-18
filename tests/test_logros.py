@@ -612,3 +612,276 @@ class TestLogrosGremioIntegracion(EvenniaTest):
         self.assertIn("Fundador", output)
         self.assertIn("Tesorero", output)
         self.assertIn("Mecenas", output)
+
+
+# ─── Wiring real de _extraer_datos_X — categorías sin cobertura previa ───────
+#
+# Estas categorías (v0.41–v0.53) nunca tenían ningún test que verificara que
+# el atributo db.* real escrito por su sistema coincide con el que
+# _extraer_datos_X() lee — a diferencia de la lógica pura de _cumple(), que
+# ya estaba cubierta en test_logros_system.py, un desajuste de nombre aquí
+# (p.ej. escribir un atributo y leer otro) no lo detectaría ningún test.
+
+class TestLogrosJefeMundoIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_jefes_mundo_derrotados_desbloquea_logros_individuales(self):
+        self.char1.db.jefes_mundo_derrotados = {"TITAN_PANTANO": 1}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("titan_derrotado", list(self.char1.db.logros))
+
+    def test_los_tres_jefes_de_mundo_desbloquea_todos_jefes_mundo(self):
+        self.char1.db.jefes_mundo_derrotados = {
+            "TITAN_PANTANO": 1, "GUARDIAN_FORJA": 1, "DRAGON_CENIZA": 1,
+        }
+        comprobar_y_notificar(self.char1)
+        self.assertIn("todos_jefes_mundo", list(self.char1.db.logros))
+
+
+class TestLogrosMazmorraIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_mazmorras_completadas_desbloquea_logro_individual(self):
+        self.char1.db.mazmorras_completadas = {"cripta_ceniza": 1}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("cripta_completada", list(self.char1.db.logros))
+
+    def test_mazmorra_legendario_desbloquea_logro(self):
+        self.char1.db.mazmorra_legendario = True
+        comprobar_y_notificar(self.char1)
+        self.assertIn("mazmorra_legendario", list(self.char1.db.logros))
+
+
+class TestLogrosArenaIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_torneos_ganados_desbloquea_campeon_arena(self):
+        self.char1.db.torneos_ganados = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("campeon_arena", list(self.char1.db.logros))
+
+    def test_tres_torneos_desbloquea_maestro_arena(self):
+        self.char1.db.torneos_ganados = 3
+        comprobar_y_notificar(self.char1)
+        self.assertIn("maestro_arena", list(self.char1.db.logros))
+
+
+class TestLogrosRunasIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_una_runa_grabada_desbloquea_primera_runa(self):
+        self.char1.db.runas_equipadas = {"arma": "RUNA_FILO", "armadura": None, "accesorio": None}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_runa", list(self.char1.db.logros))
+
+    def test_tres_runas_desbloquea_runas_completas(self):
+        self.char1.db.runas_equipadas = {
+            "arma": "RUNA_FILO", "armadura": "RUNA_ESCUDO", "accesorio": "RUNA_PODER",
+        }
+        comprobar_y_notificar(self.char1)
+        self.assertIn("runas_completas", list(self.char1.db.logros))
+
+    def test_runa_arcana_desbloquea_runa_arcana(self):
+        self.char1.db.runas_equipadas = {"arma": None, "armadura": None, "accesorio": "RUNA_ARCANA"}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("runa_arcana", list(self.char1.db.logros))
+
+
+class TestLogrosViviendaIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_vivienda_dbref_desbloquea_primera_vivienda(self):
+        self.char1.db.vivienda_dbref = "#999"
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_vivienda", list(self.char1.db.logros))
+
+    def test_vivienda_decorada_desbloquea_hogar_decorado(self):
+        self.char1.db.vivienda_decorada = True
+        comprobar_y_notificar(self.char1)
+        self.assertIn("hogar_decorado", list(self.char1.db.logros))
+
+
+class TestLogrosApuestasIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_apuestas_jugadas_desbloquea_primera_apuesta(self):
+        self.char1.db.apuestas_jugadas = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_apuesta", list(self.char1.db.logros))
+
+    def test_diez_apuestas_ganadas_desbloquea_golpe_de_suerte(self):
+        self.char1.db.apuestas_ganadas = 10
+        comprobar_y_notificar(self.char1)
+        self.assertIn("golpe_de_suerte", list(self.char1.db.logros))
+
+    def test_mayor_ganancia_desbloquea_gran_tahur(self):
+        self.char1.db.mayor_ganancia = 500
+        comprobar_y_notificar(self.char1)
+        self.assertIn("gran_tahur", list(self.char1.db.logros))
+
+
+class TestLogrosColeccionIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_primer_tesoro_encontrado_desbloquea_logro(self):
+        self.char1.db.tesoros_encontrados = ["moneda_antigua"]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_tesoro", list(self.char1.db.logros))
+
+
+class TestLogrosMonturasIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_primera_montura_desbloquea_primer_jinete(self):
+        self.char1.db.monturas = ["poni_viejo"]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_jinete", list(self.char1.db.logros))
+
+    def test_grifo_real_desbloquea_amo_grifo(self):
+        self.char1.db.monturas = ["grifo_real"]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("amo_grifo", list(self.char1.db.logros))
+
+
+class TestLogrosAlquimiaIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_pociones_elaboradas_desbloquea_primer_elixir(self):
+        self.char1.db.pociones_elaboradas = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_elixir", list(self.char1.db.logros))
+
+    def test_quince_pociones_desbloquea_maestro_alquimia(self):
+        self.char1.db.pociones_elaboradas = 15
+        comprobar_y_notificar(self.char1)
+        self.assertIn("maestro_alquimia", list(self.char1.db.logros))
+
+
+class TestLogrosExpedicionesIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_expediciones_completadas_desbloquea_primera_expedicion(self):
+        self.char1.db.expediciones_completadas = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_expedicion", list(self.char1.db.logros))
+
+    def test_fortaleza_completada_desbloquea_conquistador_fortaleza(self):
+        self.char1.db.fortaleza_completada = True
+        comprobar_y_notificar(self.char1)
+        self.assertIn("conquistador_fortaleza", list(self.char1.db.logros))
+
+
+class TestLogrosDesafiosIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_total_desafios_completados_desbloquea_primer_desafio(self):
+        self.char1.db.total_desafios_completados = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_desafio", list(self.char1.db.logros))
+
+    def test_racha_desafios_desbloquea_racha_legendaria(self):
+        self.char1.db.racha_desafios = 7
+        comprobar_y_notificar(self.char1)
+        self.assertIn("racha_legendaria", list(self.char1.db.logros))
+
+
+class TestLogrosCazarrecompensasIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_recompensas_cobradas_desbloquea_primer_cazador(self):
+        self.char1.db.recompensas_cobradas = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_cazador", list(self.char1.db.logros))
+
+    def test_recompensas_recibidas_desbloquea_mas_buscado(self):
+        self.char1.db.recompensas_recibidas = 1
+        comprobar_y_notificar(self.char1)
+        self.assertIn("mas_buscado", list(self.char1.db.logros))
+
+
+class TestLogrosCartografiaIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_salas_exploradas_desbloquea_primer_viaje(self):
+        self.char1.db.salas_exploradas = ["plaza_ciudad"]
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primer_viaje", list(self.char1.db.logros))
+
+
+class TestLogrosBestiarioIntegracion(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.char1.move_to(self.room1, quiet=True)
+        self.cap = _MsgCapture(self.char1)
+
+    def test_bestiary_con_una_criatura_desbloquea_primera_presa(self):
+        self.char1.db.bestiary = {"GOBLIN": {"kills": 1, "primera_vez": 0}}
+        comprobar_y_notificar(self.char1)
+        self.assertIn("primera_presa", list(self.char1.db.logros))

@@ -211,12 +211,9 @@ class CmdLogros(Command):
     Ver tu registro de logros y títulos desbloqueados.
 
     Uso:
-      logros                — muestra todos los logros
-      logros <categoría>    — filtra por categoría
-
-    Categorías disponibles:
-      progresion, misiones, combate, habilidades,
-      encantamiento, reputacion, crafteo, economia
+      logros                — muestra todos los logros, agrupados por categoría
+      logros <categoría>    — filtra por una categoría (usa "logros" para ver
+                               los nombres exactos de todas las categorías)
 
     Ejemplo:
       logros combate

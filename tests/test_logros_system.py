@@ -747,5 +747,419 @@ class TestLogrosGremio(unittest.TestCase):
         self.assertFalse(_cumple("gremio_mecenas", datos))
 
 
+# ─── Jefes de Mundo ──────────────────────────────────────────────────────────
+
+class TestLogrosJefeMundo(unittest.TestCase):
+
+    def test_titan_no_derrotado(self):
+        self.assertFalse(_cumple("titan_derrotado", _datos(jefes_mundo_derrotados={})))
+
+    def test_titan_derrotado_cumple(self):
+        self.assertTrue(_cumple("titan_derrotado", _datos(
+            jefes_mundo_derrotados={"TITAN_PANTANO": 1}
+        )))
+
+    def test_guardian_derrotado_cumple(self):
+        self.assertTrue(_cumple("guardian_derrotado", _datos(
+            jefes_mundo_derrotados={"GUARDIAN_FORJA": 1}
+        )))
+
+    def test_dragon_derrotado_cumple(self):
+        self.assertTrue(_cumple("dragon_derrotado", _datos(
+            jefes_mundo_derrotados={"DRAGON_CENIZA": 1}
+        )))
+
+    def test_dragon_derrotado_titulo(self):
+        tits = titulos_disponibles(["dragon_derrotado"])
+        self.assertIn("Cazadragones", tits)
+
+    def test_todos_jefes_mundo_no_cumple_parcial(self):
+        self.assertFalse(_cumple("todos_jefes_mundo", _datos(
+            jefes_mundo_derrotados={"TITAN_PANTANO": 1, "GUARDIAN_FORJA": 1}
+        )))
+
+    def test_todos_jefes_mundo_cumple(self):
+        self.assertTrue(_cumple("todos_jefes_mundo", _datos(
+            jefes_mundo_derrotados={
+                "TITAN_PANTANO": 1, "GUARDIAN_FORJA": 1, "DRAGON_CENIZA": 1,
+            }
+        )))
+
+
+# ─── Mazmorras ───────────────────────────────────────────────────────────────
+
+class TestLogrosMazmorra(unittest.TestCase):
+
+    def test_cripta_no_completada(self):
+        self.assertFalse(_cumple("cripta_completada", _datos(mazmorras_completadas={})))
+
+    def test_cripta_completada_cumple(self):
+        self.assertTrue(_cumple("cripta_completada", _datos(
+            mazmorras_completadas={"cripta_ceniza": 1}
+        )))
+
+    def test_forja_completada_cumple(self):
+        self.assertTrue(_cumple("forja_completada", _datos(
+            mazmorras_completadas={"forja_maldita": 1}
+        )))
+
+    def test_abismo_completado_cumple(self):
+        self.assertTrue(_cumple("abismo_completado", _datos(
+            mazmorras_completadas={"abismo_sin_fondo": 1}
+        )))
+
+    def test_abismo_completado_titulo(self):
+        tits = titulos_disponibles(["abismo_completado"])
+        self.assertIn("el Conquistador", tits)
+
+    def test_todas_mazmorras_no_cumple_parcial(self):
+        self.assertFalse(_cumple("todas_mazmorras", _datos(
+            mazmorras_completadas={"cripta_ceniza": 1, "forja_maldita": 1}
+        )))
+
+    def test_todas_mazmorras_cumple(self):
+        self.assertTrue(_cumple("todas_mazmorras", _datos(
+            mazmorras_completadas={
+                "cripta_ceniza": 1, "forja_maldita": 1, "abismo_sin_fondo": 1,
+            }
+        )))
+
+    def test_mazmorra_legendario_no_cumple(self):
+        self.assertFalse(_cumple("mazmorra_legendario", _datos(mazmorra_legendario=False)))
+
+    def test_mazmorra_legendario_cumple(self):
+        self.assertTrue(_cumple("mazmorra_legendario", _datos(mazmorra_legendario=True)))
+
+
+# ─── Arena ───────────────────────────────────────────────────────────────────
+
+class TestLogrosArena(unittest.TestCase):
+
+    def test_campeon_arena_no_cumple(self):
+        self.assertFalse(_cumple("campeon_arena", _datos(torneos_ganados=0)))
+
+    def test_campeon_arena_cumple(self):
+        self.assertTrue(_cumple("campeon_arena", _datos(torneos_ganados=1)))
+
+    def test_maestro_arena_no_cumple_con_dos(self):
+        self.assertFalse(_cumple("maestro_arena", _datos(torneos_ganados=2)))
+
+    def test_maestro_arena_cumple(self):
+        self.assertTrue(_cumple("maestro_arena", _datos(torneos_ganados=3)))
+
+    def test_maestro_arena_titulo(self):
+        tits = titulos_disponibles(["maestro_arena"])
+        self.assertIn("el Imbatible", tits)
+
+
+# ─── Runas ───────────────────────────────────────────────────────────────────
+
+class TestLogrosRunas(unittest.TestCase):
+
+    def test_primera_runa_sin_runas(self):
+        self.assertFalse(_cumple("primera_runa", _datos(
+            runas_equipadas={"arma": None, "armadura": None, "accesorio": None}
+        )))
+
+    def test_primera_runa_cumple(self):
+        self.assertTrue(_cumple("primera_runa", _datos(
+            runas_equipadas={"arma": "RUNA_FILO", "armadura": None, "accesorio": None}
+        )))
+
+    def test_runas_completas_no_cumple_con_dos(self):
+        self.assertFalse(_cumple("runas_completas", _datos(
+            runas_equipadas={"arma": "RUNA_FILO", "armadura": "RUNA_ESCUDO", "accesorio": None}
+        )))
+
+    def test_runas_completas_cumple(self):
+        self.assertTrue(_cumple("runas_completas", _datos(
+            runas_equipadas={
+                "arma": "RUNA_FILO", "armadura": "RUNA_ESCUDO", "accesorio": "RUNA_PODER",
+            }
+        )))
+
+    def test_runas_completas_titulo(self):
+        tits = titulos_disponibles(["runas_completas"])
+        self.assertIn("el Tallador", tits)
+
+    def test_runa_arcana_no_cumple_sin_ella(self):
+        self.assertFalse(_cumple("runa_arcana", _datos(
+            runas_equipadas={"arma": "RUNA_FILO", "armadura": None, "accesorio": None}
+        )))
+
+    def test_runa_arcana_cumple(self):
+        self.assertTrue(_cumple("runa_arcana", _datos(
+            runas_equipadas={"arma": None, "armadura": None, "accesorio": "RUNA_ARCANA"}
+        )))
+
+
+# ─── Vivienda ────────────────────────────────────────────────────────────────
+
+class TestLogrosVivienda(unittest.TestCase):
+
+    def test_primera_vivienda_no_cumple(self):
+        self.assertFalse(_cumple("primera_vivienda", _datos(vivienda_comprada=False)))
+
+    def test_primera_vivienda_cumple(self):
+        self.assertTrue(_cumple("primera_vivienda", _datos(vivienda_comprada=True)))
+
+    def test_hogar_decorado_no_cumple(self):
+        self.assertFalse(_cumple("hogar_decorado", _datos(vivienda_decorada=False)))
+
+    def test_hogar_decorado_cumple(self):
+        self.assertTrue(_cumple("hogar_decorado", _datos(vivienda_decorada=True)))
+
+    def test_hogar_decorado_titulo(self):
+        tits = titulos_disponibles(["hogar_decorado"])
+        self.assertIn("el Anfitrión", tits)
+
+
+# ─── Apuestas ────────────────────────────────────────────────────────────────
+
+class TestLogrosApuestas(unittest.TestCase):
+
+    def test_primera_apuesta_no_cumple(self):
+        self.assertFalse(_cumple("primera_apuesta", _datos(apuestas_jugadas=0)))
+
+    def test_primera_apuesta_cumple(self):
+        self.assertTrue(_cumple("primera_apuesta", _datos(apuestas_jugadas=1)))
+
+    def test_golpe_de_suerte_no_cumple_con_nueve(self):
+        self.assertFalse(_cumple("golpe_de_suerte", _datos(apuestas_ganadas=9)))
+
+    def test_golpe_de_suerte_cumple(self):
+        self.assertTrue(_cumple("golpe_de_suerte", _datos(apuestas_ganadas=10)))
+
+    def test_gran_tahur_no_cumple_con_499(self):
+        self.assertFalse(_cumple("gran_tahur", _datos(mayor_ganancia=499)))
+
+    def test_gran_tahur_cumple(self):
+        self.assertTrue(_cumple("gran_tahur", _datos(mayor_ganancia=500)))
+
+    def test_gran_tahur_titulo(self):
+        tits = titulos_disponibles(["gran_tahur"])
+        self.assertIn("el Tahúr", tits)
+
+
+# ─── Coleccionables ──────────────────────────────────────────────────────────
+
+class TestLogrosColeccion(unittest.TestCase):
+
+    def test_primer_tesoro_no_cumple(self):
+        self.assertFalse(_cumple("primer_tesoro", _datos(tesoros_encontrados=0)))
+
+    def test_primer_tesoro_cumple(self):
+        self.assertTrue(_cumple("primer_tesoro", _datos(tesoros_encontrados=1)))
+
+    def test_cazatesoros_no_cumple_con_siete(self):
+        self.assertFalse(_cumple("cazatesoros", _datos(tesoros_encontrados=7)))
+
+    def test_cazatesoros_cumple(self):
+        self.assertTrue(_cumple("cazatesoros", _datos(tesoros_encontrados=8)))
+
+    def test_coleccionista_no_cumple(self):
+        self.assertFalse(_cumple("coleccionista", _datos(coleccion_completa=False)))
+
+    def test_coleccionista_cumple(self):
+        self.assertTrue(_cumple("coleccionista", _datos(coleccion_completa=True)))
+
+    def test_coleccionista_titulo(self):
+        tits = titulos_disponibles(["coleccionista"])
+        self.assertIn("el Coleccionista", tits)
+
+
+# ─── Monturas ────────────────────────────────────────────────────────────────
+
+class TestLogrosMonturas(unittest.TestCase):
+
+    def test_primer_jinete_no_cumple(self):
+        self.assertFalse(_cumple("primer_jinete", _datos(monturas_poseidas=0)))
+
+    def test_primer_jinete_cumple(self):
+        self.assertTrue(_cumple("primer_jinete", _datos(monturas_poseidas=1)))
+
+    def test_ecuyer_no_cumple_con_dos(self):
+        self.assertFalse(_cumple("ecuyer", _datos(monturas_poseidas=2)))
+
+    def test_ecuyer_cumple(self):
+        self.assertTrue(_cumple("ecuyer", _datos(monturas_poseidas=3)))
+
+    def test_amo_grifo_no_cumple(self):
+        self.assertFalse(_cumple("amo_grifo", _datos(tiene_grifo_real=False)))
+
+    def test_amo_grifo_cumple(self):
+        self.assertTrue(_cumple("amo_grifo", _datos(tiene_grifo_real=True)))
+
+    def test_amo_grifo_titulo(self):
+        tits = titulos_disponibles(["amo_grifo"])
+        self.assertIn("el Jinete", tits)
+
+
+# ─── Alquimia ────────────────────────────────────────────────────────────────
+
+class TestLogrosAlquimia(unittest.TestCase):
+
+    def test_primer_elixir_no_cumple(self):
+        self.assertFalse(_cumple("primer_elixir", _datos(pociones_elaboradas=0)))
+
+    def test_primer_elixir_cumple(self):
+        self.assertTrue(_cumple("primer_elixir", _datos(pociones_elaboradas=1)))
+
+    def test_artesano_alquimia_no_cumple_con_cuatro(self):
+        self.assertFalse(_cumple("artesano_alquimia", _datos(pociones_elaboradas=4)))
+
+    def test_artesano_alquimia_cumple(self):
+        self.assertTrue(_cumple("artesano_alquimia", _datos(pociones_elaboradas=5)))
+
+    def test_maestro_alquimia_no_cumple_con_catorce(self):
+        self.assertFalse(_cumple("maestro_alquimia", _datos(pociones_elaboradas=14)))
+
+    def test_maestro_alquimia_cumple(self):
+        self.assertTrue(_cumple("maestro_alquimia", _datos(pociones_elaboradas=15)))
+
+    def test_maestro_alquimia_titulo(self):
+        tits = titulos_disponibles(["maestro_alquimia"])
+        self.assertIn("el Maestro Alquimista", tits)
+
+
+# ─── Expediciones ────────────────────────────────────────────────────────────
+
+class TestLogrosExpediciones(unittest.TestCase):
+
+    def test_primera_expedicion_no_cumple(self):
+        self.assertFalse(_cumple("primera_expedicion", _datos(expediciones_completadas=0)))
+
+    def test_primera_expedicion_cumple(self):
+        self.assertTrue(_cumple("primera_expedicion", _datos(expediciones_completadas=1)))
+
+    def test_veterano_expedicion_no_cumple_con_cuatro(self):
+        self.assertFalse(_cumple("veterano_expedicion", _datos(expediciones_completadas=4)))
+
+    def test_veterano_expedicion_cumple(self):
+        self.assertTrue(_cumple("veterano_expedicion", _datos(expediciones_completadas=5)))
+
+    def test_conquistador_fortaleza_no_cumple(self):
+        self.assertFalse(_cumple("conquistador_fortaleza", _datos(fortaleza_completada=False)))
+
+    def test_conquistador_fortaleza_cumple(self):
+        self.assertTrue(_cumple("conquistador_fortaleza", _datos(fortaleza_completada=True)))
+
+    def test_conquistador_fortaleza_titulo(self):
+        tits = titulos_disponibles(["conquistador_fortaleza"])
+        self.assertIn("el Conquistador", tits)
+
+
+# ─── Desafíos Diarios ────────────────────────────────────────────────────────
+
+class TestLogrosDesafios(unittest.TestCase):
+
+    def test_primer_desafio_no_cumple(self):
+        self.assertFalse(_cumple("primer_desafio", _datos(total_desafios_completados=0)))
+
+    def test_primer_desafio_cumple(self):
+        self.assertTrue(_cumple("primer_desafio", _datos(total_desafios_completados=1)))
+
+    def test_veterano_desafios_no_cumple_con_24(self):
+        self.assertFalse(_cumple("veterano_desafios", _datos(total_desafios_completados=24)))
+
+    def test_veterano_desafios_cumple(self):
+        self.assertTrue(_cumple("veterano_desafios", _datos(total_desafios_completados=25)))
+
+    def test_racha_legendaria_no_cumple_con_seis(self):
+        self.assertFalse(_cumple("racha_legendaria", _datos(racha_desafios=6)))
+
+    def test_racha_legendaria_cumple(self):
+        self.assertTrue(_cumple("racha_legendaria", _datos(racha_desafios=7)))
+
+    def test_racha_legendaria_titulo(self):
+        tits = titulos_disponibles(["racha_legendaria"])
+        self.assertIn("el Constante", tits)
+
+
+# ─── Cazarrecompensas ────────────────────────────────────────────────────────
+
+class TestLogrosCazarrecompensas(unittest.TestCase):
+
+    def test_primer_cazador_no_cumple(self):
+        self.assertFalse(_cumple("primer_cazador", _datos(recompensas_cobradas=0)))
+
+    def test_primer_cazador_cumple(self):
+        self.assertTrue(_cumple("primer_cazador", _datos(recompensas_cobradas=1)))
+
+    def test_primer_cazador_titulo(self):
+        tits = titulos_disponibles(["primer_cazador"])
+        self.assertIn("el Cazador", tits)
+
+    def test_generoso_verdugo_no_cumple_con_dos(self):
+        self.assertFalse(_cumple("generoso_verdugo", _datos(recompensas_cobradas=2)))
+
+    def test_generoso_verdugo_cumple(self):
+        self.assertTrue(_cumple("generoso_verdugo", _datos(recompensas_cobradas=3)))
+
+    def test_mas_buscado_no_cumple(self):
+        self.assertFalse(_cumple("mas_buscado", _datos(recompensas_recibidas=0)))
+
+    def test_mas_buscado_cumple(self):
+        self.assertTrue(_cumple("mas_buscado", _datos(recompensas_recibidas=1)))
+
+    def test_mas_buscado_titulo(self):
+        tits = titulos_disponibles(["mas_buscado"])
+        self.assertIn("el Más Buscado", tits)
+
+
+# ─── Cartografía ─────────────────────────────────────────────────────────────
+
+class TestLogrosCartografia(unittest.TestCase):
+
+    def test_primer_viaje_no_cumple(self):
+        self.assertFalse(_cumple("primer_viaje", _datos(salas_exploradas=0)))
+
+    def test_primer_viaje_cumple(self):
+        self.assertTrue(_cumple("primer_viaje", _datos(salas_exploradas=1)))
+
+    def test_explorador_no_cumple_con_nueve(self):
+        self.assertFalse(_cumple("explorador", _datos(salas_exploradas=9)))
+
+    def test_explorador_cumple(self):
+        self.assertTrue(_cumple("explorador", _datos(salas_exploradas=10)))
+
+    def test_cartografo_no_cumple_con_28(self):
+        self.assertFalse(_cumple("cartografo", _datos(salas_exploradas=28)))
+
+    def test_cartografo_cumple(self):
+        self.assertTrue(_cumple("cartografo", _datos(salas_exploradas=29)))
+
+    def test_cartografo_titulo(self):
+        tits = titulos_disponibles(["cartografo"])
+        self.assertIn("el Cartógrafo", tits)
+
+
+# ─── Bestiario ───────────────────────────────────────────────────────────────
+
+class TestLogrosBestiario(unittest.TestCase):
+
+    def test_primera_presa_no_cumple(self):
+        self.assertFalse(_cumple("primera_presa", _datos(criaturas_registradas=0)))
+
+    def test_primera_presa_cumple(self):
+        self.assertTrue(_cumple("primera_presa", _datos(criaturas_registradas=1)))
+
+    def test_cazador_experimentado_no_cumple_con_nueve(self):
+        self.assertFalse(_cumple("cazador_experimentado", _datos(criaturas_registradas=9)))
+
+    def test_cazador_experimentado_cumple(self):
+        self.assertTrue(_cumple("cazador_experimentado", _datos(criaturas_registradas=10)))
+
+    def test_enciclopedista_no_cumple(self):
+        self.assertFalse(_cumple("enciclopedista", _datos(bestiary_completo=False)))
+
+    def test_enciclopedista_cumple(self):
+        self.assertTrue(_cumple("enciclopedista", _datos(bestiary_completo=True)))
+
+    def test_enciclopedista_titulo(self):
+        tits = titulos_disponibles(["enciclopedista"])
+        self.assertIn("el Enciclopedista", tits)
+
+
 if __name__ == "__main__":
     unittest.main()
