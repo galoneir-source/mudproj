@@ -8,7 +8,7 @@ from evennia import Command, CmdSet
 
 from systems.subclasses.subclasses import (
     SUBCLASES, NIVEL_MIN_SUBCLASE,
-    subclase_valida, subclases_de_clase, puede_elegir_subclase,
+    subclase_valida, subclases_de_clase, puede_elegir_subclase, aplicar_subclase,
 )
 from systems.combat.engine import STAT_DEFAULTS
 
@@ -124,11 +124,13 @@ class CmdSubclase(Command):
         info = SUBCLASES[subclase_id]
         bonuses = info["stat_bonus"]
 
-        for stat, valor in bonuses.items():
+        stats_actuales = {}
+        for stat in bonuses:
             actual = getattr(caller.db, stat, None)
-            if actual is None:
-                actual = STAT_DEFAULTS.get(stat, 0)
-            setattr(caller.db, stat, actual + valor)
+            stats_actuales[stat] = actual if actual is not None else STAT_DEFAULTS.get(stat, 0)
+
+        for stat, valor in aplicar_subclase(stats_actuales, subclase_id).items():
+            setattr(caller.db, stat, valor)
 
         caller.db.subclase = subclase_id
 
