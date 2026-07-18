@@ -1,5 +1,5 @@
 """
-tests/test_recipes.py
+tests/test_recipes_system.py
 
 Tests unitarios para systems/crafting/recipes.py.
 No dependen de Evennia ni Django — se ejecutan con unittest estándar.
