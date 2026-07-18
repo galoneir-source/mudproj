@@ -6,7 +6,7 @@ Comando del sistema de clases de personaje:
 """
 from evennia import Command, CmdSet
 
-from systems.classes.classes import CLASES, clase_valida
+from systems.classes.classes import CLASES, clase_valida, aplicar_clase
 from systems.combat.engine import STAT_DEFAULTS
 
 
@@ -121,11 +121,13 @@ class CmdClase(Command):
         info = CLASES[clase_id]
         bonuses = info["stat_bonus"]
 
-        for stat, valor in bonuses.items():
+        stats_actuales = {}
+        for stat in bonuses:
             actual = getattr(caller.db, stat, None)
-            if actual is None:
-                actual = STAT_DEFAULTS.get(stat, 0)
-            setattr(caller.db, stat, actual + valor)
+            stats_actuales[stat] = actual if actual is not None else STAT_DEFAULTS.get(stat, 0)
+
+        for stat, valor in aplicar_clase(stats_actuales, clase_id).items():
+            setattr(caller.db, stat, valor)
 
         caller.db.clase = clase_id
 
