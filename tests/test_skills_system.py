@@ -1,5 +1,5 @@
 """
-tests/test_skills_trees.py
+tests/test_skills_system.py
 
 Tests unitarios puros para systems/skills/trees.py y systems/skills/engine.py.
 No dependen de Evennia ni Django.
