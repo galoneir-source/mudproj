@@ -1,5 +1,5 @@
 """
-tests/test_spawn_tables.py
+tests/test_spawn_system.py
 
 Tests unitarios para systems/spawn/tables.py.
 No dependen de Evennia ni Django.

@@ -1,5 +1,5 @@
 """
-tests/test_engine.py
+tests/test_engine_system.py
 
 Tests unitarios para systems/combat/engine.py.
 No dependen de Evennia ni de Django — se ejecutan con unittest estándar.

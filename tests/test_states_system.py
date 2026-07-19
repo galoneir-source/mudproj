@@ -1,5 +1,5 @@
 """
-tests/test_states.py
+tests/test_states_system.py
 
 Tests unitarios para systems/combat/states.py.
 No dependen de Evennia ni Django — se ejecutan con unittest estándar.
