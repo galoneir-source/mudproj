@@ -243,6 +243,55 @@ class TestAplicarHabilidad(unittest.TestCase):
     def test_case_insensitive(self):
         self.assertEqual(self._hab("GOLPE FUERTE", 10), self._hab("golpe fuerte", 10))
 
+    # ── dardo_magico / nova_arcana: usan Inteligencia EN LUGAR DE Fuerza ──────
+    # Ambas prometen (en su descripción de systems/skills/trees.py) sustituir
+    # el bonus de Fuerza por el de Inteligencia, no sumarlo encima.
+
+    def test_dardo_magico_ignora_fuerza(self):
+        # dano_base ya incorpora el bonus de la fuerza de quien ataca (como en
+        # el flujo real de resolver_ataque); tras aplicar dardo mágico, ese
+        # bonus debe quedar sustituido por el de inteligencia y desaparecer
+        # la diferencia entre tener mucha o poca fuerza.
+        with patch("random.randint", return_value=4):
+            d_fuerza_baja = calcular_dano_base(fuerza=6, nivel=1)
+            d_fuerza_alta = calcular_dano_base(fuerza=20, nivel=1)
+        resultado_fuerza_baja = _aplicar_habilidad(
+            d_fuerza_baja, "dardo magico", _stats(fuerza=6, inteligencia=10)
+        )
+        resultado_fuerza_alta = _aplicar_habilidad(
+            d_fuerza_alta, "dardo magico", _stats(fuerza=20, inteligencia=10)
+        )
+        self.assertEqual(resultado_fuerza_baja, resultado_fuerza_alta)
+
+    def test_dardo_magico_escala_con_inteligencia(self):
+        base_int_baja = _aplicar_habilidad(10, "dardo magico", _stats(fuerza=10, inteligencia=10))
+        base_int_alta = _aplicar_habilidad(10, "dardo magico", _stats(fuerza=10, inteligencia=20))
+        self.assertGreater(base_int_alta, base_int_baja)
+
+    def test_dardo_magico_stats_por_defecto_no_modifica(self):
+        # fuerza=10 e inteligencia=10 (STAT_DEFAULTS) -> ambos bonus son 0
+        self.assertEqual(self._hab("dardo magico", 10), 10)
+
+    def test_nova_arcana_ignora_fuerza(self):
+        with patch("random.randint", return_value=4):
+            d_fuerza_baja = calcular_dano_base(fuerza=6, nivel=1)
+            d_fuerza_alta = calcular_dano_base(fuerza=20, nivel=1)
+        resultado_fuerza_baja = _aplicar_habilidad(
+            d_fuerza_baja, "nova arcana", _stats(fuerza=6, inteligencia=10)
+        )
+        resultado_fuerza_alta = _aplicar_habilidad(
+            d_fuerza_alta, "nova arcana", _stats(fuerza=20, inteligencia=10)
+        )
+        self.assertEqual(resultado_fuerza_baja, resultado_fuerza_alta)
+
+    def test_nova_arcana_escala_con_inteligencia(self):
+        base_int_baja = _aplicar_habilidad(10, "nova arcana", _stats(fuerza=10, inteligencia=10))
+        base_int_alta = _aplicar_habilidad(10, "nova arcana", _stats(fuerza=10, inteligencia=20))
+        self.assertGreater(base_int_alta, base_int_baja)
+
+    def test_nova_arcana_multiplicador_2_5(self):
+        self.assertEqual(self._hab("nova arcana", 10), 25)
+
 
 # --------------------------------------------------------------------------- #
 #  calcular_xp_recompensa

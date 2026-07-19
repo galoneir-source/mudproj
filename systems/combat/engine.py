@@ -178,15 +178,21 @@ def _aplicar_habilidad(
             return int(d * 3)
         return int(d * 1.5)
 
-    def _dardo_magico(d):
+    def _sustituir_fuerza_por_inteligencia(d):
+        # dano_base ya lleva incorporado un bonus de fuerza (calcular_dano_base);
+        # estas habilidades prometen usar Inteligencia "en lugar de" Fuerza, no
+        # además de ella, así que hay que retirar ese bonus antes de sumar el de INT.
+        fuerza = stats.get("fuerza", 10)
         intel = stats.get("inteligencia", 10)
-        bonus = (intel - 10) // 2
-        return max(1, d + bonus)
+        bonus_fuerza = (fuerza - 10) // 2
+        bonus_intel = (intel - 10) // 2
+        return max(1, d - bonus_fuerza + bonus_intel)
+
+    def _dardo_magico(d):
+        return _sustituir_fuerza_por_inteligencia(d)
 
     def _nova_arcana(d):
-        intel = stats.get("inteligencia", 10)
-        bonus = (intel - 10) // 2
-        return max(1, int((d + bonus) * 2.5))
+        return int(_sustituir_fuerza_por_inteligencia(d) * 2.5)
 
     modificadores = {
         # Rama guerrero

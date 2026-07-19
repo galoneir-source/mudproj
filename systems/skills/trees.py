@@ -32,7 +32,7 @@ HABILIDADES: dict[str, dict] = {
         "coste": 1,
         "requisitos": ["golpe_fuerte"],
         "tipo": "activa",
-        "descripcion": "+5 daño base. Puede desestabilizar al objetivo.",
+        "descripcion": "+5 daño base.",
     },
     "escudo_fe": {
         "nombre": "Escudo de Fe",
