@@ -322,3 +322,67 @@ class TestRespawnScript(SpawnTestBase):
 
         scripts_post = [s for s in self.sala.scripts.all() if s.key == "respawn_script"]
         self.assertEqual(len(scripts_post), 0)
+
+    def _forzar_respawn(self, npc):
+        """Programa el respawn de npc, lo borra y dispara el script de inmediato."""
+        programar_respawn(self.sala, npc)
+        npc.delete()
+        scripts = [s for s in self.sala.scripts.all() if s.key == "respawn_script"]
+        script = scripts[0]
+        script.db.respawn_at = time.time() - 1
+        script.at_repeat()
+        nuevos = [o for o in self.sala.contents
+                  if getattr(o.db, "npc_prototipo", None) == "GOBLIN"]
+        return nuevos[0] if nuevos else None
+
+    def test_respawn_restaura_nombre_personalizado(self):
+        npc = spawn_npc("GOBLIN", self.sala, key_npc="goblin espía")
+        nuevo = self._forzar_respawn(npc)
+        self.assertIsNotNone(nuevo)
+        self.assertEqual(nuevo.key, "goblin espía")
+
+    def test_respawn_restaura_patrol_rooms(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        npc.db.patrol_rooms = [self.sala.dbref, self.room2.dbref]
+        nuevo = self._forzar_respawn(npc)
+        self.assertIsNotNone(nuevo)
+        self.assertEqual(nuevo.db.patrol_rooms, [self.sala.dbref, self.room2.dbref])
+        self.assertTrue(
+            any(s.key == "patrol_script" for s in nuevo.scripts.all())
+        )
+
+    def test_respawn_restaura_oculto_y_no_anuncia(self):
+        npc = spawn_npc("GOBLIN", self.sala, oculto=True, nivel_sigilo=25)
+        nuevo = self._forzar_respawn(npc)
+        self.assertIsNotNone(nuevo)
+        self.assertTrue(nuevo.db.oculto)
+        self.assertEqual(nuevo.db.nivel_sigilo, 25)
+
+    def test_respawn_sin_sala_borra_script(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        programar_respawn(self.sala, npc)
+        npc.delete()
+
+        scripts = [s for s in self.sala.scripts.all() if s.key == "respawn_script"]
+        script = scripts[0]
+        script.db.respawn_at = time.time() - 1
+        script.obj = None
+        script.at_repeat()
+
+        self.assertFalse(script.pk)
+
+    def test_respawn_prototipo_invalido_no_crashea(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        programar_respawn(self.sala, npc)
+        npc.delete()
+
+        scripts = [s for s in self.sala.scripts.all() if s.key == "respawn_script"]
+        script = scripts[0]
+        script.db.npc_prototipo = "PROTOTIPO_QUE_NO_EXISTE"
+        script.db.respawn_at = time.time() - 1
+        script.at_repeat()
+
+        self.assertFalse(script.pk)
+        nuevos = [o for o in self.sala.contents
+                  if getattr(o.db, "npc_prototipo", None) == "GOBLIN"]
+        self.assertEqual(len(nuevos), 0)

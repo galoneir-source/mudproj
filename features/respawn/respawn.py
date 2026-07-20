@@ -39,7 +39,6 @@ class RespawnScript(DefaultScript):
         self.interval = RESPAWN_TICK
         self.persistent = True
         self.db.npc_prototipo = None
-        self.db.sala_dbref = None
         self.db.respawn_at = time.time() + RESPAWN_DEFAULT  # timestamp absoluto
         self.db.patrol_rooms = []
         self.db.oculto = False
@@ -111,7 +110,6 @@ def programar_respawn(sala, npc):
 
     script = sala.scripts.add(RespawnScript)
     script.db.npc_prototipo = prototipo
-    script.db.sala_dbref = sala.dbref
     script.db.respawn_at = time.time() + tiempo
     script.db.patrol_rooms = patrol_rooms
     script.db.oculto = oculto
