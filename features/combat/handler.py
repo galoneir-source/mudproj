@@ -18,6 +18,20 @@ TURNO_TIMEOUT = 15   # segundos antes de acción automática (pasar turno)
 INTERVALO_TURNO = 1  # segundos entre comprobaciones internas
 
 
+def _runas_activas(obj) -> dict:
+    """
+    Runas grabadas en slots que actualmente tienen un objeto equipado.
+
+    Las runas se graban por slot (arma/armadura/accesorio), no por ítem
+    concreto — desequipar el objeto no borra la runa del atributo, así
+    que sin este filtro el efecto seguiría activo para siempre, aunque
+    varias descripciones de runa prometen "mientras esté equipado".
+    """
+    runas = dict(getattr(obj.db, "runas_equipadas", None) or {})
+    eq = dict(getattr(obj.db, "equipamiento", None) or {})
+    return {slot: rid for slot, rid in runas.items() if rid and eq.get(slot)}
+
+
 def _get_stats(obj) -> dict:
     """Lee stats de combate de un objeto Evennia."""
     stats = {}
@@ -50,8 +64,7 @@ def _get_stats(obj) -> dict:
         # Bonuses de runas (bonus_fuerza, bonus_inteligencia)
         try:
             from systems.runes.runes import obtener_efectos
-            runas = dict(getattr(obj.db, "runas_equipadas", {}) or {})
-            ef = obtener_efectos(runas)
+            ef = obtener_efectos(_runas_activas(obj))
             if ef.get("bonus_fuerza"):
                 stats["fuerza"] = (stats.get("fuerza") or 10) + ef["bonus_fuerza"]
             if ef.get("bonus_inteligencia"):
@@ -307,8 +320,7 @@ class CombatHandler(DefaultScript):
         if getattr(actor, "has_account", False):
             try:
                 from systems.runes.runes import obtener_efectos
-                runas = dict(getattr(actor.db, "runas_equipadas", {}) or {})
-                regen = obtener_efectos(runas).get("regen_hp", 0)
+                regen = obtener_efectos(_runas_activas(actor)).get("regen_hp", 0)
                 if regen:
                     hp = int(getattr(actor.db, "hp", 1) or 1)
                     hp_max = int(getattr(actor.db, "hp_max", 100) or 100)
@@ -390,10 +402,7 @@ class CombatHandler(DefaultScript):
                     import random as _rnd
                     try:
                         from systems.runes.runes import obtener_efectos
-                        runas_def = dict(
-                            getattr(objetivo.db, "runas_equipadas", {}) or {}
-                        )
-                        evasion = obtener_efectos(runas_def).get("evasion", 0)
+                        evasion = obtener_efectos(_runas_activas(objetivo)).get("evasion", 0)
                         if evasion and _rnd.random() * 100 < evasion:
                             resultado.exito = False
                             resultado.dano = 0
@@ -435,10 +444,7 @@ class CombatHandler(DefaultScript):
                     if resultado.dano and not resultado.muerto:
                         try:
                             from systems.runes.runes import obtener_efectos
-                            runas_def = dict(
-                                getattr(objetivo.db, "runas_equipadas", {}) or {}
-                            )
-                            reduccion = obtener_efectos(runas_def).get(
+                            reduccion = obtener_efectos(_runas_activas(objetivo)).get(
                                 "reduccion_dano", 0
                             )
                             if reduccion and resultado.dano > 1:
@@ -467,10 +473,7 @@ class CombatHandler(DefaultScript):
                 if resultado.exito and resultado.dano and not resultado.muerto:
                     try:
                         from systems.runes.runes import obtener_efectos
-                        runas_at = dict(
-                            getattr(actor.db, "runas_equipadas", {}) or {}
-                        )
-                        robo = obtener_efectos(runas_at).get("robo_vida", 0)
+                        robo = obtener_efectos(_runas_activas(actor)).get("robo_vida", 0)
                         if robo:
                             hp_a = int(getattr(actor.db, "hp", 1) or 1)
                             hp_max_a = int(getattr(actor.db, "hp_max", 100) or 100)
@@ -515,10 +518,7 @@ class CombatHandler(DefaultScript):
                     estado_bloqueado = False
                     try:
                         from systems.runes.runes import obtener_efectos
-                        runas_def = dict(
-                            getattr(objetivo.db, "runas_equipadas", {}) or {}
-                        )
-                        resist = obtener_efectos(runas_def).get(
+                        resist = obtener_efectos(_runas_activas(objetivo)).get(
                             "resistencia_estados", 0
                         )
                         if resist and _rnd2.random() * 100 < resist:
@@ -548,10 +548,7 @@ class CombatHandler(DefaultScript):
                     try:
                         from systems.runes.runes import obtener_efectos
                         from systems.combat.states import aplicar_estado
-                        runas_at = dict(
-                            getattr(actor.db, "runas_equipadas", {}) or {}
-                        )
-                        sangrado_ch = obtener_efectos(runas_at).get(
+                        sangrado_ch = obtener_efectos(_runas_activas(actor)).get(
                             "sangrado_chance", 0
                         )
                         if sangrado_ch and _rnd3.random() * 100 < sangrado_ch:

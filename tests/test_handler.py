@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
 
-from features.combat.handler import CombatHandler, _get_stats, _generar_loot
+from features.combat.handler import CombatHandler, _get_stats, _generar_loot, _runas_activas
 from systems.combat.engine import STAT_DEFAULTS
 
 
@@ -48,6 +48,46 @@ class TestGetStats(EvenniaTest):
         stats = _get_stats(obj)
         self.assertEqual(stats["fuerza"], 18)
         self.assertEqual(stats["hp"], 75)
+
+
+# --------------------------------------------------------------------------- #
+#  Tests de _runas_activas
+# --------------------------------------------------------------------------- #
+
+class TestRunasActivas(EvenniaTest):
+    """
+    Regresión: las runas se graban por slot (arma/armadura/accesorio), no
+    por ítem concreto — desequipar el objeto nunca borraba la entrada de
+    db.runas_equipadas, así que el efecto (bonus_fuerza, evasion, etc.)
+    seguía activo para siempre en cualquiera de los ~7 puntos de
+    handler.py que leían runas_equipadas directamente, contradiciendo
+    descripciones como la de RUNA_PODER ("mientras el arma esté
+    equipada"). _runas_activas() filtra por slots con equipo puesto.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.arma = create_object(
+            "typeclasses.objects.Equipo", key="espada de runas", location=self.char1
+        )
+        self.char1.db.equipamiento["arma"] = self.arma
+        self.char1.db.runas_equipadas["arma"] = "RUNA_PODER"
+
+    def test_runa_activa_si_slot_equipado(self):
+        self.assertEqual(_runas_activas(self.char1), {"arma": "RUNA_PODER"})
+
+    def test_runa_inactiva_si_slot_desequipado(self):
+        self.char1.db.equipamiento["arma"] = None
+        self.assertEqual(_runas_activas(self.char1), {})
+
+    def test_bonus_fuerza_desaparece_al_desequipar(self):
+        stats_equipado = _get_stats(self.char1)
+        self.char1.db.equipamiento["arma"] = None
+        stats_desequipado = _get_stats(self.char1)
+        self.assertEqual(
+            stats_desequipado["fuerza"],
+            stats_equipado["fuerza"] - 5,  # RUNA_PODER: +5 Fuerza
+        )
 
 
 # --------------------------------------------------------------------------- #
