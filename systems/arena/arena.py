@@ -54,15 +54,26 @@ def puede_inscribirse(dbrefs_inscritos: list, dbref: str) -> tuple[bool, str]:
 def generar_bracket(inscritos: list) -> dict:
     """
     Genera el bracket inicial dado una lista de dbrefs de jugadores inscritos.
-    Mezcla aleatoriamente y rellena con None (byes) hasta la siguiente potencia de 2.
+    Mezcla aleatoriamente y reparte un bye (None) por pareja como máximo,
+    hasta la siguiente potencia de 2.
+
+    Repartir los byes uno por pareja (en vez de agruparlos al final y
+    emparejar en bloques de dos consecutivos) evita que dos byes caigan en
+    la misma pareja: con 5 o 6 inscritos (3 y 2 byes respectivamente,
+    ambos > 1), emparejar consecutivamente produce una pareja (None, None)
+    — un combate "fantasma" sin ningún jugador real, que además le regala
+    un bye extra e injusto al jugador que le toque enfrentarse a ese hueco
+    en la siguiente ronda (avanza sin jugar un combate real).
     """
     j = list(inscritos)
     random.shuffle(j)
     p2 = _siguiente_potencia_de_2(len(j))
-    while len(j) < p2:
-        j.append(None)
+    byes = p2 - len(j)
 
-    primera_ronda = [(j[i], j[i + 1]) for i in range(0, len(j), 2)]
+    primera_ronda = [(j[i], None) for i in range(byes)]
+    resto = j[byes:]
+    primera_ronda += [(resto[i], resto[i + 1]) for i in range(0, len(resto), 2)]
+
     return {
         "rondas":           [primera_ronda],
         "ronda_actual":     0,

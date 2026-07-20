@@ -136,6 +136,45 @@ class TestGenerarBracket:
         # Con 20 intentos deberían salir distintos órdenes
         assert len(resultados) > 1
 
+    def test_cinco_jugadores_sin_pareja_fantasma(self):
+        """
+        Regresión: con 5 inscritos (potencia 8, 3 byes) el reparto
+        consecutivo agrupaba los 3 None al final, produciendo una pareja
+        (None, None) — un combate sin ningún jugador real, que además le
+        regalaba un bye extra al rival que le tocara en la ronda
+        siguiente. Ninguna pareja debe tener los dos huecos vacíos.
+        """
+        inscritos = [f"#{i}" for i in range(1, 6)]
+        for _ in range(30):
+            b = generar_bracket(inscritos)
+            ronda0 = b["rondas"][0]
+            assert len(ronda0) == 4  # potencia de 2 = 8 → 4 parejas
+            assert not any(p1 is None and p2 is None for p1, p2 in ronda0)
+            nones = sum((p1 is None) + (p2 is None) for p1, p2 in ronda0)
+            assert nones == 3  # 8 - 5 = 3 byes
+
+    def test_seis_jugadores_sin_pareja_fantasma(self):
+        """Mismo bug con 6 inscritos (potencia 8, 2 byes)."""
+        inscritos = [f"#{i}" for i in range(1, 7)]
+        for _ in range(30):
+            b = generar_bracket(inscritos)
+            ronda0 = b["rondas"][0]
+            assert not any(p1 is None and p2 is None for p1, p2 in ronda0)
+            nones = sum((p1 is None) + (p2 is None) for p1, p2 in ronda0)
+            assert nones == 2  # 8 - 6 = 2 byes
+
+    def test_ningun_bye_deja_dos_huecos_vacios_para_ningun_n(self):
+        """Barrido general: para cualquier N entre MIN y MAX_JUGADORES,
+        ninguna pareja de la primera ronda debe quedar (None, None)."""
+        from systems.arena.arena import MIN_JUGADORES, MAX_JUGADORES
+        for n in range(MIN_JUGADORES, MAX_JUGADORES + 1):
+            inscritos = [f"#{i}" for i in range(n)]
+            b = generar_bracket(inscritos)
+            ronda0 = b["rondas"][0]
+            assert not any(p1 is None and p2 is None for p1, p2 in ronda0), (
+                f"n={n} produjo una pareja (None, None)"
+            )
+
 
 # --------------------------------------------------------------------------- #
 #  siguiente_combate
