@@ -8,6 +8,7 @@ de modo que todos los jugadores comparten las mismas 5 tareas cada día.
 Las recompensas escalan con la racha de días consecutivos completados.
 """
 import random
+from datetime import date, timedelta
 
 POOL_DESAFIOS = [
     {
@@ -230,12 +231,27 @@ def bonus_racha_xp(racha: int) -> int:
     return 600
 
 
+def racha_si_completa_hoy(racha: int, ultimo_dia: str | None, hoy_str: str) -> int:
+    """
+    Racha que se otorgaría si el jugador completa los 5 desafíos de hoy.
+
+    Refleja la misma condición que aplica el otorgamiento real de racha
+    (ver `_completar_todos` en features/daily/daily_script.py): la racha
+    solo continúa (racha + 1) si el último día completado fue ayer; en
+    cualquier otro caso (racha ya rota, o nunca completada) se reinicia
+    a 1, aunque `racha` guarde un valor antiguo más alto.
+    """
+    ayer = (date.fromisoformat(hoy_str) - timedelta(days=1)).isoformat()
+    return racha + 1 if ultimo_dia == ayer else 1
+
+
 def formatear_desafios(
     desafios: list,
     progreso: list,
     completados_idx: list,
     racha: int,
     fecha_str: str,
+    ultimo_dia: str | None = None,
 ) -> str:
     """Formatea la lista de desafíos del día con progreso del jugador."""
     sep = "|w" + "─" * 58 + "|n"
@@ -259,8 +275,12 @@ def formatear_desafios(
     total_hoy = len(completados_set)
     racha_str = f"|Y{racha}|n día{'s' if racha != 1 else ''} consecutivo{'s' if racha != 1 else ''}"
     lineas.append(f"  Racha: {racha_str}   |  Hoy: |w{total_hoy}/5|n completados")
-    bonus_m = bonus_racha_monedas(racha + (1 if total_hoy < 5 else 0))
-    bonus_x = bonus_racha_xp(racha + (1 if total_hoy < 5 else 0))
+    # Si ya se completaron los 5 hoy, `racha` ya es el valor real otorgado
+    # (actualizado por _completar_todos); si no, hay que previsualizar
+    # cuál sería la racha si se completan hoy, que no siempre es racha+1.
+    racha_prevista = racha if total_hoy >= 5 else racha_si_completa_hoy(racha, ultimo_dia, fecha_str)
+    bonus_m = bonus_racha_monedas(racha_prevista)
+    bonus_x = bonus_racha_xp(racha_prevista)
     if bonus_m > 0 or bonus_x > 0:
         lineas.append(
             f"  Bonus al completar los 5: |g+{bonus_x} XP|n  |y+{bonus_m} monedas|n"

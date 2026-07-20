@@ -14,6 +14,7 @@ from systems.daily.daily import (
     calcular_multiplicador_racha,
     bonus_racha_monedas,
     bonus_racha_xp,
+    racha_si_completa_hoy,
     formatear_desafios,
     formatear_racha,
 )
@@ -411,7 +412,8 @@ class TestFormatearDesafios:
 
     def test_bonus_racha_aparece_cuando_hay_racha(self):
         d = self._desafios()
-        out = formatear_desafios(d, [0]*5, [], 2, "2026-07-01")
+        # La racha sigue viva: el último día completado fue ayer (2026-06-30).
+        out = formatear_desafios(d, [0]*5, [], 2, "2026-07-01", "2026-06-30")
         assert "Bonus" in out
 
     def test_cinco_lineas_de_desafio(self):
@@ -420,6 +422,53 @@ class TestFormatearDesafios:
         # Cada desafío lleva un [N] — debe haber 5
         assert out.count("[1]") == 1
         assert out.count("[5]") == 1
+
+    def test_bonus_previsualizado_no_asume_racha_viva_por_defecto(self):
+        """
+        Regresión: antes del fix, el bonus previsualizado se calculaba
+        siempre como bonus_racha_xp/monedas(racha + 1), ignorando si la
+        racha realmente seguía viva (último día completado == ayer). Un
+        jugador con racha_desafios=4 guardada de hace una semana (racha
+        ya rota, nunca se resetea a 0 en el atributo) veía prometido el
+        bonus de racha 5 aunque _completar_todos() fuera a otorgarle
+        racha 1 (bonus 0) al completar hoy. Sin ultimo_dia (o con un
+        ultimo_dia que no es ayer), la previsualización debe reflejar el
+        reinicio real: sin línea de "Bonus" porque racha 1 no da bonus.
+        """
+        d = self._desafios()
+        out = formatear_desafios(d, [0] * 5, [], 4, "2026-07-01")
+        assert "Bonus" not in out
+
+    def test_bonus_previsualizado_se_reinicia_si_no_fue_ayer(self):
+        d = self._desafios()
+        # ultimo_dia_desafios es de hace varios días, no ayer → racha rota.
+        out_roto = formatear_desafios(d, [0] * 5, [], 4, "2026-07-05", "2026-06-30")
+        out_vivo = formatear_desafios(d, [0] * 5, [], 4, "2026-07-05", "2026-07-04")
+        assert "Bonus" not in out_roto
+        assert "Bonus" in out_vivo
+
+    def test_bonus_previsualizado_usa_racha_real_si_ya_completo_hoy(self):
+        """Si ya completó los 5 hoy, `racha` YA es el valor real otorgado
+        por _completar_todos — no debe previsualizarse racha+1 encima."""
+        d = self._desafios()
+        out = formatear_desafios(d, [0] * 5, [0, 1, 2, 3, 4], 1, "2026-07-01")
+        assert "Bonus" not in out
+
+
+class TestRachaSiCompletaHoy:
+    def test_continua_si_ultimo_dia_fue_ayer(self):
+        assert racha_si_completa_hoy(3, "2026-06-30", "2026-07-01") == 4
+
+    def test_reinicia_si_ultimo_dia_no_fue_ayer(self):
+        assert racha_si_completa_hoy(3, "2026-06-20", "2026-07-01") == 1
+
+    def test_reinicia_si_nunca_completo(self):
+        assert racha_si_completa_hoy(0, None, "2026-07-01") == 1
+
+    def test_reinicia_incluso_con_racha_alta_guardada(self):
+        # racha_desafios nunca se resetea a 0 en el atributo — solo se
+        # sobrescribe la próxima vez que se completan los 5 de un día.
+        assert racha_si_completa_hoy(10, "2026-05-01", "2026-07-01") == 1
 
 
 class TestFormatearRacha:

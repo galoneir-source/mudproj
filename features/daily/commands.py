@@ -72,7 +72,8 @@ class CmdDesafios(Command):
         desafios = generar_desafios_del_dia(hoy)
         progreso, completados = _progreso_actual(caller, hoy)
         racha = int(getattr(caller.db, "racha_desafios", 0) or 0)
-        caller.msg(formatear_desafios(desafios, progreso, completados, racha, hoy))
+        ultimo_dia = getattr(caller.db, "ultimo_dia_desafios", None)
+        caller.msg(formatear_desafios(desafios, progreso, completados, racha, hoy, ultimo_dia))
 
 
 class DailyCmdSet(CmdSet):
