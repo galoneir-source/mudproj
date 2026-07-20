@@ -868,6 +868,12 @@ class CombatHandler(DefaultScript):
             return
         hp_obj = max(0, (getattr(objetivo.db, "hp", 0) or 0) - daño)
         _set_stat(objetivo, "hp", hp_obj)
+        # Tracking de daño en Jefe de Mundo (igual que el ataque directo del jugador)
+        if (getattr(objetivo.db, "es_jefe_mundo", False)
+                and getattr(actor, "has_account", False)):
+            tracker = dict(getattr(objetivo.ndb, "dano_por_jugador", None) or {})
+            tracker[actor.dbref] = tracker.get(actor.dbref, 0) + daño
+            objetivo.ndb.dano_por_jugador = tracker
         nombre_mascota = mascota.get("nombre", "tu mascota")
         self.obj.msg_contents(
             f"|y{nombre_mascota}|n muerde a |r{objetivo.key}|n "

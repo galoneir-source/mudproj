@@ -291,6 +291,29 @@ class TestCombatHandlerMascota(EvenniaTest):
         self.handler._aplicar_ataque_mascota(self.char1, self.npc)
         self.assertTrue(any("Fang" in m or "muerde" in m for m in mensajes_sala))
 
+    def test_pet_ataca_jefe_mundo_registra_dano(self):
+        """
+        Regresión: el ataque de la mascota reducía el HP del objetivo pero
+        nunca actualizaba ndb.dano_por_jugador (a diferencia del golpe
+        directo del jugador, que sí lo hace) — el daño de mascota contra un
+        jefe de mundo era invisible para distribuir_recompensas_jefe_mundo(),
+        infravalorando la contribución real de jugadores con mascota fuerte.
+        """
+        mascota = dict(self.char1.db.mascota)
+        daño_esperado = calcular_daño_mascota(mascota["vinculo"], mascota["ataque"])
+        self.npc.db.es_jefe_mundo = True
+        self.npc.ndb.dano_por_jugador = {}
+
+        self.handler._aplicar_ataque_mascota(self.char1, self.npc)
+
+        tracker = dict(self.npc.ndb.dano_por_jugador or {})
+        self.assertEqual(tracker.get(self.char1.dbref), daño_esperado)
+
+    def test_pet_ataca_npc_normal_no_registra_dano(self):
+        """Sin es_jefe_mundo, no debe crearse tracker (solo aplica a jefes)."""
+        self.handler._aplicar_ataque_mascota(self.char1, self.npc)
+        self.assertIsNone(getattr(self.npc.ndb, "dano_por_jugador", None))
+
 
 # --------------------------------------------------------------------------- #
 #  CombatHandler — vincuación tras victoria
