@@ -20,7 +20,7 @@ from typeclasses.characters import Character
 from typeclasses.rooms import Room
 
 
-class JugadorDePrueba(Character):
+class JugadorDePruebaArena(Character):
     """
     has_account en Evennia cuenta sesiones conectadas (self.sessions.count()),
     no la mera asignación de account — igual que en test_jefes_mundo.py, este
@@ -136,7 +136,7 @@ class TestInscripcionGrupo(EvenniaTest):
 
 
 def _crear_jugador(key, monedas=1000):
-    j = create.create_object(JugadorDePrueba, key=key)
+    j = create.create_object(JugadorDePruebaArena, key=key)
     j.db.monedas = monedas
     j.msg = lambda text=None, **kw: None
     return j
