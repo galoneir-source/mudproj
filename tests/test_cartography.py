@@ -75,3 +75,117 @@ class TestCmdMapa(EvenniaTest):
         _make_cmd(CmdMapa, self.char1).func()
 
         self.assertIn("1/1", capturado["texto"])
+
+
+class JugadorDePruebaCartografia(Character):
+    """
+    has_account en Evennia cuenta sesiones conectadas (self.sessions.count()),
+    no la mera asignación de account — EvenniaTest conecta una sesión real
+    al Account (self.account) pero no la puppetea sobre self.char1, así que
+    self.char1.has_account sigue siendo False por defecto (mismo gotcha ya
+    documentado en test_jefes_mundo.py/test_arena.py). Room.at_object_receive()
+    filtra por has_account antes de registrar exploración, así que hace
+    falta este typeclass para simular "hay un jugador real detrás" sin
+    montar una sesión real.
+    """
+
+    @property
+    def has_account(self):
+        return True
+
+
+class TestRoomAtObjectReceiveRegistraExploracion(EvenniaTest):
+    """
+    Tests de integración del punto de entrada real de producción:
+    Room.at_object_receive() (typeclasses/rooms.py), que es lo que de
+    verdad dispara el registro de una sala cuando un jugador entra
+    caminando — no _zonas_a_dbref() ni CmdMapa directamente. Ninguno de
+    los tests previos de este archivo ejercitaba este hook; solo el
+    catálogo puro y las funciones ya llamadas a mano.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        self.char1 = create.create_object(JugadorDePruebaCartografia, key="JugadorCarto")
+        self.char1.db.salas_exploradas = []
+        self.char1.msg = lambda text=None, **kw: None
+
+    def test_entrar_a_sala_con_zona_valida_la_registra(self):
+        # es_zona_explorable() exige que la zona esté en el catálogo real
+        # (ZONAS_VALIDAS) — usar un id inventado no dispara el registro.
+        sala = create.create_object(Room, key="Sala real de zona válida")
+        sala.db.zona = "plaza_ciudad"
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertIn(sala.dbref, list(self.char1.db.salas_exploradas))
+
+    def test_entrar_dos_veces_no_duplica(self):
+        sala = create.create_object(Room, key="Sala real revisitada")
+        sala.db.zona = "taberna"
+
+        self.char1.move_to(sala, quiet=True)
+        otra = create.create_object(Room, key="Sala intermedia")
+        otra.db.zona = "mercado"
+        self.char1.move_to(otra, quiet=True)
+        self.char1.move_to(sala, quiet=True)
+
+        exploradas = list(self.char1.db.salas_exploradas)
+        self.assertEqual(exploradas.count(sala.dbref), 1)
+
+    def test_sala_sin_zona_no_se_registra(self):
+        sala = create.create_object(Room, key="Sala sin zona")
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertEqual(list(self.char1.db.salas_exploradas), [])
+
+    def test_zona_inventada_no_se_registra(self):
+        """Solo cuentan las zonas del catálogo real (ZONAS_VALIDAS) — una
+        zona con id arbitrario no lo dispara aunque exista en db.zona."""
+        sala = create.create_object(Room, key="Sala con zona inventada")
+        sala.db.zona = "zona_que_no_existe_en_el_catalogo"
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertEqual(list(self.char1.db.salas_exploradas), [])
+
+    def test_sala_mazmorra_no_se_registra_aunque_tenga_zona(self):
+        sala = create.create_object(Room, key="Sala mazmorra real")
+        sala.db.zona = "plaza_ciudad"
+        sala.db.es_mazmorra = True
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertEqual(list(self.char1.db.salas_exploradas), [])
+
+    def test_sala_vivienda_no_se_registra_aunque_tenga_zona(self):
+        sala = create.create_object(Room, key="Sala vivienda real")
+        sala.db.zona = "barrio_residencial"
+        sala.db.es_vivienda = True
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertEqual(list(self.char1.db.salas_exploradas), [])
+
+    def test_npc_sin_cuenta_no_registra_exploracion(self):
+        from typeclasses.npc import NPC
+
+        sala = create.create_object(Room, key="Sala visitada por NPC")
+        sala.db.zona = "mercado"
+        npc = create.create_object(NPC, key="Goblin de prueba")
+
+        npc.move_to(sala, quiet=True)
+
+        # El NPC no tiene el atributo salas_exploradas inicializado en
+        # absoluto (solo Character lo inicializa en at_object_creation).
+        self.assertIsNone(getattr(npc.db, "salas_exploradas", None))
+
+    def test_primera_visita_real_dispara_logro_primer_viaje(self):
+        sala = create.create_object(Room, key="Sala del primer viaje")
+        sala.db.zona = "bosque_norte"
+
+        self.char1.move_to(sala, quiet=True)
+
+        self.assertIn("primer_viaje", list(self.char1.db.logros or []))
