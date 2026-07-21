@@ -49,16 +49,25 @@ def _buscar_destinatario(nombre: str):
 
 
 def _buscar_obj_inv(caller, nombre: str):
-    """Busca objeto en el inventario del remitente."""
-    candidatos = [
-        obj for obj in caller.contents
-        if nombre.lower() in obj.key.lower()
-    ]
-    if not candidatos:
-        return None, f"|rNo tienes ningún objeto con el nombre '{nombre}'.|n"
-    if len(candidatos) > 1:
-        return None, f"|rNombre ambiguo. Sé más específico.|n"
-    return candidatos[0], ""
+    """
+    Busca objeto en el inventario del remitente por nombre: coincidencia
+    exacta primero, y si hay varias parciales, avisar en vez de rechazar
+    de plano un nombre exacto solo porque también es substring de otro
+    objeto (mismo patrón ya corregido en banco/tienda/grupo/equipamiento).
+    """
+    nombre_l = nombre.lower()
+    exactos = [obj for obj in caller.contents if obj.key.lower() == nombre_l]
+    if len(exactos) == 1:
+        return exactos[0], ""
+
+    parciales = [obj for obj in caller.contents if nombre_l in obj.key.lower()]
+    if len(parciales) > 1:
+        nombres = ", ".join(obj.key for obj in parciales)
+        return None, f"|rNombre ambiguo: {nombres}. Sé más específico.|n"
+    if len(parciales) == 1:
+        return parciales[0], ""
+
+    return None, f"|rNo tienes ningún objeto con el nombre '{nombre}'.|n"
 
 
 def _bandeja(char) -> list:
