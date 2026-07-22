@@ -114,6 +114,27 @@ class TestInscripcionGrupo(EvenniaTest):
         torneo = obtener_torneo_activo()
         self.assertEqual(torneo.db.estado, "activo")
 
+    def test_iniciar_reinicia_el_timer_real_al_timeout_de_combate(self):
+        """
+        Regresión: `iniciar()` hacía `self.interval = TIMEOUT_COMBATE`, que
+        solo actualiza el campo db_interval persistido — el LoopingCall de
+        Twisted ya en marcha (arrancado en at_script_creation con
+        TIMEOUT_INSCRIPCION=600s) seguía corriendo con el intervalo viejo.
+        Efecto real: cualquier torneo que siguiera "activo" 600s después de
+        su creación se cancelaba de golpe (devolviendo cuotas) aunque hubiera
+        combates en curso, porque el timeout de inscripción nunca se
+        reemplazaba de verdad por el de combate (300s). Fix: usar
+        `self.start(interval=...)`, que sí para y relanza el timer real.
+        """
+        from features.arena.tournament_script import TIMEOUT_COMBATE
+
+        _make_cmd(CmdArena, self.char1, "inscribir").func()
+        _make_cmd(CmdArena, self.char2, "inscribir").func()
+        _make_cmd(CmdArena, self.char1, "iniciar").func()
+
+        torneo = obtener_torneo_activo()
+        self.assertEqual(torneo.ndb._task.interval, TIMEOUT_COMBATE)
+
     def test_iniciar_con_un_solo_inscrito_falla(self):
         _make_cmd(CmdArena, self.char1, "inscribir").func()
         _make_cmd(CmdArena, self.char1, "iniciar").func()

@@ -15,7 +15,6 @@ Ciclo de vida:
 """
 
 from evennia import DefaultScript
-from evennia.utils import logger
 
 from systems.trade.trade import (
     nuevo_lado,
@@ -23,12 +22,10 @@ from systems.trade.trade import (
     retirar_objeto,
     establecer_monedas,
     confirmar,
-    desconfirmar_ambos,
     ambos_confirmados,
     validar_monedas,
     formatear_intercambio,
     formatear_oferta_simple,
-    tiene_oferta,
 )
 
 

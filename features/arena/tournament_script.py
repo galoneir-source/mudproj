@@ -160,7 +160,12 @@ class TorneoScript(DefaultScript):
         self.db.sala_arena = sala.dbref
         self.db.bracket    = generar_bracket(inscritos)
         self.db.estado     = "activo"
-        self.interval      = TIMEOUT_COMBATE
+        # No basta con "self.interval = TIMEOUT_COMBATE": eso solo actualiza el
+        # campo db_interval persistido, pero el LoopingCall de Twisted ya en
+        # marcha (arrancado en at_script_creation con TIMEOUT_INSCRIPCION) sigue
+        # corriendo con el intervalo viejo hasta que se reinicia explícitamente.
+        # self.start()/self.restart() sí para y relanza el timer real.
+        self.start(interval=TIMEOUT_COMBATE)
 
         nombres = dict(self.db.nombres or {})
         _anunciar_global(

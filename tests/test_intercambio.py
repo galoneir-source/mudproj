@@ -18,6 +18,8 @@ from features.trade.commands import (
     CmdIntercambiar,
     CmdOfrecer,
     CmdRetirarOferta,
+    _buscar_jugador,
+    _buscar_objeto_inventario,
 )
 from features.trade.trade_session import TradeSession
 from typeclasses.characters import Character
@@ -171,3 +173,39 @@ class TestSwapTrasConfirmar(TradeTestBase):
         self.assertEqual(self.char2.db.monedas, 50)
 
         sesion.delete()
+
+
+class TestBusquedaExactaSobreParcial(TradeTestBase):
+    """
+    Regresión: _buscar_jugador() y _buscar_objeto_inventario()
+    (features/trade/commands.py) hacían coincidencia por substring puro y
+    rechazaban como "ambiguo" en cuanto había 2+ coincidencias parciales,
+    sin priorizar nunca una coincidencia exacta — mismo patrón ya corregido
+    en banco (609bbea), tienda (98d67ae), grupo (e56b9aa), equipamiento
+    (155cbb3) y correo (9d11590). Un jugador con "daga" y "daga oxidada" en
+    el inventario no podía ofrecer la "daga" exacta en un intercambio.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.daga = create.create_object(Object, key="daga", location=self.char1)
+        self.daga_oxidada = create.create_object(
+            Object, key="daga oxidada", location=self.char1
+        )
+
+    def test_objeto_nombre_exacto_no_es_ambiguo_pese_a_substring_de_otro(self):
+        obj, err = _buscar_objeto_inventario(self.char1, "daga")
+        self.assertEqual(obj, self.daga)
+        self.assertEqual(err, "")
+
+    def test_jugador_nombre_exacto_no_es_ambiguo_pese_a_substring_de_otro(self):
+        self.char2.key = "Ana"
+        anabella = create.create_object(
+            Character, key="Anabella", location=self.char1.location
+        )
+        anabella.account = self.char2.account
+
+        obj, err = _buscar_jugador(self.char1, "Ana")
+
+        self.assertEqual(obj, self.char2)
+        self.assertEqual(err, "")

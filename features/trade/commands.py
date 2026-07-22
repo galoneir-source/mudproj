@@ -36,13 +36,15 @@ def _buscar_jugador(caller, nombre: str):
     sala = caller.location
     if not sala:
         return None, "No estás en ninguna sala."
-    candidatos = [
+    nombre_l = nombre.lower()
+    jugadores = [
         obj for obj in sala.contents
-        if obj != caller
-        and hasattr(obj, "account")
-        and obj.account
-        and nombre.lower() in obj.key.lower()
+        if obj != caller and hasattr(obj, "account") and obj.account
     ]
+    exactos = [obj for obj in jugadores if obj.key.lower() == nombre_l]
+    if len(exactos) == 1:
+        return exactos[0], ""
+    candidatos = [obj for obj in jugadores if nombre_l in obj.key.lower()]
     if not candidatos:
         return None, f"|rNo se encontró ningún jugador con el nombre '{nombre}' en esta sala.|n"
     if len(candidatos) > 1:
@@ -53,10 +55,11 @@ def _buscar_jugador(caller, nombre: str):
 
 def _buscar_objeto_inventario(caller, nombre: str):
     """Busca un objeto en el inventario del jugador."""
-    candidatos = [
-        obj for obj in caller.contents
-        if nombre.lower() in obj.key.lower()
-    ]
+    nombre_l = nombre.lower()
+    exactos = [obj for obj in caller.contents if obj.key.lower() == nombre_l]
+    if len(exactos) == 1:
+        return exactos[0], ""
+    candidatos = [obj for obj in caller.contents if nombre_l in obj.key.lower()]
     if not candidatos:
         return None, f"|rNo tienes ningún objeto con el nombre '{nombre}'.|n"
     if len(candidatos) > 1:
