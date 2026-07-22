@@ -30,56 +30,58 @@ def at_server_start():
     This is called every time the server starts up, regardless of
     how it was shut down.
     """
+    from evennia.utils import logger
+
     try:
         from features.time.clock_script import obtener_reloj
         obtener_reloj()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el reloj mundial.")
     try:
         from features.weather.weather_script import obtener_clima_script
         obtener_clima_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de clima.")
     try:
         from features.events.event_script import obtener_evento_script
         obtener_evento_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de eventos.")
     try:
         from features.records.records_script import obtener_records_script
         obtener_records_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de récords.")
     try:
         from features.market.market_script import obtener_mercado_script
         obtener_mercado_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de mercado.")
     try:
         from features.contracts.contract_script import obtener_tablón_script
         obtener_tablón_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el tablón de contratos.")
     try:
         from features.world_bosses.world_boss_script import obtener_world_boss_script
         obtener_world_boss_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de jefes de mundo.")
     try:
         from features.housing.housing_script import obtener_gestor_script
         obtener_gestor_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el gestor de viviendas.")
     try:
         from features.bounty.bounty_script import obtener_recompensas_script
         obtener_recompensas_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de recompensas.")
     try:
         from features.daily.daily_script import obtener_desafios_script
         obtener_desafios_script()
     except Exception:
-        pass
+        logger.log_trace("at_server_start: fallo al arrancar el script de desafíos diarios.")
 
 
 def at_server_stop():
@@ -126,7 +128,8 @@ def at_server_cold_start():
         if salas_temp:
             logger.log_info(f"Cold start: eliminadas {len(salas_temp)} salas de mazmorra huérfanas.")
     except Exception:
-        pass
+        from evennia.utils import logger
+        logger.log_trace("at_server_cold_start: fallo al limpiar salas de mazmorra huérfanas.")
 
 
 def at_server_cold_stop():
