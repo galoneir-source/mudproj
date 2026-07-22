@@ -11,11 +11,6 @@ from evennia.utils.test_resources import EvenniaTest
 from web.api.views import api_room_detail
 
 
-class _BuilderAccount:
-    def check_permstring(self, perm):
-        return perm == "Builder"
-
-
 class TestRoomObjectClassification(EvenniaTest):
 
     def setUp(self):
@@ -39,8 +34,17 @@ class TestRoomObjectClassification(EvenniaTest):
         self.assertNotIn("piedra suelta", personajes_section)
 
     def test_api_room_detail_separates_npcs_from_regular_objects(self):
+        """
+        request.user ES la cuenta directamente en Evennia (AUTH_USER_MODEL =
+        "accounts.AccountDB") — no tiene ningún atributo "db_object". El
+        mock debe imitar eso, no la interfaz incorrecta que _require_builder()
+        asumía antes del fix (ver web/api/views.py).
+        """
         request = RequestFactory().get(f"/api/rooms/{self.room.id}/")
-        request.user = SimpleNamespace(is_authenticated=True, db_object=_BuilderAccount())
+        request.user = SimpleNamespace(
+            is_authenticated=True,
+            check_permstring=lambda perm: perm == "Builder",
+        )
 
         response = api_room_detail(request, self.room.id)
         data = json.loads(response.content.decode("utf-8"))

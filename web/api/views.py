@@ -31,12 +31,18 @@ def _error(msg: str, status: int = 400) -> JsonResponse:
 def _require_builder(request) -> bool:
     """
     Devuelve True si el usuario Django autenticado tiene perm Builder o Admin.
+
+    En Evennia, AUTH_USER_MODEL = "accounts.AccountDB" — request.user YA ES
+    la cuenta (AccountDB), no un modelo de usuario separado con un atributo
+    "db_object" apuntando a ella. No existe tal atributo en AccountDB.
     """
     if not request.user or not request.user.is_authenticated:
         return False
     try:
-        account = request.user.db_object
-        return account.check_permstring("Builder") or account.check_permstring("Admin")
+        return (
+            request.user.check_permstring("Builder")
+            or request.user.check_permstring("Admin")
+        )
     except Exception:
         return False
 
@@ -225,6 +231,8 @@ def api_room_detail(request, dbref: str):
     try:
         from evennia import ObjectDB
         room = ObjectDB.objects.get(id=int(dbref))
+        if not room.is_typeclass("typeclasses.rooms.Room", exact=False):
+            return _error(f"Sala #{dbref} no encontrada.", status=404)
     except (ValueError, ObjectDB.DoesNotExist):
         return _error(f"Sala #{dbref} no encontrada.", status=404)
     except Exception as e:
