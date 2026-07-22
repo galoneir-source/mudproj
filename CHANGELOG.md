@@ -5,6 +5,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+Ronda de revisión de código de todo el proyecto (2026-07-18 a 2026-07-23): auditoría sistema por sistema de `systems/`+`features/`, un barrido de patrones de bug conocidos repetido sobre todo el código, y una revisión de la infraestructura fuera de `systems/features/` (cmdsets, arranque del servidor, construcción del mundo, API web, configuración). 17 commits de fixes reales, todos confirmados en verde en CI.
+
+### Seguridad
+- La API REST (`/api/rooms/`, `/api/rooms/<dbref>/`) rechazaba con 403 a **todo el mundo**, incluidos administradores y Builders legítimos, desde que se escribió: la comprobación de permisos accedía a un atributo inexistente (`request.user.db_object`) y el error quedaba silenciado, devolviendo siempre "acceso denegado". Corregido — además, `/api/rooms/<dbref>/` ya no confunde el dbref de un personaje o de cualquier otro objeto con el de una sala.
+
+### Corregido
+- **Runas de equipamiento**: los efectos de una runa grabada seguían activos indefinidamente tras desequipar el objeto (arma, armadura o accesorio), o incluso combatiendo a manos desnudas.
+- **Desafíos Diarios**: el bonus de racha previsualizado en `desafios` no comprobaba si la racha seguía viva (si se completó ayer), prometiendo un bonus mayor del que realmente se otorgaba al terminar los 5 desafíos del día.
+- **Arena y Torneos PvP**: con 5 o 6 jugadores inscritos, el bracket podía generar un combate contra un jugador fantasma; además, el temporizador interno de combate nunca sustituía de verdad al timeout de inscripción, así que un torneo en curso podía cancelarse de golpe (devolviendo las cuotas) diez minutos después de crearse, incluso en pleno combate.
+- **Correo entre jugadores**: adjuntar un objeto a una carta rechazaba como "ambiguo" un nombre exacto si existía otro objeto con ese nombre como subcadena (p. ej. "daga" junto a "daga oxidada").
+- **Intercambio entre jugadores**: el mismo problema de nombre ambiguo afectaba a la búsqueda de jugador y de objeto de inventario al ofrecer algo en un intercambio.
+- **Clases y Subclases**: `CmdClase`/`CmdSubclase` reimplementaban a mano la lógica de aplicar bonuses en vez de usar la función pura ya existente, con riesgo de que ambas rutas divergieran.
+- **Combate**: los hechizos "dardo mágico" y "nova arcana" sumaban el bonus de Fuerza del personaje en vez de sustituirlo por el de Inteligencia, infravalorando el daño de los personajes orientados a magia.
+- **Jefes de Mundo**: el daño infligido por la mascota de un jugador contra un jefe de mundo no contaba para las recompensas de participación.
+- **Arranque del servidor**: los scripts globales (reloj, clima, mercado, contratos, jefes de mundo, vivienda, cazarrecompensas...) silenciaban cualquier error al arrancar sin registrar nada; ahora cualquier fallo queda en el log.
+
 ## [0.53.0] — 2026-07-01
 
 ### Añadido
