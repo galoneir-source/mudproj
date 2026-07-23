@@ -7,6 +7,7 @@ Rooms are simple containers that has no location of their own.
 
 from evennia.objects.objects import DefaultRoom
 from evennia.utils.utils import inherits_from
+from evennia.utils import logger
 
 from .objects import ObjectParent
 
@@ -60,7 +61,9 @@ class Room(ObjectParent, DefaultRoom):
                 from features.achievements.commands import comprobar_y_notificar
                 comprobar_y_notificar(moved_obj)
         except Exception:
-            pass
+            logger.log_trace(
+                "Room.at_object_receive: fallo al registrar exploración de sala."
+            )
 
 
     def return_appearance(self, looker, **kwargs):

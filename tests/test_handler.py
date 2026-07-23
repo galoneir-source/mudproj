@@ -184,6 +184,25 @@ class TestCombatHandler(EvenniaTest):
         handler = self._crear_handler()
         self.assertEqual(handler.db.turno_actual, 0)
 
+    def test_iniciar_rompe_sigilo_y_cancela_la_tarea_pendiente(self):
+        """
+        Regresión: iniciar() ya ponía oculto=False al entrar en combate, pero
+        no cancelaba la tarea de evennia.utils.delay que Consumible.aplicar()
+        (typeclasses/objects.py, efecto "sigilo") programó para restaurarlo —
+        la tarea vieja seguía viva y disparaba igualmente a su hora original,
+        mandando un "tu sigilo ha expirado" falso después de que el combate
+        ya lo hubiera roto.
+        """
+        self.jugador.db.oculto = True
+        self.jugador.db.nivel_sigilo = 25
+        tarea = MagicMock()
+        self.jugador.ndb.tarea_sigilo = tarea
+
+        self._crear_handler()
+
+        self.assertFalse(self.jugador.db.oculto)
+        tarea.cancel.assert_called_once()
+
     # ------------------------------------------------------------------ #
     #  agregar / eliminar participantes
     # ------------------------------------------------------------------ #

@@ -338,6 +338,13 @@ class Consumible(DefaultObject):
             caller.db.oculto = True
             caller.db.nivel_sigilo = 25
             from evennia.utils import delay as _delay
+            # Cancelar la tarea de una aplicación anterior: si no, el temporizador
+            # viejo dispara igualmente a su hora original y corta el sigilo (con
+            # el mensaje de "ha expirado") aunque se haya vuelto a beber la poción
+            # y debiera seguir activo con la duración nueva.
+            tarea_previa = caller.ndb.tarea_sigilo
+            if tarea_previa:
+                tarea_previa.cancel()
             def _quitar_sigilo(char=caller):
                 try:
                     if char and char.db:
@@ -345,7 +352,7 @@ class Consumible(DefaultObject):
                         char.msg("|xEl efecto de sigilo ha expirado.|n")
                 except Exception:
                     pass
-            _delay(dur, _quitar_sigilo)
+            caller.ndb.tarea_sigilo = _delay(dur, _quitar_sigilo)
             mins = dur // 60
             segs = dur % 60
             dur_txt = f"{mins} min" if not segs else (f"{mins} min {segs} s" if mins else f"{segs} s")

@@ -228,6 +228,9 @@ class CombatHandler(DefaultScript):
                 # El combate rompe el sigilo alquímico
                 if getattr(p.db, "oculto", False) and getattr(p.db, "nivel_sigilo", 0) == 25:
                     p.db.oculto = False
+                    tarea_sigilo = p.ndb.tarea_sigilo
+                    if tarea_sigilo:
+                        tarea_sigilo.cancel()
 
         sala = self.obj
         nombres = ", ".join(p.key for p in participantes)

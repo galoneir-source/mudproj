@@ -90,6 +90,36 @@ class TestConsumibleAplicar(EvenniaTest):
         msg = poc.aplicar(self.char1)
         self.assertIn("No tiene efecto", msg)
 
+    def test_sigilo_activa_oculto(self):
+        poc = _crear_consumible(self.char1, "sigilo", potencia=180)
+        poc.aplicar(self.char1)
+        self.assertTrue(self.char1.db.oculto)
+        self.assertEqual(self.char1.db.nivel_sigilo, 25)
+        self.assertIsNotNone(self.char1.ndb.tarea_sigilo)
+
+    def test_reaplicar_sigilo_cancela_la_tarea_anterior(self):
+        """
+        Regresión: cada Consumible.aplicar(efecto="sigilo") programaba un
+        evennia.utils.delay() nuevo sin cancelar el de una aplicación previa.
+        Si se bebía una segunda poción de sigilo antes de que expirase la
+        primera, el temporizador viejo disparaba igual a su hora original y
+        cortaba el sigilo (con el mensaje de "ha expirado") aunque el jugador
+        acabara de renovarlo con una duración nueva.
+        """
+        from unittest.mock import MagicMock
+
+        poc1 = _crear_consumible(self.char1, "sigilo", potencia=180)
+        poc1.aplicar(self.char1)
+        tarea1 = self.char1.ndb.tarea_sigilo
+        tarea1.cancel = MagicMock()
+
+        poc2 = _crear_consumible(self.char1, "sigilo", potencia=180)
+        poc2.aplicar(self.char1)
+
+        tarea1.cancel.assert_called_once()
+        self.assertIsNot(self.char1.ndb.tarea_sigilo, tarea1)
+        self.assertTrue(self.char1.db.oculto)
+
 
 # --------------------------------------------------------------------------- #
 #  Consumible.consumir — gestión de usos
