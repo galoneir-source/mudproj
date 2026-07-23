@@ -5,7 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
-Continuación de la ronda de revisión de código tras el cierre de v0.54.0: núcleo compartido (`typeclasses/`), contenido y ayuda del juego (`world/`), rendimiento y seguridad. 2 commits de fixes reales, ambos confirmados en verde en CI.
+## [0.55.0] — 2026-07-24
+
+Continuación de la ronda de revisión de código tras el cierre de v0.54.0: núcleo compartido (`typeclasses/`), contenido y ayuda del juego (`world/`), rendimiento, seguridad, y los hooks restantes de `server/conf/` (confirmados como plantilla intacta, sin cambios). 2 commits de fixes reales, ambos confirmados en verde en CI.
 
 ### Corregido
 - El efecto de sigilo de las pociones de alquimia se cortaba antes de tiempo: si se bebía una segunda poción antes de que expirase la primera, el temporizador viejo disparaba igual a su hora original y avisaba de que "el sigilo ha expirado" pese a haberse renovado con una duración nueva. El mismo aviso falso podía aparecer también justo después de que el sigilo se rompiera al entrar en combate.
