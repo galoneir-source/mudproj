@@ -23,18 +23,21 @@ of the screen is done by the unlogged-in "look" command.
 from django.conf import settings
 
 from evennia import utils
+from world.texts import WORLD_TEXTS
 
 CONNECTION_SCREEN = """
 |b==============================================================|n
- Welcome to |g{}|n, version {}!
+ {}
 
- If you have an existing account, connect to it by typing:
-      |wconnect <username> <password>|n
- If you need to create an account, type (without the <>'s):
-      |wcreate <username> <password>|n
+ Bienvenido a |g{}|n, versión {}.
 
- If you have spaces in your username, enclose it in quotes.
- Enter |whelp|n for more info. |wlook|n will re-show this screen.
+ Si ya tienes una cuenta, conéctate escribiendo:
+      |wconnect <usuario> <contraseña>|n
+ Si necesitas crear una cuenta, escribe (sin los <>):
+      |wcreate <usuario> <contraseña>|n
+
+ Si tu nombre de usuario tiene espacios, escríbelo entre comillas.
+ Escribe |whelp|n para más información. |wlook|n vuelve a mostrar esta pantalla.
 |b==============================================================|n""".format(
-    settings.SERVERNAME, utils.get_evennia_version("short")
+    WORLD_TEXTS["system_welcome"], settings.SERVERNAME, utils.get_evennia_version("short")
 )

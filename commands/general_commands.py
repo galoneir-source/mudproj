@@ -683,6 +683,40 @@ class CmdInventario(Command):
 
 
 # --------------------------------------------------------------------------- #
+#  Alias en español de comandos base de Evennia (get/drop/say)
+#
+#  world/help_entries.py (temas "inventario", "loot" y "comandos") siempre
+#  documentó "coger", "soltar" y "decir" como comandos reales, pero nunca se
+#  registró ningún comando con esas keys/aliases — sólo existían los comandos
+#  originales de Evennia en inglés (get/drop/say). Aquí se reemplaza cada uno
+#  por una subclase con key en español y el original como alias, para que la
+#  ayuda del juego describa comandos que de verdad funcionan.
+# --------------------------------------------------------------------------- #
+
+from evennia.commands.default.general import CmdGet as _CmdGet
+from evennia.commands.default.general import CmdDrop as _CmdDrop
+from evennia.commands.default.general import CmdSay as _CmdSay
+
+
+class CmdCoger(_CmdGet):
+    __doc__ = _CmdGet.__doc__
+    key = "coger"
+    aliases = ["get", "grab"]
+
+
+class CmdSoltar(_CmdDrop):
+    __doc__ = _CmdDrop.__doc__
+    key = "soltar"
+    aliases = ["drop"]
+
+
+class CmdDecir(_CmdSay):
+    __doc__ = _CmdSay.__doc__
+    key = "decir"
+    aliases = ["say", '"', "'"]
+
+
+# --------------------------------------------------------------------------- #
 #  CmdSet general
 # --------------------------------------------------------------------------- #
 
@@ -698,3 +732,6 @@ class GeneralCmdSet(CmdSet):
         self.add(CmdPercibir())
         self.add(CmdInventario())
         self.add(CmdUsar())
+        self.add(CmdCoger())
+        self.add(CmdSoltar())
+        self.add(CmdDecir())

@@ -109,7 +109,7 @@ Lista completa de comandos disponibles.
   |wcerrar <salida>|n            — cerrar una puerta
   |wbloquear <salida>|n          — bloquear con llave
   |wdesbloquear <salida>|n       — desbloquear con llave
-  |westadobuerta <salida>|n      — ver estado de una puerta
+  |westadopuerta <salida>|n      — ver estado de una puerta
         """,
     },
 
@@ -315,7 +315,7 @@ Algunas salidas son puertas que pueden estar abiertas, cerradas o bloqueadas.
 
 # Estado de una puerta
 
-  |westadobuerta <salida>|n  — ver si está abierta, cerrada o bloqueada
+  |westadopuerta <salida>|n  — ver si está abierta, cerrada o bloqueada
 
 # Abrir y cerrar
 
