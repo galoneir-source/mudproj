@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+Continuación de la ronda de revisión de código tras el cierre de v0.54.0: núcleo compartido (`typeclasses/`), contenido y ayuda del juego (`world/`), rendimiento y seguridad. 2 commits de fixes reales, ambos confirmados en verde en CI.
+
+### Corregido
+- El efecto de sigilo de las pociones de alquimia se cortaba antes de tiempo: si se bebía una segunda poción antes de que expirase la primera, el temporizador viejo disparaba igual a su hora original y avisaba de que "el sigilo ha expirado" pese a haberse renovado con una duración nueva. El mismo aviso falso podía aparecer también justo después de que el sigilo se rompiera al entrar en combate.
+- La ayuda del juego (`help`) documentaba tres comandos que nunca habían existido — `decir`, `coger` y `soltar` — así que cualquiera que la siguiera al pie de la letra se encontraba con "no entiendo ese comando". Ahora existen de verdad, como alias en español de los comandos base del juego.
+- Corregido un error tipográfico en la ayuda del comando para ver el estado de una puerta (`estadopuerta`).
+- La pantalla de conexión seguía siendo la plantilla en inglés por defecto de Evennia, sin traducir pese al resto del juego.
+
 ## [0.54.0] — 2026-07-23
 
 Ronda de revisión de código de todo el proyecto (2026-07-18 a 2026-07-23): auditoría sistema por sistema de `systems/`+`features/`, un barrido de patrones de bug conocidos repetido sobre todo el código, y una revisión de la infraestructura fuera de `systems/features/` (cmdsets, arranque del servidor, construcción del mundo, API web, configuración). 17 commits de fixes reales, todos confirmados en verde en CI.
