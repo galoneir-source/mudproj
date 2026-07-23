@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.54.0] — 2026-07-23
+
 Ronda de revisión de código de todo el proyecto (2026-07-18 a 2026-07-23): auditoría sistema por sistema de `systems/`+`features/`, un barrido de patrones de bug conocidos repetido sobre todo el código, y una revisión de la infraestructura fuera de `systems/features/` (cmdsets, arranque del servidor, construcción del mundo, API web, configuración). 17 commits de fixes reales, todos confirmados en verde en CI.
 
 ### Seguridad
