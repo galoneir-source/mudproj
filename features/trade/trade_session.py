@@ -2,9 +2,12 @@
 features/trade/trade_session.py
 
 TradeSession — script temporal que gestiona una sesión de intercambio entre
-dos jugadores. No usa interval/timeout propio: se cancela en at_stop si el
-server se recarga, y los comandos comprueban que los jugadores siguen en la
-misma sala.
+dos jugadores. Tiene un timeout total de 120s desde su creación (interval +
+at_repeat -> cancelar(); no se reinicia con cada acción, así que no es un
+timeout "de inactividad" sino un límite fijo de sesión que actúa como red de
+seguridad para propuestas huérfanas). También se cancela en at_server_reload
+si el server se recarga, y los comandos comprueban que los jugadores siguen
+en la misma sala.
 
 Ciclo de vida:
   1. Jugador A usa `intercambiar <B>` → se crea el script.
@@ -35,7 +38,7 @@ class TradeSession(DefaultScript):
         self.key = "trade_session"
         self.desc = "Sesión de intercambio activa"
         self.persistent = False   # Se limpia en reload
-        self.interval = 120       # Auto-cancela tras 2 min de inactividad
+        self.interval = 120       # Auto-cancela 2 min después de crearse (no se reinicia con la actividad)
         self.start_delay = True
         self.db.jugador_a = None  # dbref del iniciador
         self.db.jugador_b = None  # dbref del otro
