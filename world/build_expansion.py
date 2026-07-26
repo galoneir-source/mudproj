@@ -184,8 +184,6 @@ def construir_expansion(caller=None):
         _spawn("HOMBRE_LAGARTO", pantano)
         troll = _spawn("TROLL", guarida)
         # Patrulla del hombre lagarto entre pantano y senda
-        lagarto = _find_room("Pantano Cenagoso")  # ya creado arriba, pero lo buscamos por si acaso
-        # El hombre lagarto lo encontramos en pantano.contents
         for obj in pantano.contents:
             if getattr(obj.db, "npc_prototipo", None) == "HOMBRE_LAGARTO":
                 obj.db.patrol_rooms = [pantano.dbref, senda.dbref]

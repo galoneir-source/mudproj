@@ -1127,7 +1127,7 @@ APRENDIZ_CORRUPTO = {
         ("inteligencia", 16), ("defensa", 6),
         ("experiencia", 0),
         ("temperamento", "agresivo"),
-        ("habilidades", ["dardo magico", "escudo arcano"]),
+        ("habilidades", ["dardo magico"]),
         ("loot", [
             {"key": "cenizas arcanas", "cantidad": 1, "chance": 0.70,
              "desc": "Cenizas impregnadas de energía mágica residual. Queman la mano al tocarlas."},
@@ -1186,7 +1186,7 @@ ARCHIMAGO_VEXTHAR = {
         ("inteligencia", 24), ("defensa", 10),
         ("experiencia", 0),
         ("temperamento", "agresivo"),
-        ("habilidades", ["dardo magico", "escudo arcano", "bola fuego", "drenar vida"]),
+        ("habilidades", ["dardo magico", "bola fuego", "drenar vida"]),
         ("loot", [
             {"key": "núcleo arcano", "cantidad": 1,
              "desc": "El núcleo de energía pura que mantenía a Vexthar con vida. Emana un calor intenso."},
