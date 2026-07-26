@@ -186,6 +186,12 @@ class TorneoScript(DefaultScript):
         """Inicia el próximo combate del bracket o declara al campeón."""
         from systems.arena.arena import siguiente_combate, registrar_ganador, campeon
 
+        # TIMEOUT_COMBATE es "por combate", no un presupuesto total para todo
+        # el torneo: hay que reiniciar el timer real en cada ronda (igual que
+        # en iniciar()), o un torneo de varias rondas que en conjunto supere
+        # los 5 min se cancelaría entero aunque los combates vayan con normalidad.
+        self.start(interval=TIMEOUT_COMBATE)
+
         bracket = dict(self.db.bracket or {})
         if not bracket:
             return

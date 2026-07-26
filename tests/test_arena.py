@@ -135,6 +135,28 @@ class TestInscripcionGrupo(EvenniaTest):
         torneo = obtener_torneo_activo()
         self.assertEqual(torneo.ndb._task.interval, TIMEOUT_COMBATE)
 
+    def test_siguiente_combate_reinicia_el_timer_de_combate(self):
+        """
+        Regresión: TIMEOUT_COMBATE se arrancaba una sola vez en iniciar() y
+        nunca se reiniciaba entre rondas, así que era un presupuesto de 5 min
+        para TODO el torneo (no "por combate" como dice el comentario). Un
+        torneo de varias rondas cuyo tiempo total de combates sumara más de
+        5 min se cancelaba entero (con devolución de cuotas) aunque los
+        combates fueran avanzando con normalidad. Fix: _siguiente_combate()
+        reinicia el timer real en cada ronda con self.start(interval=...).
+        """
+        from unittest.mock import patch
+        from features.arena.tournament_script import TIMEOUT_COMBATE
+
+        _make_cmd(CmdArena, self.char1, "inscribir").func()
+        _make_cmd(CmdArena, self.char2, "inscribir").func()
+        _make_cmd(CmdArena, self.char1, "iniciar").func()
+
+        torneo = obtener_torneo_activo()
+        with patch.object(torneo, "start") as mock_start:
+            torneo._siguiente_combate()
+            mock_start.assert_called_once_with(interval=TIMEOUT_COMBATE)
+
     def test_iniciar_con_un_solo_inscrito_falla(self):
         _make_cmd(CmdArena, self.char1, "inscribir").func()
         _make_cmd(CmdArena, self.char1, "iniciar").func()
