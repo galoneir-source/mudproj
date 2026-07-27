@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `EstadosScript` (efectos de veneno/sangrado/regeneración fuera de combate) fijaba su `interval` sin `start_delay=True`, así que el primer tick se aplicaba de inmediato al terminar el combate en lugar de esperar los 5s esperados — daño o curación un tick antes de lo previsto. Mismo patrón que los bugs de temporizador ya corregidos en mazmorras y arena.
+- Eliminado código muerto en `TorneoScript.inscribir()` (`features/arena/tournament_script.py`): un `import` sin usar, un bucle `for ... pass` sin efecto y un `try/except` que importaba `evtable` sin usarlo nunca.
+
 ## [0.56.0] — 2026-07-27
 
 Ronda de revisión sobre áreas fuera del código de juego propiamente dicho: dependencias, pipeline de CI, contenido de mundo no cubierto en la ronda anterior, locks/permisos, y temporizadores de scripts (concurrencia). 7 commits, todos confirmados en verde en CI (incluida una regresión propia detectada y revertida en el mismo ciclo).
