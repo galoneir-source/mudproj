@@ -83,6 +83,44 @@ def at_server_start():
     except Exception:
         logger.log_trace("at_server_start: fallo al arrancar el script de desafíos diarios.")
 
+    _limpiar_actividad_huerfana()
+
+
+def _limpiar_actividad_huerfana():
+    """
+    CombatHandler, TorneoScript y ExpedicionScript son persistent=False:
+    Evennia para su timer incondicionalmente en cada arranque (reload,
+    cold start o tras una caída) sin borrar la fila de la base de datos
+    (ScriptDB.objects.update_scripts_after_server_start() solo hace
+    script._stop_task(), nunca script.delete()). El resultado es un
+    script "zombie" que sigue existiendo y sigue siendo devuelto como
+    "el combate/torneo/expedición activo" por el código que lo busca,
+    pero cuyo temporizador (turno_timeout, TIMEOUT_COMBATE, etc.) ya no
+    puede volver a dispararse — así que si ninguno de los participantes
+    vuelve a actuar, la actividad queda congelada para siempre y
+    db.en_combate en los jugadores implicados queda en True de forma
+    permanente (solo se limpia normalmente desde dentro del propio
+    handler). Se resuelve cada uno con su propio método de cancelación
+    ya existente, igual que si hubiera terminado por timeout.
+    """
+    from evennia.scripts.models import ScriptDB
+
+    try:
+        for handler in ScriptDB.objects.filter(db_key="combat_handler"):
+            handler._terminar_combate()
+    except Exception:
+        logger.log_trace("at_server_start: fallo al limpiar combates huérfanos tras el reinicio.")
+    try:
+        for torneo in ScriptDB.objects.filter(db_key="torneo_arena"):
+            torneo._cancelar("El servidor se reinició durante el torneo.")
+    except Exception:
+        logger.log_trace("at_server_start: fallo al limpiar torneos huérfanos tras el reinicio.")
+    try:
+        for exped in ScriptDB.objects.filter(db_key="expedicion_script"):
+            exped._limpiar(exito=False)
+    except Exception:
+        logger.log_trace("at_server_start: fallo al limpiar expediciones huérfanas tras el reinicio.")
+
 
 def at_server_stop():
     """
