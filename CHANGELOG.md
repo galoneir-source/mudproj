@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `CombatHandler`, `TorneoScript` y `ExpedicionScript` son `persistent=False`: Evennia para su temporizador incondicionalmente en cada arranque del servidor (reload, cold start o tras una caída) sin borrar la fila de la base de datos, dejando un script "zombie" — sigue siendo devuelto como la actividad activa, pero su timer nunca vuelve a dispararse. Si nadie vuelve a actuar, la actividad queda congelada para siempre: un combate deja `db.en_combate=True` de forma permanente en los jugadores implicados (bloqueando invitar/expulsar de grupo y todos los comandos de duelo), un torneo deja las cuotas de inscripción cobradas sin forma de recuperarlas, y una expedición puede dejar al grupo atrapado en la sala temporal. Se añade una limpieza en el arranque del servidor que resuelve cada actividad huérfana con su propio método de cancelación ya existente (el mismo que se usa para el timeout normal).
+
 ## [0.57.0] — 2026-07-27
 
 Quinta ronda de revisión: barrido sistemático de dos patrones de bug ya conocidos (sin código nuevo desde la ronda anterior) — scripts persistentes sin `start_delay` y bloques `except Exception` silenciosos. 73 sitios inspeccionados, 2 hallazgos reales, ambos confirmados en verde en CI.
