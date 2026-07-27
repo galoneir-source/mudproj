@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.57.0] — 2026-07-27
+
+Quinta ronda de revisión: barrido sistemático de dos patrones de bug ya conocidos (sin código nuevo desde la ronda anterior) — scripts persistentes sin `start_delay` y bloques `except Exception` silenciosos. 73 sitios inspeccionados, 2 hallazgos reales, ambos confirmados en verde en CI.
+
 ### Corregido
 - `EstadosScript` (efectos de veneno/sangrado/regeneración fuera de combate) fijaba su `interval` sin `start_delay=True`, así que el primer tick se aplicaba de inmediato al terminar el combate en lugar de esperar los 5s esperados — daño o curación un tick antes de lo previsto. Mismo patrón que los bugs de temporizador ya corregidos en mazmorras y arena.
 - Eliminado código muerto en `TorneoScript.inscribir()` (`features/arena/tournament_script.py`): un `import` sin usar, un bucle `for ... pass` sin efecto y un `try/except` que importaba `evtable` sin usarlo nunca.
