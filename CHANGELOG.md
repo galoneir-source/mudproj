@@ -5,7 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
-Nueva ronda de revisión sobre áreas fuera del código de juego propiamente dicho: dependencias, pipeline de CI, contenido de mundo no cubierto en la ronda anterior, locks/permisos, y temporizadores de scripts (concurrencia).
+## [0.56.0] — 2026-07-27
+
+Ronda de revisión sobre áreas fuera del código de juego propiamente dicho: dependencias, pipeline de CI, contenido de mundo no cubierto en la ronda anterior, locks/permisos, y temporizadores de scripts (concurrencia). 7 commits, todos confirmados en verde en CI (incluida una regresión propia detectada y revertida en el mismo ciclo).
 
 ### Corregido
 - **Arena y Torneos PvP**: el timeout de combate (`TIMEOUT_COMBATE`, 5 min) solo se arrancaba una vez al iniciar el torneo y nunca se reiniciaba entre rondas, así que en la práctica era un presupuesto de 5 minutos para *todo* el torneo en vez de "por combate" como indica su nombre — un torneo de varias rondas cuyo tiempo total de combates superase los 5 minutos se cancelaba entero (con devolución de cuotas) aunque los combates fueran avanzando con normalidad. Ahora el timer se reinicia en cada ronda.
@@ -13,6 +15,9 @@ Nueva ronda de revisión sobre áreas fuera del código de juego propiamente dic
 - La documentación de `TradeSession` (intercambio entre jugadores) afirmaba explícitamente "no usa interval/timeout propio", justo lo contrario de lo que hace el código (`interval=120` + `at_repeat` que cancela la sesión). Corregida para reflejar el comportamiento real: un límite fijo de 120s desde la creación, no reiniciable por actividad.
 - El pipeline de CI no declaraba permisos explícitos para `GITHUB_TOKEN` ni un límite de tiempo por job; ahora usa `permissions: contents: read` (mínimo privilegio) y `timeout-minutes: 60`.
 - Variable muerta en `world/build_expansion.py` (`lagarto = _find_room(...)`, nunca usada) eliminada.
+
+### Nota
+- Un intento de fijar versión en `requirements.txt` (`evennia~=5.0.1`) rompió el job de Python 3.12 en CI: esa versión de evennia importa `distutils` sin condición, eliminado de la stdlib en 3.12. Revertido de inmediato a `evennia`/`pytest` sin pin (el estado previo, verificado). Ver detalles en el commit `3fda747`.
 
 ## [0.55.0] — 2026-07-24
 
