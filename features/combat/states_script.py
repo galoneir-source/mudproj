@@ -19,6 +19,13 @@ class EstadosScript(DefaultScript):
         self.desc = "Procesa estados de combate activos"
         self.interval = TICK_INTERVAL
         self.persistent = False
+        # Sin start_delay=True, Evennia dispara el primer at_repeat() de
+        # inmediato (no tras TICK_INTERVAL segundos): el estado ya está
+        # poblado en ese momento (programar_estados_script solo se llama
+        # con estados no vacíos), así que un tick de daño/curación se
+        # aplicaba en el instante en que el combate termina, en vez de tras
+        # los TICK_INTERVAL segundos esperados.
+        self.start_delay = True
 
     def at_repeat(self):
         obj = self.obj

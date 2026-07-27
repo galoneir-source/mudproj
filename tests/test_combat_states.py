@@ -13,6 +13,7 @@ from typeclasses.objects import Consumible
 from systems.combat.engine import resolver_ataque, STAT_DEFAULTS
 from systems.combat.states import aplicar_estado, tick_estados
 from features.combat.handler import CombatHandler, _get_stats
+from features.combat.states_script import EstadosScript, programar_estados_script
 
 
 # --------------------------------------------------------------------------- #
@@ -171,3 +172,32 @@ class TestHandlerTicks(EvenniaTest):
         self.char1.db.estados = {"veneno": {"dano_por_turno": 5, "turnos_restantes": 1}}
         handler._aplicar_ticks_estado(self.char1)
         self.assertNotIn("veneno", self.char1.db.estados)
+
+
+# --------------------------------------------------------------------------- #
+#  EstadosScript — no debe aplicar un tick antes de TICK_INTERVAL segundos
+# --------------------------------------------------------------------------- #
+
+class TestEstadosScriptStartDelay(EvenniaTest):
+    """
+    Regresión: sin start_delay=True, Evennia dispara el primer at_repeat()
+    de forma inmediata en vez de esperar TICK_INTERVAL segundos. Como
+    programar_estados_script() solo se llama con estados ya poblados
+    (justo al salir de combate), ese primer tick inmediato aplicaba daño
+    de veneno/sangrado (o curación de regeneración) en el instante mismo
+    en que el combate termina, no tras el intervalo esperado.
+    """
+
+    def test_start_delay_activado(self):
+        script = self.char1.scripts.add(EstadosScript)
+        self.assertTrue(script.start_delay)
+        script.delete()
+
+    def test_programar_no_aplica_tick_inmediato(self):
+        self.char1.db.hp = 50
+        self.char1.db.hp_max = 100
+        self.char1.db.estados = {"veneno": {"dano_por_turno": 5, "turnos_restantes": 2}}
+        programar_estados_script(self.char1)
+        # Si el primer at_repeat() se disparase de inmediato (bug), el HP
+        # ya habría bajado a 45 aquí, antes de que pase ningún tiempo real.
+        self.assertEqual(self.char1.db.hp, 50)
