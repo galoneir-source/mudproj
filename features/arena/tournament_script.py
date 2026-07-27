@@ -89,15 +89,6 @@ class TorneoScript(DefaultScript):
         self.db.nombres = nombres
         self.db.pot = (self.db.pot or 0) + INSCRIPCION_FEE
 
-        # Anuncio global
-        from evennia import search_object
-        for session_obj in jugador.sessions.all() if hasattr(jugador, "sessions") else []:
-            pass
-        try:
-            from evennia.utils import evtable
-        except Exception:
-            pass
-
         _anunciar_global(
             f"|cArena:|n |w{jugador.key}|n se ha inscrito en el torneo. "
             f"({len(inscritos)} inscritos — usa |warena|n para ver estado)"
