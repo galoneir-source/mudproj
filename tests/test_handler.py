@@ -326,6 +326,52 @@ class TestCombatHandler(EvenniaTest):
         self.assertFalse(handler.db.activo)
 
 
+class TestIaNpcCobardeHuida(EvenniaTest):
+    """
+    Regresión: _ia_npc() ponía 'enraged'=True a CUALQUIER NPC (sin mirar su
+    temperamento) al bajar de 50% HP. Como 'enraged' no se resetea hasta el
+    fin del combate y bloquea la rama de huida (HP<25%, gate 'not enraged'),
+    un NPC 'cobarde' que pierde HP de forma gradual (el caso normal: cruza
+    el 50% antes que el 25%) nunca llegaba a poder huir — pese a que
+    world/help_entries.py promete explícitamente "cobarde... puede huir si
+    le atacas".
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+
+        self.npc = create_object("typeclasses.npc.NPC", key="Goblin cobarde")
+        self.npc.db.temperamento = "cobarde"
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=40, hp_max=100, nivel=1)
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.jugador, self.npc])
+
+    def test_cobarde_no_se_enfurece_bajo_el_50_por_ciento(self):
+        self.handler._ia_npc(self.npc)
+        self.assertFalse(self.npc.db.enraged)
+
+    def test_agresivo_si_se_enfurece_bajo_el_50_por_ciento(self):
+        # Regresión inversa: el resto de temperamentos deben seguir
+        # enfureciéndose igual que antes, sin cambio de comportamiento.
+        self.npc.db.temperamento = "agresivo"
+        self.handler._ia_npc(self.npc)
+        self.assertTrue(self.npc.db.enraged)
+
+    def test_cobarde_puede_huir_tras_perder_mas_de_la_mitad_del_hp(self):
+        self.handler._ia_npc(self.npc)  # 40% hp: no se enfurece (ver arriba)
+        self.npc.db.hp = 20  # 20% hp: por debajo del umbral crítico de huida
+        with patch("random.random", return_value=0.1):
+            with patch.object(self.handler, "registrar_accion") as mock_registrar:
+                self.handler._ia_npc(self.npc)
+        mock_registrar.assert_called_once_with(self.npc, "huir")
+
+
 class TestEventniaCompat(EvenniaTest):
     """
     Tests de compatibilidad con el sistema interno de Evennia.

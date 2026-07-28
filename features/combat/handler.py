@@ -1040,6 +1040,7 @@ class CombatHandler(DefaultScript):
         hp_max_npc = getattr(npc.db, "hp_max", 100) or 100
         porcentaje_hp = hp_npc / hp_max_npc
         enraged = bool(getattr(npc.db, "enraged", False))
+        temperamento = getattr(npc.db, "temperamento", "neutral") or "neutral"
         habilidades = getattr(npc.db, "habilidades", []) or []
 
         # Elegir objetivo: el jugador con HP más bajo
@@ -1063,8 +1064,13 @@ class CombatHandler(DefaultScript):
                 self.registrar_accion(npc, "huir")
                 return
 
-        # Entrar en modo enraged si HP < 50%
-        if porcentaje_hp < 0.50 and not enraged:
+        # Entrar en modo enraged si HP < 50% (los NPC 'cobarde' nunca se
+        # enfurecen: si lo hicieran, el umbral de furia (50%) se dispararía
+        # antes que el de huida (25%) y el flag 'enraged', que no se
+        # resetea hasta el fin del combate, bloquearía la huida para el
+        # resto del combate — justo el comportamiento que "cobarde" promete
+        # evitar, ver world/help_entries.py: "puede huir si le atacas").
+        if porcentaje_hp < 0.50 and not enraged and temperamento != "cobarde":
             npc.db.enraged = True
             if npc.location:
                 npc.location.msg_contents(
