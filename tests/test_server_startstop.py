@@ -13,6 +13,7 @@ Ejecutar con:
 """
 from unittest.mock import patch
 
+from evennia import create_object
 from evennia.scripts.models import ScriptDB
 from evennia.utils.create import create_script
 from evennia.utils.test_resources import EvenniaTest
@@ -95,6 +96,44 @@ class TestLimpiezaCombateHuerfano(EvenniaTest):
         self.assertFalse(self.char1.db.en_combate)
         self.assertFalse(self.char2.db.en_combate)
         self.assertEqual(ScriptDB.objects.filter(db_key="combat_handler").count(), 0)
+
+    def test_fallo_en_un_combate_no_bloquea_la_limpieza_de_otro(self):
+        """
+        Regresión: _limpiar_actividad_huerfana() envolvía el bucle entero de
+        cada tipo de script en un único try/except (a diferencia del patrón
+        ya establecido para los 9 scripts globales de arriba, cada uno con
+        su propio try/except). Si _terminar_combate() fallaba para UN
+        combate huérfano (p. ej. su sala fue borrada mientras el servidor
+        estaba caído), la excepción abortaba el bucle entero y ningún otro
+        combate huérfano del mismo tipo se limpiaba — justo el bug que este
+        mecanismo existe para prevenir, disparado por otra vía.
+        """
+        from features.combat.handler import CombatHandler
+
+        sala2 = create_object("typeclasses.rooms.Room", key="Otra Sala")
+
+        handler_malo = self.room1.scripts.add(CombatHandler)
+        handler_malo.db.participantes = [self.char1]
+        self.char1.db.en_combate = True
+
+        handler_bueno = sala2.scripts.add(CombatHandler)
+        handler_bueno.db.participantes = [self.char2]
+        self.char2.db.en_combate = True
+
+        original = CombatHandler._terminar_combate
+
+        def _fallar_solo_para_el_malo(self):
+            if self.id == handler_malo.id:
+                raise RuntimeError("boom")
+            return original(self)
+
+        with patch.object(CombatHandler, "_terminar_combate", _fallar_solo_para_el_malo):
+            at_server_start()
+
+        # El handler bueno se limpió igual, pese al fallo del otro.
+        self.assertFalse(self.char2.db.en_combate)
+        self.assertEqual(ScriptDB.objects.filter(db_key="combat_handler").count(), 1)
+        self.assertTrue(self.char1.db.en_combate)  # el malo sigue zombie, sin limpiar
 
 
 class TestLimpiezaTorneoHuerfano(EvenniaTest):

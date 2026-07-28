@@ -953,7 +953,8 @@ class CombatHandler(DefaultScript):
             if estados:
                 from features.combat.states_script import programar_estados_script
                 programar_estados_script(participante)
-        sala.msg_contents("|gEl combate ha terminado.|n\n")
+        if sala:
+            sala.msg_contents("|gEl combate ha terminado.|n\n")
         self.delete()
 
     def _dar_xp_a_grupo(self, asesino, xp_base: int):

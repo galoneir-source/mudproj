@@ -104,22 +104,28 @@ def _limpiar_actividad_huerfana():
     ya existente, igual que si hubiera terminado por timeout.
     """
     from evennia.scripts.models import ScriptDB
+    from evennia.utils import logger
 
-    try:
-        for handler in ScriptDB.objects.filter(db_key="combat_handler"):
+    # Cada script se limpia en su propio try/except (mismo patrón que los
+    # 9 scripts globales más arriba): si uno falla (p. ej. su sala fue
+    # borrada mientras el servidor estaba caído y _terminar_combate()
+    # revienta al llamar sala.msg_contents()), no debe abortar la limpieza
+    # de los demás scripts huérfanos del mismo tipo ni de los otros tipos.
+    for handler in ScriptDB.objects.filter(db_key="combat_handler"):
+        try:
             handler._terminar_combate()
-    except Exception:
-        logger.log_trace("at_server_start: fallo al limpiar combates huérfanos tras el reinicio.")
-    try:
-        for torneo in ScriptDB.objects.filter(db_key="torneo_arena"):
+        except Exception:
+            logger.log_trace("at_server_start: fallo al limpiar un combate huérfano tras el reinicio.")
+    for torneo in ScriptDB.objects.filter(db_key="torneo_arena"):
+        try:
             torneo._cancelar("El servidor se reinició durante el torneo.")
-    except Exception:
-        logger.log_trace("at_server_start: fallo al limpiar torneos huérfanos tras el reinicio.")
-    try:
-        for exped in ScriptDB.objects.filter(db_key="expedicion_script"):
+        except Exception:
+            logger.log_trace("at_server_start: fallo al limpiar un torneo huérfano tras el reinicio.")
+    for exped in ScriptDB.objects.filter(db_key="expedicion_script"):
+        try:
             exped._limpiar(exito=False)
-    except Exception:
-        logger.log_trace("at_server_start: fallo al limpiar expediciones huérfanas tras el reinicio.")
+        except Exception:
+            logger.log_trace("at_server_start: fallo al limpiar una expedición huérfana tras el reinicio.")
 
 
 def at_server_stop():

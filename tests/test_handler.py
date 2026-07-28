@@ -7,7 +7,7 @@ Usan el framework de tests de Evennia (EvenniaTest) que arranca Django y la BD d
 Ejecutar con:
   cd /opt/evennia/mudproj && venv/bin/evennia test mygame.tests.test_handler
 """
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
@@ -324,6 +324,24 @@ class TestCombatHandler(EvenniaTest):
         handler._terminar_combate()
         # El handler se elimina al terminar; db.activo debe ser False
         self.assertFalse(handler.db.activo)
+
+    def test_terminar_combate_sin_sala_no_falla(self):
+        """
+        Regresión: _terminar_combate() hacía sala.msg_contents(...) sin
+        comprobar antes si self.obj (la sala) seguía existiendo. Si la sala
+        fue borrada (p. ej. limpieza del mundo mientras el combate quedó
+        huérfano tras un reinicio del servidor, ver
+        _limpiar_actividad_huerfana en server/conf/at_server_startstop.py),
+        esa llamada lanzaba AttributeError sobre None DESPUÉS de haber
+        limpiado ya el estado de los participantes pero ANTES de borrarse a
+        sí mismo — dejando el script zombie para siempre y abortando, si se
+        llama desde un bucle sin try/except por elemento, la limpieza de
+        cualquier otro combate huérfano restante.
+        """
+        handler = self._crear_handler()
+        with patch.object(type(handler), "obj", new_callable=PropertyMock, return_value=None):
+            handler._terminar_combate()  # no debe lanzar excepción
+        self.assertFalse(self.jugador.db.en_combate)
 
 
 class TestIaNpcCobardeHuida(EvenniaTest):
