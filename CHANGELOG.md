@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- IA de NPC (`_ia_npc`, `features/combat/handler.py`): cualquier NPC entraba en modo `enraged` (furia) al bajar de 50% HP, sin mirar su temperamento. Como `enraged` no se resetea hasta el fin del combate y bloquea la rama de huida (HP < 25%, con condición `not enraged`), un NPC con temperamento `cobarde` que perdiera HP de forma gradual —el caso normal, cruzando primero el 50% y luego el 25%— nunca llegaba a poder huir, pese a que `world/help_entries.py` promete explícitamente "cobarde... puede huir si le atacas". Los NPC `cobarde` ya no entran en modo `enraged`, dejando su rama de huida alcanzable; el resto de temperamentos no cambia de comportamiento.
+
 ## [0.58.0] — 2026-07-28
 
 Sexta ronda de revisión: qué ocurre con los scripts `persistent=False` (CombatHandler, TorneoScript, ExpedicionScript) durante un `evennia reload` o reinicio. Confirma un mecanismo más sutil de lo esperado: Evennia no borra la fila del script al reiniciar, solo detiene su temporizador — el script queda "zombie", devuelto como actividad activa pero incapaz de resolverse solo.
