@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.61.0] — 2026-07-28
+
+Novena ronda de revisión: autorrevisión del propio fix de la ronda anterior (`_limpiar_actividad_huerfana()`, v0.58.0) en vez de código antiguo nunca tocado — 3 bugs reales, dos de ellos solo visibles al escribir un test que forzara de verdad la ruta de fallo.
+
+### Corregido
+- `_limpiar_actividad_huerfana()` (`server/conf/at_server_startstop.py`, añadida en la limpieza de actividad huérfana tras reinicio) envolvía el bucle entero de cada tipo de script (combates/torneos/expediciones huérfanos) en un único try/except, en vez del patrón ya establecido de un try/except por elemento (como los 9 scripts globales de más arriba en el mismo archivo). Si `_terminar_combate()`/`_cancelar()`/`_limpiar()` fallaba para UN script huérfano, la excepción abortaba la limpieza de todos los demás del mismo tipo — justo el bug de "actividad congelada para siempre" que este mecanismo existe para prevenir, disparado por otra vía. Ahora cada script se limpia en su propio try/except.
+- Ese mismo bloque `except` llamaba a `logger.log_trace(...)` sin importar `logger` en el ámbito de la función — cualquier fallo real habría producido un `NameError` en vez de loguearse y continuar, propagando la excepción hacia arriba. Añadido el import que faltaba.
+- `CombatHandler._terminar_combate()` (`features/combat/handler.py`) llamaba `sala.msg_contents(...)` sin comprobar antes si `self.obj` (la sala) seguía existiendo — si la sala fue borrada, la llamada lanzaba `AttributeError` después de limpiar el estado de los participantes pero antes de que el script se borrara a sí mismo. Ahora comprueba `if sala:` antes de anunciar, igual que el resto de métodos de limpieza del proyecto.
+
 ## [0.60.0] — 2026-07-28
 
 Octava ronda de revisión: cross-check exhaustivo de `world/help_entries.py` contra el código real (mismo método que encontró el bug de "cobarde" en la ronda anterior) — solo un hallazgo menor, el resto del archivo coincide exactamente con la implementación.
