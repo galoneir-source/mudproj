@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.60.0] — 2026-07-28
+
+Octava ronda de revisión: cross-check exhaustivo de `world/help_entries.py` contra el código real (mismo método que encontró el bug de "cobarde" en la ronda anterior) — solo un hallazgo menor, el resto del archivo coincide exactamente con la implementación.
+
 ### Corregido
 - `help percibir` (`world/help_entries.py`) documentaba la fórmula de percepción como `Inteligencia + Nivel ÷ 2` sin mencionar que `PerceptionManager.nivel_percepcion()` también aplica una penalización por hora del día (noche/anochecer/amanecer) y por clima (lluvia/tormenta/niebla). Añadida la mención de la penalización a la entrada de ayuda; sin cambios de lógica.
 
