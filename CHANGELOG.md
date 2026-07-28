@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `help percibir` (`world/help_entries.py`) documentaba la fórmula de percepción como `Inteligencia + Nivel ÷ 2` sin mencionar que `PerceptionManager.nivel_percepcion()` también aplica una penalización por hora del día (noche/anochecer/amanecer) y por clima (lluvia/tormenta/niebla). Añadida la mención de la penalización a la entrada de ayuda; sin cambios de lógica.
+
 ## [0.59.0] — 2026-07-28
 
 Séptima ronda de revisión: IA reactiva de NPC (`_ia_npc`) y conectividad del grafo de salidas del mundo — la segunda salió limpia, sin cambios de código.

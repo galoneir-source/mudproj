@@ -391,7 +391,10 @@ entidades ocultas en la sala actual.
 # Nivel de percepción
 
 Tu percepción depende de tu |wInteligencia|n y tu |wNivel|n:
-  Percepción = Inteligencia + Nivel ÷ 2
+  Percepción = Inteligencia + Nivel ÷ 2 (− penalización por hora y clima)
+
+La oscuridad de la noche y el mal tiempo (niebla, tormenta…) reducen tu
+percepción efectiva; un cielo despejado y buena luz no la penalizan.
 
 # Qué puedes descubrir
 
