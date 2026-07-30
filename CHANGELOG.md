@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.63.0] — 2026-07-30
+
+Ronda de rendimiento: se propusieron candidatos de rendimiento (no bugs de comportamiento) y se corrigió el único que resultó seguro de aplicar tras verificación empírica contra la suite de tests.
+
+### Corregido
+- `hora_actual()`/`obtener_reloj()` (`features/time/clock_script.py`), `clima_actual()`/`obtener_clima_script()` (`features/weather/weather_script.py`) y `obtener_evento_activo()`/`obtener_evento_script()`/`tiempo_restante_evento()` (`features/events/event_script.py`) hacían `ScriptDB.objects.filter(db_key=...).exists()` seguido de `.first()` — dos consultas a la base de datos para resolver el mismo script singleton. Reducido a una sola consulta (`.first()` y comprobación de `None`). `hora_actual()`/`clima_actual()` se llaman en `Room.return_appearance()` (`typeclasses/rooms.py`), invocado en cada movimiento de cualquier jugador entre salas; `obtener_evento_activo()` se llama hasta dos veces por turno en cada combate activo del servidor (`CombatHandler._get_stats()`). Se evaluó además cachear la referencia al script entre llamadas para eliminar la consulta por completo, pero se descartó tras romper la suite real (5 failures + 31 errors, incluido un `IntegrityError` de SQLite): varios tests de `test_time.py`/`test_weather.py`/`test_eventos.py` borran o mutan el script directamente y esperan que las funciones de acceso reflejen el cambio de inmediato, y el rollback transaccional de `EvenniaTest` no dispara señales `post_delete` que pudieran invalidar una caché de ese tipo.
+
 ## [0.62.0] — 2026-07-30
 
 Décima ronda de revisión: `_intentar_captura()` elegía siempre el primer NPC del combate como objetivo, sin comprobar si de verdad estaba debilitado — fallaba en cualquier combate con más de un NPC.
