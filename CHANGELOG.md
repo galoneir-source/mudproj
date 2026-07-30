@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.62.0] — 2026-07-30
+
+Décima ronda de revisión: `_intentar_captura()` elegía siempre el primer NPC del combate como objetivo, sin comprobar si de verdad estaba debilitado — fallaba en cualquier combate con más de un NPC.
+
 ### Corregido
 - `CombatHandler._intentar_captura()` (`features/combat/handler.py`) seleccionaba siempre el primer NPC de `participantes` como objetivo de captura, sin comprobar su HP. En un combate con más de un NPC (grupo, oleada de mazmorra/expedición, o un segundo jugador que se une a un combate ya activo atacando a otro NPC), si ese primer NPC no estaba debilitado pero sí lo estaba otro NPC del mismo combate, el jugador recibía "aún tiene X% de HP" sobre el NPC equivocado y no podía capturar al que sí cumplía el umbral (≤20% HP). Ahora se busca el primer NPC que realmente cumpla el umbral de captura; si ninguno lo cumple, se conserva el comportamiento anterior (informar sobre el primero de la lista).
 
