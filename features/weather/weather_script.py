@@ -58,9 +58,9 @@ def clima_actual() -> str:
     """
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="clima_mundial")
-        if qs.exists():
-            return str(qs.first().db.clima or "despejado")
+        script = ScriptDB.objects.filter(db_key="clima_mundial").first()
+        if script:
+            return str(script.db.clima or "despejado")
     except Exception:
         pass
     return "despejado"
@@ -73,9 +73,9 @@ def obtener_clima_script():
     """
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="clima_mundial")
-        if qs.exists():
-            return qs.first()
+        script = ScriptDB.objects.filter(db_key="clima_mundial").first()
+        if script:
+            return script
     except Exception:
         pass
     return evennia.create_script("features.weather.weather_script.ClimaScript")

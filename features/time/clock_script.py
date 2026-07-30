@@ -59,9 +59,9 @@ def hora_actual() -> int:
     """
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="reloj_mundial")
-        if qs.exists():
-            return int(qs.first().db.hora or 8)
+        script = ScriptDB.objects.filter(db_key="reloj_mundial").first()
+        if script:
+            return int(script.db.hora or 8)
     except Exception:
         pass
     return 8
@@ -74,9 +74,9 @@ def obtener_reloj():
     """
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="reloj_mundial")
-        if qs.exists():
-            return qs.first()
+        script = ScriptDB.objects.filter(db_key="reloj_mundial").first()
+        if script:
+            return script
     except Exception:
         pass
     return evennia.create_script("features.time.clock_script.RelojMundial")

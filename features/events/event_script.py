@@ -110,9 +110,9 @@ def obtener_evento_script() -> EventoMundialScript | None:
     """
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="evento_mundial")
-        if qs.exists():
-            return qs.first()
+        script = ScriptDB.objects.filter(db_key="evento_mundial").first()
+        if script:
+            return script
     except Exception:
         pass
     return evennia.create_script(
@@ -124,9 +124,9 @@ def obtener_evento_activo() -> str | None:
     """Devuelve el event_id activo o None. Seguro ante scripts no iniciados."""
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="evento_mundial")
-        if qs.exists():
-            return qs.first().db.evento_activo or None
+        script = ScriptDB.objects.filter(db_key="evento_mundial").first()
+        if script:
+            return script.db.evento_activo or None
     except Exception:
         pass
     return None
@@ -136,10 +136,9 @@ def tiempo_restante_evento() -> int:
     """Devuelve los segundos que quedan en el evento activo (0 si no hay evento)."""
     try:
         from evennia.scripts.models import ScriptDB
-        qs = ScriptDB.objects.filter(db_key="evento_mundial")
-        if not qs.exists():
+        script = ScriptDB.objects.filter(db_key="evento_mundial").first()
+        if not script:
             return 0
-        script = qs.first()
         ev_id = script.db.evento_activo
         if not ev_id:
             return 0
