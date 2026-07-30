@@ -32,8 +32,20 @@ def _runas_activas(obj) -> dict:
     return {slot: rid for slot, rid in runas.items() if rid and eq.get(slot)}
 
 
-def _get_stats(obj) -> dict:
-    """Lee stats de combate de un objeto Evennia."""
+# Sentinel para distinguir "el llamador no resolvió el evento activo"
+# (se resuelve aquí, comportamiento de siempre) de "ya se resolvió y no hay
+# evento activo" (None explícito, no volver a consultar).
+_SIN_EVENTO_RESUELTO = object()
+
+
+def _get_stats(obj, evento_activo=_SIN_EVENTO_RESUELTO) -> dict:
+    """
+    Lee stats de combate de un objeto Evennia.
+
+    `evento_activo`: id del evento mundial ya resuelto por el llamador (p.
+    ej. una sola vez por turno en _resolver_turno, en vez de una vez por
+    participante). Si no se pasa, se resuelve aquí como antes.
+    """
     stats = {}
     for key, default in STAT_DEFAULTS.items():
         stats[key] = getattr(obj.db, key, None)
@@ -42,9 +54,11 @@ def _get_stats(obj) -> dict:
     # Evento: tormenta mágica (+INT para jugadores)
     if getattr(obj, "has_account", False):
         try:
-            from features.events.event_script import obtener_evento_activo
             from systems.events.events import EVENTOS
-            ev_id = obtener_evento_activo()
+            ev_id = evento_activo
+            if ev_id is _SIN_EVENTO_RESUELTO:
+                from features.events.event_script import obtener_evento_activo
+                ev_id = obtener_evento_activo()
             if ev_id:
                 bonus = EVENTOS.get(ev_id, {}).get("efectos", {}).get("bonus_inteligencia", 0)
                 if bonus:
@@ -392,8 +406,12 @@ class CombatHandler(DefaultScript):
             if not objetivo or objetivo.dbref not in partes_dbrefs:
                 actor.msg("Objetivo inválido. Pasas el turno.")
             else:
-                stats_at = _get_stats(actor)
-                stats_def = _get_stats(objetivo)
+                evento_activo = None
+                if getattr(actor, "has_account", False) or getattr(objetivo, "has_account", False):
+                    from features.events.event_script import obtener_evento_activo
+                    evento_activo = obtener_evento_activo()
+                stats_at = _get_stats(actor, evento_activo=evento_activo)
+                stats_def = _get_stats(objetivo, evento_activo=evento_activo)
                 resultado = resolver_ataque(
                     stats_at, stats_def,
                     actor.key, objetivo.key,
