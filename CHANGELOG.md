@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.64.0] — 2026-07-31
+
+Continuación de la ronda de rendimiento: el candidato acotado al turno de combate que había quedado pendiente tras revertir la caché entre llamadas de la v0.63.0.
+
+### Corregido
+- `CombatHandler._resolver_turno()` (`features/combat/handler.py`) llamaba `_get_stats()` dos veces por turno (atacante y objetivo), y cada llamada resolvía por separado el evento mundial activo (`obtener_evento_activo()`, una consulta a la base de datos) si el participante tenía cuenta de jugador — hasta 2 queries redundantes por turno en cualquier combate con dos jugadores. `_get_stats()` ahora acepta el evento ya resuelto como parámetro opcional (con un valor centinela por defecto que preserva el comportamiento anterior para el resto de llamadores, que no cambian); `_resolver_turno()` lo resuelve una sola vez por turno y lo pasa a ambas llamadas. A diferencia del intento de la v0.63.0, esta caché no persiste entre llamadas ni turnos — se acota a una sola resolución de turno, así que no tiene el riesgo de "staleness" entre tests que rompió la caché a nivel de módulo.
+
 ## [0.63.0] — 2026-07-30
 
 Ronda de rendimiento: se propusieron candidatos de rendimiento (no bugs de comportamiento) y se corrigió el único que resultó seguro de aplicar tras verificación empírica contra la suite de tests.
