@@ -432,6 +432,68 @@ class TestIntentarCaptura(EvenniaTest):
 
 
 # --------------------------------------------------------------------------- #
+#  CombatHandler — intentar captura con más de un NPC en el combate
+# --------------------------------------------------------------------------- #
+
+class TestIntentarCapturaMultiNpc(EvenniaTest):
+    """
+    Regresión: _intentar_captura() cogía siempre el primer NPC de
+    self.db.participantes sin comprobar su HP. En un combate con más de un
+    NPC (grupo, oleada de mazmorra/expedición, o un segundo jugador que se
+    une a un combate ya activo atacando a otro NPC), si el primer NPC de la
+    lista no estaba debilitado pero SÍ lo estaba otro NPC del mismo
+    combate, el jugador recibía "aún tiene X% de HP" sobre el NPC
+    equivocado y no podía capturar al que sí cumplía el umbral (≤20% HP).
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.char1.move_to(self.room1, quiet=True)
+        self.char1.db.mascota = None
+        self.char1.db.hp = 100
+        self.char1.db.hp_max = 100
+        self.char1.db.nivel = 5
+
+        # Primer NPC de la lista: sano, NO capturable.
+        self.npc_sano = _crear_npc(self.room1, nombre="orco", hp=40, hp_max=40)
+        # Segundo NPC: debilitado al 10% de HP, sí capturable.
+        self.npc_debil = _crear_npc(self.room1, nombre="lobo", hp=4, hp_max=40)
+
+        from features.combat.handler import CombatHandler
+        self.handler = create_script(CombatHandler, obj=self.room1)
+        self.handler.db.activo = True
+        self.handler.db.participantes = [self.char1, self.npc_sano, self.npc_debil]
+        self.handler.db.turno_actual = 0
+        self.handler.db.acciones = {}
+        self.handler.db.turno_tiempo = 0
+        self.handler.db.modo_duelo = False
+        self.char1.db.en_combate = True
+        self.npc_sano.db.en_combate = True
+        self.npc_debil.db.en_combate = True
+
+        self.cap = _MsgCapture(self.char1)
+
+    def tearDown(self):
+        try:
+            self.handler.delete()
+        except Exception:
+            pass
+        super().tearDown()
+
+    def test_captura_al_npc_debilitado_aunque_no_sea_el_primero(self):
+        self.handler._intentar_captura(self.char1)
+        self.assertIsNotNone(self.char1.db.mascota)
+        mascota = dict(self.char1.db.mascota or {})
+        self.assertEqual(mascota["especie"], "lobo")
+
+    def test_si_ningun_npc_cumple_el_umbral_reporta_el_primero(self):
+        self.npc_debil.db.hp = 40  # ya no está debilitado: ningún NPC captura
+        self.handler._intentar_captura(self.char1)
+        self.assertIsNone(self.char1.db.mascota)
+        self.assertIn("orco", self.cap.all())
+
+
+# --------------------------------------------------------------------------- #
 #  CmdCapturar — despacho real vía CombatHandler (regresión)
 # --------------------------------------------------------------------------- #
 

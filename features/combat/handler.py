@@ -893,15 +893,27 @@ class CombatHandler(DefaultScript):
             self._siguiente_turno()
             return
 
-        enemigo = next(
-            (p for p in (self.db.participantes or [])
-             if p != actor and not bool(getattr(p, "account", None))),
-            None,
-        )
-        if not enemigo:
+        npcs = [
+            p for p in (self.db.participantes or [])
+            if p != actor and not bool(getattr(p, "account", None))
+        ]
+        if not npcs:
             actor.msg("No hay ningún enemigo que puedas capturar.")
             self._siguiente_turno()
             return
+
+        # Con más de un NPC en el combate (grupo, oleada, o alguien que se
+        # une a un combate ya activo contra otro NPC), hay que elegir el que
+        # de verdad esté debilitado — no el primero de la lista sin más, o
+        # el jugador podía quedar bloqueado con el mensaje de "aún tiene X%
+        # HP" referido a un NPC distinto del que sí cumplía el umbral.
+        enemigo = next(
+            (p for p in npcs if puede_capturar(
+                int(getattr(p.db, "hp", 1) or 1),
+                int(getattr(p.db, "hp_max", 100) or 100),
+            )),
+            npcs[0],
+        )
 
         hp = int(getattr(enemigo.db, "hp", 1) or 1)
         hp_max = int(getattr(enemigo.db, "hp_max", 100) or 100)
