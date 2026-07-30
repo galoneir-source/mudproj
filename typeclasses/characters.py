@@ -114,6 +114,22 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.racha_desafios              = 0
         self.db.ultimo_dia_desafios         = None
         self.db.total_desafios_completados  = 0
+        # --- Amigos ---
+        self.db.amigos = []
+
+    def _notificar_amigos(self, mensaje: str):
+        """Avisa a los jugadores conectados que te tienen en su lista de amigos."""
+        try:
+            import evennia
+            for session in evennia.SESSION_HANDLER.get_sessions():
+                puppet = session.get_puppet()
+                if not puppet or puppet == self:
+                    continue
+                amigos = getattr(puppet.db, "amigos", None) or []
+                if self.dbref in amigos:
+                    puppet.msg(mensaje)
+        except Exception:
+            pass
 
     def at_post_puppet(self, **kwargs):
         """Llamado cuando una cuenta puppetea este personaje (login incluido)."""
@@ -126,6 +142,13 @@ class Character(ObjectParent, DefaultCharacter):
                 self.msg(formatear_notificacion(no_leidas))
         except Exception:
             pass
+        self._notificar_amigos(f"|g{self.key} se ha conectado.|n")
+
+    def at_post_unpuppet(self, account=None, session=None, **kwargs):
+        """Llamado cuando una cuenta deja de controlar este personaje (logout incluido)."""
+        super().at_post_unpuppet(account=account, session=session, **kwargs)
+        if self.sessions.count() == 0:
+            self._notificar_amigos(f"|y{self.key} se ha desconectado.|n")
 
     def at_cmdset_get(self, **kwargs):
         """

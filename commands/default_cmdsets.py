@@ -57,6 +57,7 @@ from features.bounty.commands import BountyCmdSet
 from features.expeditions.commands import ExpeditionCmdSet
 from features.alchemy.commands import AlchemyCmdSet
 from features.daily.commands import DailyCmdSet
+from features.friends.commands import FriendsCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -160,6 +161,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(AlchemyCmdSet)
         # --- Desafíos Diarios ---
         self.add(DailyCmdSet)
+        # --- Amigos ---
+        self.add(FriendsCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
