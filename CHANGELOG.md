@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.65.0] — 2026-07-31
+
+Nueva feature de juego: sistema de lista de amigos.
+
+### Añadido
+- `agregar amigo <jugador>` / `quitar amigo <jugador>` — gestionan tu lista de amigos (`db.amigos`, dbrefs). Relación unidireccional (lista de contactos, sin invitación ni aceptación de la otra parte), con un tope de 30.
+- `amigos` — muestra tu lista con estado en línea/desconectado en tiempo real.
+- Notificación a tus amigos conectados cuando entrás o salís del juego, reutilizando `at_post_puppet`/`at_post_unpuppet` (`typeclasses/characters.py`) y el mismo patrón de `SESSION_HANDLER.get_sessions()` que ya usan los scripts globales de reloj/clima/eventos para sus anuncios — sin escanear la tabla completa de personajes.
+- Lógica pura en `systems/friends/friends.py`, integración Evennia en `features/friends/commands.py`, registrado en `CharacterCmdSet`.
+
 ## [0.64.0] — 2026-07-31
 
 Continuación de la ronda de rendimiento: el candidato acotado al turno de combate que había quedado pendiente tras revertir la caché entre llamadas de la v0.63.0.
