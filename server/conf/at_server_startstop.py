@@ -87,6 +87,11 @@ def at_server_start():
         obtener_cartelera_script()
     except Exception:
         logger.log_trace("at_server_start: fallo al arrancar la cartelera de anuncios.")
+    try:
+        from features.auctions.auction_script import obtener_subastas_script
+        obtener_subastas_script()
+    except Exception:
+        logger.log_trace("at_server_start: fallo al arrancar la casa de subastas.")
 
     _limpiar_actividad_huerfana()
 

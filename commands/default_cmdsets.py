@@ -60,6 +60,7 @@ from features.daily.commands import DailyCmdSet
 from features.friends.commands import FriendsCmdSet
 from features.fast_travel.commands import FastTravelCmdSet
 from features.bulletin.commands import BulletinCmdSet
+from features.auctions.commands import AuctionCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -169,6 +170,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(FastTravelCmdSet)
         # --- Cartelera de anuncios ---
         self.add(BulletinCmdSet)
+        # --- Casa de subastas ---
+        self.add(AuctionCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
