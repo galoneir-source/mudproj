@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.66.0] — 2026-07-31
+
+Nueva feature de juego: viaje rápido entre zonas ya exploradas.
+
+### Añadido
+- `viajar` — lista tus destinos de viaje rápido disponibles (zonas del catálogo de cartografía cuyo dbref ya esté en `db.salas_exploradas`), agrupados por área.
+- `viajar <destino>` — teletransporta al jugador a un destino ya explorado, buscando por nombre de sala (exacto o coincidencia parcial única). Cuesta 20 monedas y tiene un cooldown de 30s entre viajes (`char.ndb`, no persistente); bloqueado mientras `db.en_combate` esté activo.
+- Lógica pura en `systems/fast_travel/fast_travel.py` (catálogo de destinos, búsqueda, validaciones de coste/cooldown, formateo), integración Evennia en `features/fast_travel/commands.py`, registrado en `CharacterCmdSet`. Reutiliza el catálogo `ZONAS_INFO` y el helper `_zonas_a_dbref()` ya existentes del sistema de cartografía en vez de duplicar el mapeo zona→sala.
+
 ## [0.65.0] — 2026-07-31
 
 Nueva feature de juego: sistema de lista de amigos.
