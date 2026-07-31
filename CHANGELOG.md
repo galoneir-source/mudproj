@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.67.0] — 2026-07-31
+
+Nueva feature de juego: cartelera de anuncios global.
+
+### Añadido
+- `cartelera` — ver los anuncios vigentes de la ciudad, ordenados del más reciente al más antiguo.
+- `cartelera publicar <texto>` — publica un anuncio corto (máximo 200 caracteres). Expira a los 3 días. Tablón con capacidad máxima de 15 anuncios vigentes.
+- `cartelera retirar <#>` — retira tu propio anuncio (solo el autor puede hacerlo).
+- Distinta del tablón de contratos (comando `tablón`, misiones generadas por el servidor): esta es una cartelera libre donde cualquier jugador publica mensajes de texto (ventas, avisos de gremio, mensajes generales) — de ahí el nombre de comando `cartelera` para evitar la colisión con `tablón`/`tablon`/`board`.
+- Lógica pura en `systems/bulletin/bulletin.py`, script global persistente en `features/bulletin/bulletin_script.py` (patrón `obtener_cartelera_script()`, arrancado en `server/conf/at_server_startstop.py`), comandos en `features/bulletin/commands.py`, registrado en `CharacterCmdSet`.
+
 ## [0.66.0] — 2026-07-31
 
 Nueva feature de juego: viaje rápido entre zonas ya exploradas.
