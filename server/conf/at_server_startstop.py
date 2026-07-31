@@ -82,6 +82,11 @@ def at_server_start():
         obtener_desafios_script()
     except Exception:
         logger.log_trace("at_server_start: fallo al arrancar el script de desafíos diarios.")
+    try:
+        from features.bulletin.bulletin_script import obtener_cartelera_script
+        obtener_cartelera_script()
+    except Exception:
+        logger.log_trace("at_server_start: fallo al arrancar la cartelera de anuncios.")
 
     _limpiar_actividad_huerfana()
 
