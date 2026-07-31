@@ -58,6 +58,7 @@ from features.expeditions.commands import ExpeditionCmdSet
 from features.alchemy.commands import AlchemyCmdSet
 from features.daily.commands import DailyCmdSet
 from features.friends.commands import FriendsCmdSet
+from features.fast_travel.commands import FastTravelCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -163,6 +164,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(DailyCmdSet)
         # --- Amigos ---
         self.add(FriendsCmdSet)
+        # --- Viaje rápido ---
+        self.add(FastTravelCmdSet)
         # --- General ---
         self.add(GeneralCmdSet)
 
