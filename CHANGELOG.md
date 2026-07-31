@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.68.0] — 2026-08-01
+
+Nueva feature de juego: casa de subastas global.
+
+### Añadido
+- `subasta` — ver todas las subastas activas (objeto, mejor puja, mejor postor, tiempo restante).
+- `subasta publicar <objeto> <precio>` — pone un objeto a subasta con precio de salida. Duración fija de 30 minutos, hasta 3 subastas activas por jugador.
+- `subasta pujar <#> <monto>` — puja por una subasta; la puja mínima es un 5% por encima de la actual. Las monedas quedan retenidas hasta que te superen (reembolso automático) o cierre la subasta.
+- `subasta retirar <#>` — retira tu subasta, solo si nadie ha pujado todavía.
+- Cierre automático (tick cada 60s, `AuctionScript.at_repeat()`): con puja, el objeto pasa al mejor postor y el vendedor cobra el precio final menos una comisión del 5%; sin puja, el objeto vuelve al vendedor.
+- Distinta del mercado (`mercado`, precio fijo, compra inmediata): aquí se compite al alza durante un tiempo límite.
+- Lógica pura en `systems/auctions/auctions.py`, script global persistente en `features/auctions/auction_script.py` (patrón `obtener_subastas_script()`, arrancado en `server/conf/at_server_startstop.py`), comandos en `features/auctions/commands.py`, registrado en `CharacterCmdSet`.
+
 ## [0.67.0] — 2026-07-31
 
 Nueva feature de juego: cartelera de anuncios global.
