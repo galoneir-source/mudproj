@@ -809,6 +809,12 @@ class CombatHandler(DefaultScript):
                 self._siguiente_turno()
         else:
             # Jugador → enviarlo a sala de inicio con HP mínimo
+            if asesino and getattr(asesino, "has_account", False):
+                try:
+                    from features.guild_wars.guild_war_script import obtener_guerra_script
+                    obtener_guerra_script().registrar_kill_si_en_guerra(asesino, muerto)
+                except Exception:
+                    logger.log_trace("Guild war kill hook error.")
             self._limpiar_estado_combate(muerto)
             muerto.db.hp = 1
             combate_continuaba = bool(self.db.activo)

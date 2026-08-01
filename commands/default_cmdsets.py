@@ -61,6 +61,7 @@ from features.friends.commands import FriendsCmdSet
 from features.fast_travel.commands import FastTravelCmdSet
 from features.bulletin.commands import BulletinCmdSet
 from features.auctions.commands import AuctionCmdSet
+from features.guild_wars.commands import GuildWarCmdSet
 from commands.general_commands import GeneralCmdSet
 
 
@@ -114,6 +115,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(DuelCmdSet)
         # --- Gremios ---
         self.add(GuildCmdSet)
+        # --- Guerra de gremios ---
+        self.add(GuildWarCmdSet)
         # --- Récords ---
         self.add(RecordsCmdSet)
         # --- Mercado ---

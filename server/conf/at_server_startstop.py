@@ -92,6 +92,11 @@ def at_server_start():
         obtener_subastas_script()
     except Exception:
         logger.log_trace("at_server_start: fallo al arrancar la casa de subastas.")
+    try:
+        from features.guild_wars.guild_war_script import obtener_guerra_script
+        obtener_guerra_script()
+    except Exception:
+        logger.log_trace("at_server_start: fallo al arrancar el gestor de guerras de gremios.")
 
     _limpiar_actividad_huerfana()
 
