@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.69.0] — 2026-08-01
+
+Nueva feature de juego: guerra de gremios.
+
+### Añadido
+- `guerra` — ver el estado de la guerra activa de tu gremio, o el reto pendiente si lo hay.
+- `guerra declarar <gremio>` — el Líder declara la guerra a otro gremio (reto con 5 minutos para responder).
+- `guerra aceptar` / `guerra rechazar` — el Líder del gremio retado responde al reto.
+- `guerra rendirse` — el Líder concede la guerra activa; el rival gana de inmediato.
+- El PvP en sí ya era libre en todo momento (`atacar <jugador>` ya inicia combate real entre jugadores, `features/combat/handler.py`); la guerra no habilita nada nuevo en el combate, solo cuenta las bajas entre los dos gremios enfrentados durante 1 hora y anuncia un ganador (o empate) al cierre automático.
+- Gancho en `CombatHandler._procesar_muerte()`: cuando muere un jugador con `db.gremio` a manos de otro jugador con `db.gremio`, si ambos gremios están en guerra entre sí se anota la baja y se notifica a ambos rosters.
+- Lógica pura en `systems/guild_wars/guild_wars.py`, script global persistente en `features/guild_wars/guild_war_script.py` (patrón `obtener_guerra_script()`, tick cada 60s para cerrar guerras expiradas, arrancado en `server/conf/at_server_startstop.py`), comandos en `features/guild_wars/commands.py`, registrado en `CharacterCmdSet`.
+
 ## [0.68.0] — 2026-08-01
 
 Nueva feature de juego: casa de subastas global.
