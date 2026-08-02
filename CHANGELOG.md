@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.70.0] — 2026-08-02
+
+Nueva feature de juego: matrimonio entre jugadores.
+
+### Añadido
+- `proponer <jugador>` — propone matrimonio a otro jugador (120 segundos para responder). Ninguno de los dos puede estar ya casado ni tener otra propuesta pendiente (propia o entrante).
+- `aceptar boda` / `rechazar boda` — el destinatario responde a la propuesta pendiente.
+- `divorciarse` — termina el matrimonio actual de inmediato, sin requerir presencia ni acuerdo del cónyuge.
+- `casado` — muestra tu estado civil (soltero/a, o cónyuge y fecha de la boda).
+- Notificación al cónyuge cuando el otro se conecta o desconecta (mismo mecanismo que la lista de amigos: itera sesiones reales vía `SESSION_HANDLER`, sin depender de `sessions.count()` sobre el objeto resuelto).
+- Vínculo 1-a-1, sin coste ni mecánica económica asociada: puramente social, siguiendo el patrón de reto/aceptar/rechazar ya usado en duelos y guerra de gremios.
+- Lógica pura en `systems/marriage/marriage.py`, integración sin script (estado guardado directamente en `db.conyuge_dbref`/`db.fecha_boda`/propuestas pendientes de cada personaje, expiración comprobada de forma perezosa como en duelos), comandos en `features/marriage/commands.py`, registrado en `CharacterCmdSet`.
+
 ## [0.69.0] — 2026-08-01
 
 Nueva feature de juego: guerra de gremios.
