@@ -116,6 +116,27 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.total_desafios_completados  = 0
         # --- Amigos ---
         self.db.amigos = []
+        # --- Matrimonio ---
+        self.db.conyuge_dbref = None
+        self.db.fecha_boda = None
+        self.db.propuesta_matrimonio_pendiente = None
+        self.db.propuesta_matrimonio_proponente_dbref = None
+
+    def _notificar_conyuge(self, mensaje: str):
+        """Avisa a tu cónyuge, si está conectado."""
+        try:
+            conyuge_dbref = getattr(self.db, "conyuge_dbref", None)
+            if not conyuge_dbref:
+                return
+            import evennia
+            for session in evennia.SESSION_HANDLER.get_sessions():
+                puppet = session.get_puppet()
+                if not puppet or puppet == self:
+                    continue
+                if puppet.dbref == conyuge_dbref:
+                    puppet.msg(mensaje)
+        except Exception:
+            pass
 
     def _notificar_amigos(self, mensaje: str):
         """Avisa a los jugadores conectados que te tienen en su lista de amigos."""
@@ -143,12 +164,14 @@ class Character(ObjectParent, DefaultCharacter):
         except Exception:
             pass
         self._notificar_amigos(f"|g{self.key} se ha conectado.|n")
+        self._notificar_conyuge(f"|g💍 {self.key} se ha conectado.|n")
 
     def at_post_unpuppet(self, account=None, session=None, **kwargs):
         """Llamado cuando una cuenta deja de controlar este personaje (logout incluido)."""
         super().at_post_unpuppet(account=account, session=session, **kwargs)
         if self.sessions.count() == 0:
             self._notificar_amigos(f"|y{self.key} se ha desconectado.|n")
+            self._notificar_conyuge(f"|y💍 {self.key} se ha desconectado.|n")
 
     def at_cmdset_get(self, **kwargs):
         """

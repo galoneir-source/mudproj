@@ -58,6 +58,7 @@ from features.expeditions.commands import ExpeditionCmdSet
 from features.alchemy.commands import AlchemyCmdSet
 from features.daily.commands import DailyCmdSet
 from features.friends.commands import FriendsCmdSet
+from features.marriage.commands import MarriageCmdSet
 from features.fast_travel.commands import FastTravelCmdSet
 from features.bulletin.commands import BulletinCmdSet
 from features.auctions.commands import AuctionCmdSet
@@ -169,6 +170,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(DailyCmdSet)
         # --- Amigos ---
         self.add(FriendsCmdSet)
+        # --- Matrimonio ---
+        self.add(MarriageCmdSet)
         # --- Viaje rápido ---
         self.add(FastTravelCmdSet)
         # --- Cartelera de anuncios ---
