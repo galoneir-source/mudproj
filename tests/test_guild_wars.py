@@ -116,6 +116,50 @@ class TestGuildWarScriptDeclarar(EvenniaTest):
         finally:
             guild_c.delete()
 
+    def test_declarar_no_sobrescribe_reto_pendiente_del_objetivo(self):
+        """
+        Si Cuervos Negros ya tiene un reto pendiente de un tercer gremio,
+        Los Lobos no puede declararle también la guerra: eso sobrescribiría
+        silenciosamente el reto del tercero sin avisarle.
+        """
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            self.script.declarar("Tercer Gremio", "Cuervos Negros")
+            ok, msg = self.script.declarar("Los Lobos", "Cuervos Negros")
+            self.assertFalse(ok)
+            self.assertIn("pendiente", msg.lower())
+            reto = dict(self.script.db.retos)["Cuervos Negros"]
+            self.assertEqual(reto["gremio_retador"], "Tercer Gremio")
+        finally:
+            guild_c.delete()
+
+    def test_declarar_con_reto_saliente_pendiente_falla(self):
+        """Un gremio no puede tener dos retos de guerra salientes a la vez."""
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            self.script.declarar("Los Lobos", "Cuervos Negros")
+            ok, msg = self.script.declarar("Los Lobos", "Tercer Gremio")
+            self.assertFalse(ok)
+            self.assertIn("pendiente", msg.lower())
+        finally:
+            guild_c.delete()
+
+    def test_declarar_contra_gremio_que_ya_es_retador_falla(self):
+        """
+        No se puede declarar la guerra a un gremio que ya está retando a
+        otro (aunque él mismo no sea el objetivo de ningún reto): si se
+        permitiera, podría acabar en dos guerras activas simultáneas para
+        el mismo gremio en cuanto ambos retos fueran aceptados.
+        """
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            self.script.declarar("Los Lobos", "Cuervos Negros")
+            ok, msg = self.script.declarar("Tercer Gremio", "Los Lobos")
+            self.assertFalse(ok)
+            self.assertIn("pendiente", msg.lower())
+        finally:
+            guild_c.delete()
+
 
 # --------------------------------------------------------------------------- #
 #  GuildWarScript — aceptar / rechazar
@@ -180,6 +224,35 @@ class TestGuildWarScriptAceptarRechazar(EvenniaTest):
         self.script.rechazar("Cuervos Negros")
         war_id, _ = self.script.guerra_de("Los Lobos")
         self.assertIsNone(war_id)
+
+    def test_aceptar_falla_si_retador_ya_esta_en_guerra(self):
+        """
+        Revalidación defensiva en el momento de aceptar: si el retador
+        (Los Lobos) ya entró en una guerra activa por otra vía mientras su
+        reto a Cuervos Negros seguía pendiente (invariante rota, no
+        alcanzable ya con las comprobaciones de declarar() pero cubierta
+        igualmente como red de seguridad, mismo patrón que la revalidación
+        de casado en el sistema de matrimonio), aceptar debe fallar en vez
+        de crear una segunda guerra activa para Los Lobos.
+        """
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            guerras = dict(self.script.db.guerras)
+            guerras["99"] = {
+                "gremio_a": "Los Lobos",
+                "gremio_b": "Tercer Gremio",
+                "kills_a": 0,
+                "kills_b": 0,
+                "timestamp_inicio": time.time(),
+            }
+            self.script.db.guerras = guerras
+
+            ok, msg = self.script.aceptar("Cuervos Negros")
+            self.assertFalse(ok)
+            self.assertIn("guerra", msg.lower())
+            self.assertNotIn("Cuervos Negros", dict(self.script.db.retos))
+        finally:
+            guild_c.delete()
 
 
 # --------------------------------------------------------------------------- #

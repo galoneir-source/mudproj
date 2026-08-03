@@ -55,6 +55,18 @@ class GuildWarScript(DefaultScript):
     #  Retos
     # ------------------------------------------------------------------ #
 
+    @staticmethod
+    def _ocupado_en_retos(retos: dict, gremio_nombre: str) -> bool:
+        """
+        True si `gremio_nombre` ya participa en algún reto pendiente, como
+        retado (clave de `retos`) o como retador (valor `gremio_retador` de
+        cualquier entrada). Un gremio solo puede tener un reto pendiente a
+        la vez, en cualquiera de los dos roles.
+        """
+        if gremio_nombre in retos:
+            return True
+        return any(reto["gremio_retador"] == gremio_nombre for reto in retos.values())
+
     def declarar(self, gremio_a_nombre: str, gremio_b_nombre: str) -> tuple[bool, str]:
         if gremio_a_nombre == gremio_b_nombre:
             return False, "No puedes declararle la guerra a tu propio gremio."
@@ -64,6 +76,11 @@ class GuildWarScript(DefaultScript):
             return False, "Ese gremio ya está en guerra con otro."
 
         retos = dict(self.db.retos or {})
+        if self._ocupado_en_retos(retos, gremio_a_nombre):
+            return False, "Tu gremio ya tiene un reto de guerra pendiente. Espera a que expire o sea respondido."
+        if self._ocupado_en_retos(retos, gremio_b_nombre):
+            return False, "Ese gremio ya tiene un reto de guerra pendiente."
+
         retos[gremio_b_nombre] = {
             "gremio_retador": gremio_a_nombre,
             "timestamp": time.time(),
@@ -82,6 +99,11 @@ class GuildWarScript(DefaultScript):
             del retos[gremio_b_nombre]
             self.db.retos = retos
             return False, "El reto de guerra ha expirado."
+
+        if self.guerra_de(reto["gremio_retador"])[0]:
+            del retos[gremio_b_nombre]
+            self.db.retos = retos
+            return False, "El gremio que te retó ya está en guerra con otro."
 
         del retos[gremio_b_nombre]
         self.db.retos = retos

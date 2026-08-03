@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `GuildWarScript.declarar()` (`features/guild_wars/guild_war_script.py`) no comprobaba si alguno de los dos gremios ya participaba en otro reto de guerra pendiente (ni como retado ni como retador) antes de crear uno nuevo. Como `db.retos` se indexa por gremio retado, declarar la guerra a un gremio que ya tenía un reto entrante de un tercero sobrescribía ese reto en silencio, sin avisar al retador original; y nada impedía que un mismo gremio acumulara varios retos salientes o entrantes a la vez, lo que podía dejarlo en dos guerras activas simultáneas en cuanto ambos retos se aceptaran (la guerra "invisible" seguía contando bajas y cerrándose sola, pero `guerra`/`guerra rendirse` solo veían la primera que encontraba `guerra_de()`). Añadido `_ocupado_en_retos()`: ningún gremio puede tener más de un reto pendiente a la vez, en ningún rol. Además, `aceptar()` revalida en el momento de aceptar que el retador siga libre de guerra (red de seguridad ante condiciones de carrera, mismo patrón que la revalidación de estado civil en `aceptar boda` del sistema de matrimonio). 4 tests de regresión nuevos en `tests/test_guild_wars.py`.
+
 ## [0.70.1] — 2026-08-03
 
 ### Corregido
