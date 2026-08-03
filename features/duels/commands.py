@@ -24,9 +24,13 @@ def _get_combat_handler(sala):
     return None
 
 
-def _limpiar_duelo(char):
-    """Elimina todos los atributos de reto pendiente del personaje."""
+def _limpiar_duelo_saliente(char):
+    """Elimina el reto que `char` mismo lanzó (slot saliente)."""
     char.db.duelo_pendiente = None
+
+
+def _limpiar_duelo_entrante(char):
+    """Elimina la referencia al reto que `char` recibió (slot entrante)."""
     char.db.duelo_retador_dbref = None
     char.db.duelo_apuesta_pendiente = 0
 
@@ -34,17 +38,18 @@ def _limpiar_duelo(char):
 def _tiene_reto_saliente_vigente(char) -> bool:
     """
     True si `char` tiene un reto que él mismo lanzó y sigue vigente.
-    Si el reto ha caducado, limpia los atributos de ambos lados (él y
-    su retado) y devuelve False, en vez de bloquear para siempre.
+    Si el reto ha caducado, limpia el slot saliente de `char` y el
+    entrante de su retado, y devuelve False, en vez de bloquear para
+    siempre.
     """
     pendiente = getattr(char.db, "duelo_pendiente", None)
     if not pendiente:
         return False
     if reto_expirado(pendiente.get("timestamp", 0), time.time()):
         retado = _buscar_por_dbref(pendiente.get("retado_dbref"))
-        _limpiar_duelo(char)
+        _limpiar_duelo_saliente(char)
         if retado:
-            _limpiar_duelo(retado)
+            _limpiar_duelo_entrante(retado)
         return False
     return True
 
@@ -52,20 +57,24 @@ def _tiene_reto_saliente_vigente(char) -> bool:
 def _tiene_reto_entrante_vigente(objetivo) -> bool:
     """
     True si `objetivo` tiene un reto entrante vigente de otro jugador.
-    Si el retador ya no existe o su reto ha caducado, limpia los
-    atributos de ambos lados y devuelve False.
+    Si el retador ya no existe o su reto ha caducado, limpia el slot
+    entrante de `objetivo` y el saliente del retador.
+
+    Nunca toca el slot saliente de `objetivo` ni el entrante del
+    retador: cada uno puede tener, de forma independiente, su propio
+    reto pendiente hacia otra persona en curso.
     """
     retador_dbref = getattr(objetivo.db, "duelo_retador_dbref", None)
     if not retador_dbref:
         return False
     retador = _buscar_por_dbref(retador_dbref)
     if not retador:
-        _limpiar_duelo(objetivo)
+        _limpiar_duelo_entrante(objetivo)
         return False
     pendiente = getattr(retador.db, "duelo_pendiente", None) or {}
     if reto_expirado(pendiente.get("timestamp", 0), time.time()):
-        _limpiar_duelo(objetivo)
-        _limpiar_duelo(retador)
+        _limpiar_duelo_entrante(objetivo)
+        _limpiar_duelo_saliente(retador)
         return False
     return True
 
@@ -203,21 +212,21 @@ class CmdAceptarDuelo(Command):
         retador = _buscar_por_dbref(retador_dbref)
         if not retador:
             caller.msg("El jugador que te retó ya no está disponible.")
-            _limpiar_duelo(caller)
+            _limpiar_duelo_entrante(caller)
             return
 
         pendiente = getattr(retador.db, "duelo_pendiente", None) or {}
         timestamp = pendiente.get("timestamp", 0)
         if reto_expirado(timestamp, time.time()):
             caller.msg("El reto ya ha expirado.")
-            _limpiar_duelo(caller)
-            _limpiar_duelo(retador)
+            _limpiar_duelo_entrante(caller)
+            _limpiar_duelo_saliente(retador)
             return
 
         if retador.location != caller.location:
             caller.msg(f"|w{retador.key}|n ya no está aquí.")
-            _limpiar_duelo(caller)
-            _limpiar_duelo(retador)
+            _limpiar_duelo_entrante(caller)
+            _limpiar_duelo_saliente(retador)
             return
 
         if getattr(retador.db, "en_combate", False) or getattr(caller.db, "en_combate", False):
@@ -238,15 +247,15 @@ class CmdAceptarDuelo(Command):
             )
             if not ok:
                 caller.msg(f"No se puede iniciar el duelo: {motivo}")
-                _limpiar_duelo(caller)
-                _limpiar_duelo(retador)
+                _limpiar_duelo_entrante(caller)
+                _limpiar_duelo_saliente(retador)
                 return
 
         # Guardar apuesta en ambos y limpiar pendientes
         retador.db.apuesta_duelo = apuesta
         caller.db.apuesta_duelo = apuesta
-        _limpiar_duelo(caller)
-        _limpiar_duelo(retador)
+        _limpiar_duelo_entrante(caller)
+        _limpiar_duelo_saliente(retador)
 
         # Iniciar combate en modo duelo
         from features.combat.handler import CombatHandler
@@ -288,9 +297,9 @@ class CmdRechazarDuelo(Command):
         retador = _buscar_por_dbref(retador_dbref)
         if retador:
             retador.msg(f"|y{caller.key}|n ha rechazado tu reto de duelo.")
-            _limpiar_duelo(retador)
+            _limpiar_duelo_saliente(retador)
 
-        _limpiar_duelo(caller)
+        _limpiar_duelo_entrante(caller)
         caller.msg("Has rechazado el reto de duelo.")
 
 

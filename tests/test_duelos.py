@@ -16,7 +16,6 @@ from features.duels.commands import (
     CmdRechazarDuelo,
     CmdRetar,
     CmdRendirse,
-    _limpiar_duelo,
 )
 from systems.duels.duels import DUEL_TIMEOUT
 
@@ -221,6 +220,88 @@ class TestCmdRetar(EvenniaTest):
         cmd.func()
         self.assertEqual(self.char2.db.duelo_retador_dbref, tercero.dbref)
         tercero.delete()
+
+
+# ---------------------------------------------------------------------------
+# Reto saliente y entrante son independientes
+#
+# Un jugador puede tener a la vez un reto que él mismo lanzó (slot
+# saliente, db.duelo_pendiente) y uno que recibió de otra persona (slot
+# entrante, db.duelo_retador_dbref/db.duelo_apuesta_pendiente): son
+# atributos distintos y nada en CmdRetar impide que coexistan. Resolver
+# uno (aceptar/rechazar) no debe tocar el otro.
+# ---------------------------------------------------------------------------
+
+class TestRetoSalienteEntranteIndependientes(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        _init_char(self.char2)
+        import evennia
+        self.char3 = evennia.create_object(
+            "typeclasses.characters.Character", key="Tercero", location=self.room1
+        )
+        _init_char(self.char3)
+        self.char1.move_to(self.room1, quiet=True)
+        self.char2.move_to(self.room1, quiet=True)
+        self.room1.msg_contents = lambda m, **kw: None
+        self.cap1 = _MsgCapture(self.char1)
+        self.cap2 = _MsgCapture(self.char2)
+        self.cap3 = _MsgCapture(self.char3)
+
+    def tearDown(self):
+        self.char3.delete()
+        super().tearDown()
+
+    def _retar(self, caller, args):
+        cmd = _make_cmd(CmdRetar, caller, args)
+        cmd.func()
+
+    def _preparar_saliente_y_entrante(self):
+        self._retar(self.char1, self.char2.key)  # char1 -> char2 (saliente de char1)
+        self._retar(self.char3, self.char1.key)  # char3 -> char1 (entrante de char1)
+        self.assertIsNotNone(self.char1.db.duelo_pendiente)
+        self.assertEqual(self.char1.db.duelo_retador_dbref, self.char3.dbref)
+
+    def test_rechazar_entrante_no_cancela_saliente(self):
+        self._preparar_saliente_y_entrante()
+
+        cmd = _make_cmd(CmdRechazarDuelo, self.char1, "")
+        cmd.func()
+
+        # El reto saliente de char1 hacia char2 sigue intacto.
+        self.assertIsNotNone(self.char1.db.duelo_pendiente)
+        self.assertEqual(self.char1.db.duelo_pendiente["retado_dbref"], self.char2.dbref)
+        self.assertEqual(self.char2.db.duelo_retador_dbref, self.char1.dbref)
+
+        # y char2 todavía puede aceptarlo con normalidad.
+        cmd = _make_cmd(CmdAceptarDuelo, self.char2, "")
+        cmd.func()
+        handler = None
+        for script in self.room1.scripts.all():
+            if script.key == "combat_handler":
+                handler = script
+                break
+        self.assertIsNotNone(handler, "Handler de combate no creado")
+
+    def test_aceptar_entrante_no_borra_saliente_a_ciegas(self):
+        self._preparar_saliente_y_entrante()
+
+        # char1 acepta el reto de char3: entran en duelo.
+        cmd = _make_cmd(CmdAceptarDuelo, self.char1, "")
+        cmd.func()
+        self.assertTrue(self.char1.db.en_combate)
+
+        # char2 intenta aceptar su reto (ya obsoleto) de char1: debe
+        # fallar por el motivo real -- char1 ya está en combate -- y no
+        # con el mensaje engañoso de "expirado" que daba el bug (el reto
+        # saliente de char1 se borraba a ciegas al resolver el entrante).
+        self.cap2.msgs.clear()
+        cmd = _make_cmd(CmdAceptarDuelo, self.char2, "")
+        cmd.func()
+        self.assertIn("ya está en combate", self.cap2.all())
+        self.assertNotIn("expirado", self.cap2.all().lower())
 
 
 # ---------------------------------------------------------------------------

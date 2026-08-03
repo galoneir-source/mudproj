@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `_limpiar_duelo()` (`features/duels/commands.py`) borraba a la vez el slot de reto saliente (`db.duelo_pendiente`) y el entrante (`db.duelo_retador_dbref`/`db.duelo_apuesta_pendiente`) de un jugador, aunque son independientes: un jugador puede tener a la vez un reto que él mismo lanzó y otro que le hicieron (nada en `CmdRetar` lo impide). Si A retaba a B y, por separado, C retaba a A, resolver el reto de C (aceptar o rechazar) borraba también, sin avisar, el reto saliente de A hacia B — B veía luego "el reto ya ha expirado" en vez del motivo real. Mismo bug exacto ya corregido en matrimonio (v0.70.1) y guerra de gremios (v0.70.2); duelos es el sistema más antiguo de los tres (v0.21.0) y probablemente el origen del patrón. Dividida en `_limpiar_duelo_saliente()` / `_limpiar_duelo_entrante()`; cada punto de resolución limpia solo el slot que corresponde. 2 tests de regresión nuevos en `tests/test_duelos.py`.
+
 ## [0.70.2] — 2026-08-03
 
 ### Corregido
