@@ -50,25 +50,30 @@ def _buscar_por_dbref(dbref_str):
         return None
 
 
-def _limpiar_propuesta(char):
-    """Elimina todos los atributos de propuesta pendiente del personaje."""
+def _limpiar_propuesta_saliente(char):
+    """Elimina la propuesta que `char` mismo lanzó (slot saliente)."""
     char.db.propuesta_matrimonio_pendiente = None
+
+
+def _limpiar_propuesta_entrante(char):
+    """Elimina la referencia a la propuesta que `char` recibió (slot entrante)."""
     char.db.propuesta_matrimonio_proponente_dbref = None
 
 
 def _tiene_propuesta_saliente_vigente(char) -> bool:
     """
     True si `char` tiene una propuesta que él mismo lanzó y sigue vigente.
-    Si expiró, limpia los atributos de ambos lados y devuelve False.
+    Si expiró, limpia el slot saliente de `char` y el entrante del
+    destinatario, y devuelve False.
     """
     pendiente = getattr(char.db, "propuesta_matrimonio_pendiente", None)
     if not pendiente:
         return False
     if propuesta_expirada(pendiente.get("timestamp", 0), time.time()):
         objetivo = _buscar_por_dbref(pendiente.get("objetivo_dbref"))
-        _limpiar_propuesta(char)
+        _limpiar_propuesta_saliente(char)
         if objetivo:
-            _limpiar_propuesta(objetivo)
+            _limpiar_propuesta_entrante(objetivo)
         return False
     return True
 
@@ -76,19 +81,24 @@ def _tiene_propuesta_saliente_vigente(char) -> bool:
 def _tiene_propuesta_entrante_vigente(objetivo) -> bool:
     """
     True si `objetivo` tiene una propuesta entrante vigente de otro jugador.
-    Si el proponente ya no existe o la propuesta caducó, limpia ambos lados.
+    Si el proponente ya no existe o la propuesta caducó, limpia el slot
+    entrante de `objetivo` y el saliente del proponente.
+
+    Nunca toca el slot saliente de `objetivo` ni el entrante del
+    proponente: cada uno puede tener, de forma independiente, su propia
+    propuesta hacia otra persona en curso.
     """
     proponente_dbref = getattr(objetivo.db, "propuesta_matrimonio_proponente_dbref", None)
     if not proponente_dbref:
         return False
     proponente = _buscar_por_dbref(proponente_dbref)
     if not proponente:
-        _limpiar_propuesta(objetivo)
+        _limpiar_propuesta_entrante(objetivo)
         return False
     pendiente = getattr(proponente.db, "propuesta_matrimonio_pendiente", None) or {}
     if propuesta_expirada(pendiente.get("timestamp", 0), time.time()):
-        _limpiar_propuesta(objetivo)
-        _limpiar_propuesta(proponente)
+        _limpiar_propuesta_entrante(objetivo)
+        _limpiar_propuesta_saliente(proponente)
         return False
     return True
 
@@ -183,21 +193,21 @@ class CmdAceptarBoda(Command):
         proponente = _buscar_por_dbref(proponente_dbref)
         if not proponente:
             caller.msg("La persona que te propuso matrimonio ya no está disponible.")
-            _limpiar_propuesta(caller)
+            _limpiar_propuesta_entrante(caller)
             return
 
         pendiente = getattr(proponente.db, "propuesta_matrimonio_pendiente", None) or {}
         timestamp = pendiente.get("timestamp", 0)
         if propuesta_expirada(timestamp, time.time()):
             caller.msg("La propuesta ya ha expirado.")
-            _limpiar_propuesta(caller)
-            _limpiar_propuesta(proponente)
+            _limpiar_propuesta_entrante(caller)
+            _limpiar_propuesta_saliente(proponente)
             return
 
         if getattr(proponente.db, "conyuge_dbref", None) or getattr(caller.db, "conyuge_dbref", None):
             caller.msg("No se puede completar la boda: uno de los dos ya está casado.")
-            _limpiar_propuesta(caller)
-            _limpiar_propuesta(proponente)
+            _limpiar_propuesta_entrante(caller)
+            _limpiar_propuesta_saliente(proponente)
             return
 
         ahora = time.time()
@@ -205,8 +215,8 @@ class CmdAceptarBoda(Command):
         proponente.db.fecha_boda = ahora
         caller.db.conyuge_dbref = proponente.dbref
         caller.db.fecha_boda = ahora
-        _limpiar_propuesta(caller)
-        _limpiar_propuesta(proponente)
+        _limpiar_propuesta_entrante(caller)
+        _limpiar_propuesta_saliente(proponente)
 
         anuncio = formatear_boda(proponente.key, caller.key)
         proponente.msg(anuncio)
@@ -244,9 +254,9 @@ class CmdRechazarBoda(Command):
         proponente = _buscar_por_dbref(proponente_dbref)
         if proponente:
             proponente.msg(f"|y{caller.key}|n ha rechazado tu propuesta de matrimonio.")
-            _limpiar_propuesta(proponente)
+            _limpiar_propuesta_saliente(proponente)
 
-        _limpiar_propuesta(caller)
+        _limpiar_propuesta_entrante(caller)
         caller.msg("Has rechazado la propuesta de matrimonio.")
 
 

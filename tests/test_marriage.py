@@ -13,13 +13,14 @@ from unittest.mock import patch
 
 from evennia.utils.test_resources import EvenniaTest
 
+from evennia import create_object
+
 from features.marriage.commands import (
     CmdProponer,
     CmdAceptarBoda,
     CmdRechazarBoda,
     CmdDivorciarse,
     CmdCasado,
-    _limpiar_propuesta,
 )
 from systems.marriage.marriage import TIMEOUT_PROPUESTA_SEGUNDOS
 
@@ -400,3 +401,84 @@ class TestHooksConexionConyuge(EvenniaTest):
             self.account.unpuppet_object(self.session)
         mock_notif.assert_called_once()
         self.assertIn("desconectado", mock_notif.call_args[0][0])
+
+
+# ---------------------------------------------------------------------------
+# Propuesta saliente y entrante son independientes
+#
+# Un personaje puede tener a la vez una propuesta que él mismo lanzó
+# (slot saliente, db.propuesta_matrimonio_pendiente) y una que recibió de
+# otra persona (slot entrante, db.propuesta_matrimonio_proponente_dbref):
+# son atributos distintos y `puede_proponer` no impide que coexistan.
+# Resolver una (aceptar/rechazar) no debe tocar la otra.
+# ---------------------------------------------------------------------------
+
+class TestPropuestaSalienteEntranteIndependientes(EvenniaTest):
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        _init_char(self.char2)
+        self.char3 = create_object("typeclasses.characters.Character", key="Tercero")
+        _init_char(self.char3)
+        self.char1.move_to(self.room1, quiet=True)
+        self.char2.move_to(self.room1, quiet=True)
+        self.char3.move_to(self.room1, quiet=True)
+        self.cap1 = _MsgCapture(self.char1)
+        self.cap2 = _MsgCapture(self.char2)
+        self.cap3 = _MsgCapture(self.char3)
+
+    def _proponer(self, caller, objetivo_key):
+        cmd = _make_cmd(CmdProponer, caller, objetivo_key)
+        cmd.func()
+
+    def _preparar_saliente_y_entrante(self):
+        # char1 propone a char2: char1 queda con propuesta saliente.
+        self._proponer(self.char1, self.char2.key)
+        # char3 propone a char1: char1 queda ADEMÁS con propuesta entrante,
+        # sin que la saliente hacia char2 se lo impida.
+        self._proponer(self.char3, self.char1.key)
+        self.assertIsNotNone(self.char1.db.propuesta_matrimonio_pendiente)
+        self.assertEqual(
+            self.char1.db.propuesta_matrimonio_proponente_dbref, self.char3.dbref
+        )
+
+    def test_rechazar_entrante_no_cancela_saliente(self):
+        self._preparar_saliente_y_entrante()
+
+        cmd = _make_cmd(CmdRechazarBoda, self.char1, "")
+        cmd.func()
+
+        # La propuesta saliente de char1 hacia char2 sigue intacta.
+        self.assertIsNotNone(self.char1.db.propuesta_matrimonio_pendiente)
+        self.assertEqual(
+            self.char1.db.propuesta_matrimonio_pendiente["objetivo_dbref"], self.char2.dbref
+        )
+        self.assertEqual(
+            self.char2.db.propuesta_matrimonio_proponente_dbref, self.char1.dbref
+        )
+
+        # y char2 todavía puede aceptarla con normalidad.
+        cmd = _make_cmd(CmdAceptarBoda, self.char2, "")
+        cmd.func()
+        self.assertEqual(self.char1.db.conyuge_dbref, self.char2.dbref)
+        self.assertEqual(self.char2.db.conyuge_dbref, self.char1.dbref)
+
+    def test_aceptar_entrante_no_borra_saliente_a_ciegas(self):
+        self._preparar_saliente_y_entrante()
+
+        # char1 acepta la propuesta de char3: se casan.
+        cmd = _make_cmd(CmdAceptarBoda, self.char1, "")
+        cmd.func()
+        self.assertEqual(self.char1.db.conyuge_dbref, self.char3.dbref)
+
+        # char2 intenta aceptar la propuesta (ya obsoleta) de char1: debe
+        # fallar con el motivo real -- char1 ya está casado -- y no con el
+        # mensaje engañoso de "expirado" que daba el bug (la propuesta
+        # saliente de char1 se borraba a ciegas al resolver la entrante).
+        self.cap2.msgs.clear()
+        cmd = _make_cmd(CmdAceptarBoda, self.char2, "")
+        cmd.func()
+        self.assertIn("ya está casado", self.cap2.all())
+        self.assertNotIn("expirado", self.cap2.all().lower())
+        self.assertIsNone(self.char2.db.conyuge_dbref)
