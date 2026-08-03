@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.70.1] — 2026-08-03
+
 ### Corregido
 - `_limpiar_propuesta()` (`features/marriage/commands.py`) borraba a la vez el slot de propuesta saliente (`db.propuesta_matrimonio_pendiente`) y el entrante (`db.propuesta_matrimonio_proponente_dbref`) de un personaje, aunque son independientes: un personaje puede tener a la vez una propuesta que él mismo lanzó a alguien y otra que le hicieron. Si A proponía a B y, por separado, C proponía a A, al resolver A la propuesta de C (aceptar o rechazar) se borraba también, sin avisar, la propuesta saliente de A hacia B — B veía luego "la propuesta ya ha expirado" en vez del motivo real. Dividida en `_limpiar_propuesta_saliente()` / `_limpiar_propuesta_entrante()`; cada punto de resolución limpia solo el slot que corresponde.
 
