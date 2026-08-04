@@ -278,6 +278,26 @@ class TestCmdDivorciarse(EvenniaTest):
         cmd.func()
         self.assertIn("divorciado", self.cap2.all().lower())
 
+    def test_divorcio_con_conyuge_borrado_se_autorrepara(self):
+        """
+        Si el cónyuge fue eliminado (p. ej. @delete de un admin), conyuge_dbref
+        queda apuntando a un objeto inexistente. divorciarse debe limpiar
+        igualmente el propio slot en vez de bloquear al superviviente.
+        """
+        fantasma = create_object(
+            "typeclasses.characters.Character", key="Fantasma", location=self.room1,
+        )
+        dbref_fantasma = fantasma.dbref
+        fantasma.delete()
+
+        self.char1.db.conyuge_dbref = dbref_fantasma
+        cmd = _make_cmd(CmdDivorciarse, self.char1, "")
+        cmd.func()
+
+        self.assertIsNone(self.char1.db.conyuge_dbref)
+        self.assertIsNone(self.char1.db.fecha_boda)
+        self.assertIn("divorciado", self.cap1.all().lower())
+
 
 # ---------------------------------------------------------------------------
 # CmdCasado
