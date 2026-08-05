@@ -676,13 +676,24 @@ class CombatHandler(DefaultScript):
         self.delete()
 
     def _procesar_muerte(self, muerto, asesino=None):
-        # Fallback: si un tick de estado mata a alguien durante un duelo
-        if getattr(self.db, "modo_duelo", False) and asesino and getattr(muerto, "has_account", False):
-            from systems.duels.duels import calcular_hp_umbral
-            hp_max = getattr(muerto.db, "hp_max", 100) or 100
-            muerto.db.hp = calcular_hp_umbral(hp_max)
-            self._fin_duelo(ganador=asesino, perdedor=muerto)
-            return
+        # Fallback: si un tick de estado (veneno/sangrado) mata a alguien
+        # durante un duelo, _aplicar_ticks_estado() llama aquí sin `asesino`
+        # (el daño no viene de un golpe con atacante). Sin resolver el rival
+        # como ganador en ese caso, este bloque nunca se ejecutaba pese a
+        # que el comentario decía cubrirlo: el duelo caía por la rama de
+        # "jugador normal" (te manda a home con 1 HP) sin pasar por
+        # _fin_duelo, perdiendo la apuesta, las stats de duelo, y sin avisar
+        # al torneo/recompensa que dependían de ese resultado.
+        if getattr(self.db, "modo_duelo", False) and getattr(muerto, "has_account", False):
+            if not asesino:
+                rivales = [p for p in (self.db.participantes or []) if p != muerto]
+                asesino = rivales[0] if rivales else None
+            if asesino:
+                from systems.duels.duels import calcular_hp_umbral
+                hp_max = getattr(muerto.db, "hp_max", 100) or 100
+                muerto.db.hp = calcular_hp_umbral(hp_max)
+                self._fin_duelo(ganador=asesino, perdedor=muerto)
+                return
 
         sala = self.obj
         sala.msg_contents(f"\n|r💀 {muerto.key} ha caído en combate.|n\n")

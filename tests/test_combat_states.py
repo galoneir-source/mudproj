@@ -175,6 +175,66 @@ class TestHandlerTicks(EvenniaTest):
 
 
 # --------------------------------------------------------------------------- #
+#  CombatHandler — un tick de estado letal en duelo debe cerrar el duelo
+#  correctamente (no matar de verdad ni saltarse _fin_duelo)
+# --------------------------------------------------------------------------- #
+
+class TestHandlerTicksDueloLetal(EvenniaTest):
+    """
+    Regresión: si un tick de veneno/sangrado bajaba el HP a 0 durante un
+    duelo, _procesar_muerte() lo trataba como una muerte normal de jugador
+    (te manda a casa con 1 HP) en vez de cerrar el duelo, porque el
+    fallback que sí lo contempla exigía un `asesino` que un tick de estado
+    nunca aporta. Se perdía la apuesta, las stats de duelo y el aviso al
+    torneo/recompensa, y encima el jugador "moría" de verdad en un sistema
+    que garantiza que los duelos nunca matan.
+    """
+
+    def _crear_handler(self):
+        handler = self.room1.scripts.add(CombatHandler)
+        handler.db.participantes = [self.char1, self.char2]
+        handler.db.turno_actual = 0
+        handler.db.acciones = {}
+        handler.db.turno_tiempo = 0
+        handler.db.activo = True
+        handler.db.modo_duelo = True
+        return handler
+
+    def setUp(self):
+        super().setUp()
+        _set_stats(self.char1, hp=3, hp_max=100)
+        _set_stats(self.char2, hp=80, hp_max=100)
+        self.room1.msg_contents = lambda m, **kw: None
+
+    def test_veneno_letal_en_duelo_cierra_duelo_no_mata(self):
+        handler = self._crear_handler()
+        self.char1.db.estados = {"veneno": {"dano_por_turno": 10, "turnos_restantes": 2}}
+
+        from systems.duels.duels import calcular_hp_umbral
+        umbral = calcular_hp_umbral(100)
+
+        murio = handler._aplicar_ticks_estado(self.char1)
+
+        self.assertTrue(murio)
+        self.assertEqual(self.char1.db.hp, umbral)
+        self.assertEqual(self.char2.db.duelos_ganados, 1)
+        self.assertEqual(self.char1.db.duelos_perdidos, 1)
+
+    def test_veneno_letal_en_duelo_transfiere_apuesta(self):
+        handler = self._crear_handler()
+        self.char1.db.estados = {"veneno": {"dano_por_turno": 10, "turnos_restantes": 2}}
+        self.char1.db.monedas = 200
+        self.char2.db.monedas = 0
+        self.char1.db.apuesta_duelo = 50
+        self.char2.db.apuesta_duelo = 50
+
+        handler._aplicar_ticks_estado(self.char1)
+
+        self.assertEqual(self.char1.db.monedas, 150)
+        self.assertEqual(self.char2.db.monedas, 50)
+
+
+# --------------------------------------------------------------------------- #
 #  EstadosScript — no debe aplicar un tick antes de TICK_INTERVAL segundos
 # --------------------------------------------------------------------------- #
 

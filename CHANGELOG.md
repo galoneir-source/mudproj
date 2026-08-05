@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `CombatHandler._procesar_muerte()` (`features/combat/handler.py`) trataba una muerte por tick de estado (veneno/sangrado) durante un duelo como una muerte normal de jugador (te manda a tu sala de inicio con 1 HP), en vez de cerrar el duelo. El único fallback pensado para este caso (el comentario decía explícitamente "si un tick de estado mata a alguien durante un duelo") exigía un `asesino`, pero `_aplicar_ticks_estado()` llama a `_procesar_muerte()` sin ese argumento porque el daño no viene de un golpe con atacante — el fallback nunca se ejecutaba en la práctica. Consecuencias: el duelo mataba de verdad a un jugador pese a que el sistema garantiza que se detiene al 10 % de HP, la apuesta se perdía en vez de transferirse al ganador, `duelos_ganados`/`duelos_perdidos` no se actualizaban, y si era un combate de torneo o de caza de recompensa (`cazar`), ni el torneo avanzaba (quedaba colgado hasta cancelarse solo por timeout, devolviendo las inscripciones de todos) ni se cobraba la recompensa. Ahora, si `asesino` viene vacío pero el combate es un duelo, se resuelve como ganador al otro participante del duelo antes de decidir la rama a seguir. 2 tests de regresión nuevos en `tests/test_combat_states.py`.
+
 ## [0.70.3] — 2026-08-04
 
 ### Corregido
