@@ -626,6 +626,36 @@ class CombatHandler(DefaultScript):
         self.db.turno_actual = (self.db.turno_actual + 1) % len(parts)
         self._anunciar_turno()
 
+    def _avanzar_turno_tras_baja(self, actor_referencia, eliminado):
+        """
+        Avanza el turno correctamente tras eliminar_participante() (muerte,
+        captura o huida) durante la resolución del turno de actor_referencia.
+
+        eliminar_participante() solo reindexa turno_actual con un clamp de
+        desbordamiento — da el índice correcto cuando el eliminado estaba
+        DESPUÉS de actor_referencia en la lista, pero si estaba antes (o era
+        el propio actor_referencia) el hueco ya desplazó ese índice hacia el
+        siguiente participante por sí solo; sumarle 1 otra vez (llamando a
+        _siguiente_turno() a ciegas, como hacía antes cada punto de llamada)
+        salta un participante entero. Aquí se recalcula siempre a partir de
+        la posición real de actor_referencia tras el hueco.
+        """
+        if not self.db.activo:
+            return  # eliminar_participante() ya cerró el combate
+        parts = self.db.participantes or []
+        if not parts:
+            return
+        if actor_referencia in parts and actor_referencia != eliminado:
+            self.db.turno_actual = parts.index(actor_referencia)
+            self._siguiente_turno()
+        else:
+            # El eliminado era actor_referencia (murió o huyó en su propio
+            # turno): el índice que dejó eliminar_participante() ya apunta
+            # al siguiente participante, no hay que sumar otro paso.
+            self.db.acciones = {}
+            self.db.turno_tiempo = 0
+            self._anunciar_turno()
+
     def _fin_duelo(self, ganador, perdedor):
         """Cierra un duelo PvP: actualiza estadísticas, transfiere apuesta y elimina el handler."""
         from systems.duels.duels import formatear_resultado
@@ -676,6 +706,10 @@ class CombatHandler(DefaultScript):
         self.delete()
 
     def _procesar_muerte(self, muerto, asesino=None):
+        # Capturado antes de tocar self.db.participantes: eliminar_participante()
+        # reindexa turno_actual con un clamp que solo es correcto si `muerto`
+        # estaba después de este participante en la lista (ver _avanzar_turno_tras_baja).
+        actor_referencia = self._participante_actual()
         # Fallback: si un tick de estado (veneno/sangrado) mata a alguien
         # durante un duelo, _aplicar_ticks_estado() llama aquí sin `asesino`
         # (el daño no viene de un golpe con atacante). Sin resolver el rival
@@ -813,11 +847,9 @@ class CombatHandler(DefaultScript):
             from features.respawn.respawn import programar_respawn
             programar_respawn(sala, muerto)
 
-            combate_continuaba = bool(self.db.activo)
             self.eliminar_participante(muerto)
             muerto.delete()
-            if combate_continuaba and self.db.activo:
-                self._siguiente_turno()
+            self._avanzar_turno_tras_baja(actor_referencia, muerto)
         else:
             # Jugador → enviarlo a sala de inicio con HP mínimo
             if asesino and getattr(asesino, "has_account", False):
@@ -828,16 +860,13 @@ class CombatHandler(DefaultScript):
                     logger.log_trace("Guild war kill hook error.")
             self._limpiar_estado_combate(muerto)
             muerto.db.hp = 1
-            combate_continuaba = bool(self.db.activo)
             self.eliminar_participante(muerto)
             home = muerto.home or muerto.location
             muerto.move_to(home, quiet=True)
             muerto.msg(
                 "|rHas caído en combate.|n Despiertas débil en tu lugar de inicio."
             )
-            # Avanzar turno solo si el combate sigue activo tras la eliminación
-            if combate_continuaba and self.db.activo:
-                self._siguiente_turno()
+            self._avanzar_turno_tras_baja(actor_referencia, muerto)
 
     def _limpiar_estado_combate(self, participante):
         """Resetea el estado de combate de un participante (jugador o NPC)."""
@@ -861,6 +890,7 @@ class CombatHandler(DefaultScript):
             destino = random.choice(salidas).destination
             actor.move_to(destino, quiet=False)
             actor.msg("|yHas escapado del combate.|n")
+            self._avanzar_turno_tras_baja(actor, actor)
         else:
             sala.msg_contents(f"{actor.key} intenta huir pero |rfalla|n.")
             self._siguiente_turno()
@@ -982,11 +1012,9 @@ class CombatHandler(DefaultScript):
         self._limpiar_estado_combate(enemigo)
         from features.respawn.respawn import programar_respawn
         programar_respawn(sala, enemigo)
-        combate_continuaba = bool(self.db.activo)
         self.eliminar_participante(enemigo)
         enemigo.delete()
-        if combate_continuaba and self.db.activo:
-            self._siguiente_turno()
+        self._avanzar_turno_tras_baja(actor, enemigo)
 
     def _terminar_combate(self):
         sala = self.obj

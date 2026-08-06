@@ -14,6 +14,7 @@ from evennia import create_object
 
 from features.combat.handler import CombatHandler, _get_stats, _generar_loot, _runas_activas
 from systems.combat.engine import STAT_DEFAULTS
+from typeclasses.characters import Character
 
 
 # --------------------------------------------------------------------------- #
@@ -342,6 +343,97 @@ class TestCombatHandler(EvenniaTest):
         with patch.object(type(handler), "obj", new_callable=PropertyMock, return_value=None):
             handler._terminar_combate()  # no debe lanzar excepción
         self.assertFalse(self.jugador.db.en_combate)
+
+
+class JugadorFalsoTurno(Character):
+    """Simula un segundo jugador sin sesión real (mismo truco que test_guild_wars.py)."""
+    @property
+    def has_account(self):
+        return True
+
+
+class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
+    """
+    Regresión: eliminar_participante() reindexa turno_actual con un simple
+    clamp de desbordamiento (evita que el índice quede fuera de rango), pero
+    cada punto de llamada que lo invoca (_procesar_muerte, _intentar_captura)
+    volvía a sumar 1 con _siguiente_turno() sin comprobar si ese clamp ya
+    había dejado el índice apuntando al participante correcto. Cuando el
+    eliminado estaba ANTES del actor en la lista (o era el propio actor,
+    p. ej. una muerte por tick de veneno en su propio turno), la suma extra
+    saltaba por completo el turno de quien le seguía. _intentar_huida(), por
+    su parte, nunca llamaba a _siguiente_turno()/_anunciar_turno() tras una
+    huida exitosa, así que el siguiente turno no se anunciaba (ni mensaje al
+    jugador, ni IA del NPC programada) hasta que lo rescatara el timeout
+    automático de turno. Fix: _avanzar_turno_tras_baja() recalcula siempre a
+    partir de la posición real del actor tras el hueco, en vez de sumar un
+    paso a ciegas.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+
+        self.jugador2 = create_object(JugadorFalsoTurno, key="Compañero")
+        self.jugador2.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador2, hp=100, hp_max=100, nivel=1)
+
+        self.npc = create_object("typeclasses.npc.NPC", key="Goblin")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=1, hp_max=30, nivel=1)
+
+    def _crear_handler(self, orden):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar(orden)
+        return handler
+
+    def test_matar_a_alguien_anterior_en_la_lista_no_salta_el_siguiente_turno(self):
+        # Orden: [npc, jugador, jugador2] -> es el turno de jugador (índice 1)
+        handler = self._crear_handler([self.npc, self.jugador, self.jugador2])
+        handler.db.turno_actual = 1
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.npc, asesino=self.jugador)
+        siguiente = handler.db.participantes[handler.db.turno_actual]
+        self.assertEqual(siguiente, self.jugador2)
+
+    def test_capturar_a_alguien_anterior_en_la_lista_no_salta_el_siguiente_turno(self):
+        self.npc.db.hp = 5  # <=20% de 30 -> capturable
+        handler = self._crear_handler([self.npc, self.jugador, self.jugador2])
+        handler.db.turno_actual = 1
+        with patch("evennia.utils.delay"):
+            handler._intentar_captura(self.jugador)
+        siguiente = handler.db.participantes[handler.db.turno_actual]
+        self.assertEqual(siguiente, self.jugador2)
+
+    def test_muerte_en_el_propio_turno_no_salta_el_siguiente(self):
+        # El propio jugador muere en su turno (p. ej. tick de veneno, sin
+        # asesino) -> el turno debe pasar directo al siguiente, no saltarlo.
+        handler = self._crear_handler([self.jugador, self.npc, self.jugador2])
+        handler.db.turno_actual = 0
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.jugador)
+        siguiente = handler.db.participantes[handler.db.turno_actual]
+        self.assertEqual(siguiente, self.npc)
+
+    def test_huida_exitosa_anuncia_el_siguiente_turno(self):
+        salida = create_object("typeclasses.exits.Exit", key="norte", location=self.sala)
+        salida.destination = self.room2
+        handler = self._crear_handler([self.jugador, self.npc, self.jugador2])
+        handler.db.turno_actual = 0
+        handler.db.turno_tiempo = 7  # tiempo ya acumulado antes de huir
+
+        with patch("random.random", return_value=0.01), \
+             patch("random.choice", return_value=salida), \
+             patch("evennia.utils.delay") as mock_delay:
+            handler._intentar_huida(self.jugador)
+
+        self.assertEqual(handler.db.turno_tiempo, 0)
+        # El siguiente participante es el NPC -> su turno debe anunciarse
+        # (IA programada), no quedar en silencio hasta el timeout.
+        self.assertTrue(mock_delay.called)
 
 
 class TestIaNpcCobardeHuida(EvenniaTest):
