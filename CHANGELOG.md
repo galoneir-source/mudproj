@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.0] — 2026-08-06
+
 ### Corregido
 - `CombatHandler.eliminar_participante()` (`features/combat/handler.py`) reindexaba `turno_actual` con un simple clamp de desbordamiento tras quitar a un participante (muerte, captura o huida), pero cada punto de llamada (`_procesar_muerte()`, `_intentar_captura()`) volvía a sumar un paso más con `_siguiente_turno()` sin comprobar si ese clamp ya había dejado el índice apuntando al siguiente participante correcto. Cuando el eliminado estaba ANTES del actor en la lista de participantes (p. ej. un jugador de un grupo remata a un enemigo que no era el primero en unirse al combate) — o era el propio actor, como una muerte por tick de veneno/sangrado en su propio turno — la suma extra saltaba por completo el turno de quien le seguía, dándole dos turnos seguidos al mismo participante. Por separado, `_intentar_huida()` nunca llamaba a `_siguiente_turno()`/`_anunciar_turno()` tras una huida exitosa, así que el siguiente turno no se anunciaba (sin mensaje al jugador ni IA del NPC programada) hasta que lo rescataba el timeout automático de turno (hasta 15s de combate aparentemente congelado). Ambos solo son observables en combates de 3 o más participantes (grupos, oleadas, un segundo jugador uniéndose a un combate activo) — con 2 participantes la eliminación siempre termina el combate antes de que el salto sea visible. Fix: `_avanzar_turno_tras_baja()`, un helper único que recalcula siempre a partir de la posición real del actor de referencia tras el hueco, usado por los tres puntos de eliminación. 4 tests de regresión nuevos en `tests/test_handler.py`.
 
