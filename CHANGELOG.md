@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.1] — 2026-08-07
+
 ### Corregido
 - El reinicio diario de Desafíos (`features/daily/daily_script.py`, `features/daily/commands.py`) calculaba la fecha del día con `date.today()`, que devuelve la fecha de la zona horaria **local del sistema operativo** del servidor — el ajuste `TIME_ZONE = "UTC"` de Django no tiene ningún efecto sobre `datetime`/`date` de la librería estándar, solo sobre `django.utils.timezone.now()` y los campos de fecha del ORM. La ayuda de `desafios` promete explícitamente "Los desafíos se renuevan cada día a medianoche (UTC)"; con el servidor en cualquier zona horaria distinta de UTC (confirmado con el propio entorno de este proyecto, `Europe/Madrid`), el reinicio diario ocurría 1-2 horas antes o después de la medianoche UTC prometida, y ese desfase cambiaría de nuevo si el servidor se desplegara alguna vez en otra zona horaria. Fix: `_hoy()`/`_ayer()` ahora calculan la fecha con `datetime.now(timezone.utc).date()` en vez de `date.today()`. 7 tests de regresión nuevos en `tests/test_daily.py`.
 
