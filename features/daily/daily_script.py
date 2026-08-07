@@ -5,7 +5,7 @@ Script global persistente del sistema de Desafíos Diarios y
 función pública notificar_progreso() que los demás sistemas llaman
 tras eventos relevantes (kill, recolección, apuesta, alquimia, expedición).
 """
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from evennia import DefaultScript
 from evennia.utils import logger
@@ -20,11 +20,17 @@ from systems.daily.daily import (
 
 
 def _hoy() -> str:
-    return date.today().isoformat()
+    # date.today()/datetime.now() usan la zona horaria LOCAL del sistema
+    # operativo, no la que fija Django TIME_ZONE=UTC (ese ajuste solo afecta
+    # a django.utils.timezone.now() y a los campos de fecha del ORM, nunca al
+    # datetime/date de la librería estándar) — hay que pedir la fecha UTC
+    # explícitamente o el reinicio diario ocurre a medianoche del servidor,
+    # no a medianoche UTC como promete la ayuda de `desafios`.
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 def _ayer() -> str:
-    return (date.today() - timedelta(days=1)).isoformat()
+    return (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
 
 
 class DesafiosDiariosScript(DefaultScript):

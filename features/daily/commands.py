@@ -5,7 +5,7 @@ Comandos del sistema de Desafíos Diarios:
   desafios          — ver los 5 desafíos del día con tu progreso
   desafios racha    — ver tu racha de días consecutivos
 """
-from datetime import date
+from datetime import datetime, timezone
 
 from evennia import Command, CmdSet
 
@@ -17,7 +17,9 @@ from systems.daily.daily import (
 
 
 def _hoy() -> str:
-    return date.today().isoformat()
+    # Mismo fix que features/daily/daily_script.py: fecha UTC explícita, no
+    # date.today() (zona horaria local del servidor, no la de Django).
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 def _progreso_actual(caller, hoy: str) -> tuple:

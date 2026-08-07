@@ -18,7 +18,7 @@ deterministas sin depender de la fecha real en la que se ejecutan.
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_daily
 """
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from evennia.utils.test_resources import EvenniaTest
@@ -29,6 +29,13 @@ from features.daily.daily_script import (
     notificar_progreso,
 )
 from systems.daily.daily import POOL_DESAFIOS
+
+
+def _hoy_utc():
+    # Misma fuente de verdad que features/daily/{daily_script,commands}.py
+    # tras el fix de zona horaria (date.today() usaba la hora LOCAL del
+    # servidor, no la UTC que promete la ayuda de `desafios`).
+    return datetime.now(timezone.utc).date()
 
 
 def _pool_por_id(*ids):
@@ -117,6 +124,53 @@ class TestObtenerDesafiosScript(EvenniaTest):
         self.assertEqual(s1.id, s2.id)
 
 
+class TestFechaUsaUTCNoLocal(EvenniaTest):
+    """
+    Regresión: _hoy()/_ayer() usaban date.today(), que devuelve la fecha de
+    la zona horaria LOCAL del sistema operativo — Django TIME_ZONE=UTC no
+    afecta en absoluto al datetime/date de la librería estándar, solo a
+    django.utils.timezone.now() y a los campos de fecha del ORM. La ayuda de
+    `desafios` promete explícitamente "medianoche (UTC)"; con un servidor en
+    cualquier zona horaria distinta de UTC, el reinicio diario ocurría 1-2h
+    antes o después de lo prometido. Si el código volviera a usar
+    date.today() (zona horaria local, no controlable de forma portable en un
+    test), este test comprueba en su lugar que _hoy()/_ayer() derivan de
+    datetime.now(timezone.utc): se parchea ese `datetime.now` con un instante
+    fijo y se verifica que la fecha calculada corresponde exactamente a ese
+    instante en UTC.
+    """
+
+    def test_daily_script_hoy_usa_datetime_now_utc(self):
+        from features.daily import daily_script
+        instante = datetime(2026, 8, 8, 0, 30, tzinfo=timezone.utc)
+        with patch.object(daily_script, "datetime") as mock_dt:
+            mock_dt.now.return_value = instante
+            self.assertEqual(daily_script._hoy(), "2026-08-08")
+            mock_dt.now.assert_called_with(timezone.utc)
+
+    def test_daily_script_ayer_usa_datetime_now_utc(self):
+        from features.daily import daily_script
+        instante = datetime(2026, 8, 8, 0, 30, tzinfo=timezone.utc)
+        with patch.object(daily_script, "datetime") as mock_dt:
+            mock_dt.now.return_value = instante
+            self.assertEqual(daily_script._ayer(), "2026-08-07")
+
+    def test_commands_hoy_usa_datetime_now_utc(self):
+        from features.daily import commands as daily_commands
+        instante = datetime(2026, 8, 8, 0, 30, tzinfo=timezone.utc)
+        with patch.object(daily_commands, "datetime") as mock_dt:
+            mock_dt.now.return_value = instante
+            self.assertEqual(daily_commands._hoy(), "2026-08-08")
+            mock_dt.now.assert_called_with(timezone.utc)
+
+    def test_hoy_coincide_con_datetime_now_utc(self):
+        from features.daily import daily_script
+        from features.daily import commands as daily_commands
+        esperado = datetime.now(timezone.utc).date().isoformat()
+        self.assertEqual(daily_script._hoy(), esperado)
+        self.assertEqual(daily_commands._hoy(), esperado)
+
+
 @patch("features.daily.daily_script.generar_desafios_del_dia", side_effect=_desafios_fijos)
 class TestNotificarProgreso(EvenniaTest):
     def setUp(self):
@@ -162,8 +216,8 @@ class TestNotificarProgreso(EvenniaTest):
         self.assertEqual(self.char1.db.monedas, mon_total)
 
     def test_racha_continua_si_ultimo_dia_fue_ayer(self, _mock):
-        hoy = date.today().isoformat()
-        ayer = (date.today() - timedelta(days=1)).isoformat()
+        hoy = _hoy_utc().isoformat()
+        ayer = (_hoy_utc() - timedelta(days=1)).isoformat()
         self.char1.db.ultimo_dia_desafios = ayer
         self.char1.db.racha_desafios = 2
 
@@ -240,7 +294,7 @@ class TestCmdDesafios(EvenniaTest):
         self.assertNotIn("Bonus", self.cap.all())
 
     def test_preview_bonus_aparece_con_racha_viva(self, _m1, _m2):
-        ayer = (date.today() - timedelta(days=1)).isoformat()
+        ayer = (_hoy_utc() - timedelta(days=1)).isoformat()
         self.char1.db.racha_desafios = 2
         self.char1.db.ultimo_dia_desafios = ayer
         self._desafios()
