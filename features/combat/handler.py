@@ -294,6 +294,15 @@ class CombatHandler(DefaultScript):
             if self.db.turno_actual >= len(parts):
                 self.db.turno_actual = 0
 
+        # _terminar_combate() solo limpia apuesta_duelo de quien queda en
+        # self.db.participantes tras la baja — el eliminado (p. ej. quien
+        # huyó) ya no está en esa lista y se quedaría con una apuesta
+        # "fantasma" activa, que se cobraría de verdad en su próximo
+        # combate en modo duelo sin apuesta explícita (caza de recompensa,
+        # torneo de arena), transfiriendo monedas que nadie apostó.
+        if getattr(self.db, "modo_duelo", False) and hasattr(obj, "db"):
+            obj.db.apuesta_duelo = 0
+
         jugadores = [p for p in parts if getattr(p, "has_account", False)]
         if len(parts) <= 1 or not jugadores:
             self._terminar_combate()

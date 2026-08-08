@@ -489,6 +489,58 @@ class TestFinDuelo(EvenniaTest):
 
 
 # ---------------------------------------------------------------------------
+# Apuesta "fantasma" tras huir de un duelo (eliminar_participante)
+# ---------------------------------------------------------------------------
+
+class TestApuestaTrasHuidaDeDuelo(EvenniaTest):
+    """
+    _terminar_combate() solo limpia apuesta_duelo de quien queda en
+    self.db.participantes — quien huyó ya no está en esa lista y antes se
+    quedaba con la apuesta activa, que se cobraba de verdad en su próximo
+    duelo sin apuesta explícita (caza de recompensa, torneo de arena).
+    """
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1, monedas=100)
+        _init_char(self.char2, monedas=100)
+        self.char1.move_to(self.room1, quiet=True)
+        self.char2.move_to(self.room1, quiet=True)
+        self.room1.msg_contents = lambda m, **kw: None
+
+        from features.combat.handler import CombatHandler
+        self.handler = self.room1.scripts.add(CombatHandler)
+        self.handler.db.modo_duelo = True
+        self.handler.iniciar([self.char1, self.char2])
+        self.char1.db.apuesta_duelo = 40
+        self.char2.db.apuesta_duelo = 40
+
+    def test_huir_de_duelo_limpia_la_apuesta_del_que_huye(self):
+        from unittest.mock import patch
+        with patch("random.random", return_value=0.1), \
+             patch("random.choice", side_effect=lambda seq: seq[0]):
+            self.handler._intentar_huida(self.char1)
+        self.assertEqual(self.char1.db.apuesta_duelo, 0)
+
+    def test_apuesta_fantasma_no_se_cobra_en_caza_de_recompensa_posterior(self):
+        from unittest.mock import patch
+        with patch("random.random", return_value=0.1), \
+             patch("random.choice", side_effect=lambda seq: seq[0]):
+            self.handler._intentar_huida(self.char1)
+
+        # Simula una caza de recompensa posterior: nueva duelo sin apuesta
+        # explícita (como hace CmdCazar, que nunca toca apuesta_duelo).
+        from features.combat.handler import CombatHandler
+        handler2 = self.room1.scripts.add(CombatHandler)
+        handler2.db.modo_duelo = True
+        handler2.iniciar([self.char1, self.char2])
+        handler2._fin_duelo(ganador=self.char1, perdedor=self.char2)
+
+        self.assertEqual(self.char1.db.monedas, 100)
+        self.assertEqual(self.char2.db.monedas, 100)
+
+
+# ---------------------------------------------------------------------------
 # CmdRendirse
 # ---------------------------------------------------------------------------
 

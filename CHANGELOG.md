@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `CombatHandler.eliminar_participante()` (`features/combat/handler.py`) no limpiaba `apuesta_duelo` del participante que huía de un duelo con apuesta — solo `_terminar_combate()` limpiaba la de quien se quedaba en `db.participantes`, y el que huyó ya no estaba en esa lista. La apuesta "fantasma" quedaba pegada al personaje y se cobraba de verdad en su siguiente combate en modo duelo sin apuesta explícita (una caza de recompensa con `cazar`, o un combate de torneo de arena), transfiriendo monedas que nadie había apostado. Fix: `eliminar_participante()` limpia ahora `apuesta_duelo` de cualquier participante eliminado mientras el combate esté en modo duelo, cubriendo huida y cualquier otra baja fuera de la resolución de muerte (que ya limpiaba correctamente ambos lados vía `_fin_duelo`). 2 tests de regresión nuevos en `tests/test_duelos.py`.
+
 ## [0.71.1] — 2026-08-07
 
 ### Corregido
