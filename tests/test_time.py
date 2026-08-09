@@ -70,6 +70,30 @@ class TestRelojMundial(EvenniaTest):
 
 
 # --------------------------------------------------------------------------- #
+#  RelojMundial: no debe avanzar la hora al crearse (start_delay)
+# --------------------------------------------------------------------------- #
+
+class TestRelojMundialStartDelay(EvenniaTest):
+    """
+    Regresión: sin start_delay=True, Evennia dispara el primer at_repeat()
+    de forma inmediata al crear el script en vez de esperar 60s, adelantando
+    la hora de 8 a 9 en el instante mismo de creación.
+    """
+
+    def test_start_delay_activado(self):
+        import evennia
+        reloj = evennia.create_script("features.time.clock_script.RelojMundial")
+        self.assertTrue(reloj.start_delay)
+        reloj.delete()
+
+    def test_hora_no_avanza_al_crear_el_script(self):
+        import evennia
+        reloj = evennia.create_script("features.time.clock_script.RelojMundial")
+        self.assertEqual(reloj.db.hora, 8)
+        reloj.delete()
+
+
+# --------------------------------------------------------------------------- #
 #  obtener_reloj
 # --------------------------------------------------------------------------- #
 

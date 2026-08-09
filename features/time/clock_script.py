@@ -21,6 +21,10 @@ class RelojMundial(DefaultScript):
         self.desc = "Reloj global del mundo"
         self.persistent = True
         self.interval = 60      # 1 minuto real por tick
+        # Sin start_delay=True, Evennia dispara el primer at_repeat() de
+        # inmediato al crear el script (no tras 60s), avanzando la hora
+        # de 8 a 9 en el instante de creación en vez de esperar el tick.
+        self.start_delay = True
         self.db.hora = 8        # comienza a las 8:00
 
     def at_repeat(self):

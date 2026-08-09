@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `RelojMundial` (`features/time/clock_script.py`) y `ClimaScript` (`features/weather/weather_script.py`) fijaban `self.interval` sin `self.start_delay = True` — el mismo patrón ya corregido 4 veces antes en este proyecto (mazmorras, torneos, intercambio, ticks de estado de combate). Evennia dispara `at_repeat()` de inmediato al crear el script en vez de esperar el intervalo, así que la primerísima creación de estos scripts (el arranque original del mundo, o cualquier entorno de desarrollo/test nuevo) adelantaba la hora de 8 a 9 y rifaba un cambio de clima en el instante de creación, no tras 60s/600s como se espera. Sin efecto observable en la partida ya en marcha, dado que los reinicios/reloads posteriores respetan el tiempo restante real vía el mecanismo de pausa/reanudación de Evennia — se corrige igualmente por consistencia con el resto del código. Fix: `self.start_delay = True` en ambos scripts. 3 tests de regresión nuevos (`tests/test_time.py`, `tests/test_weather.py`).
+
 ## [0.71.2] — 2026-08-09
 
 ### Corregido

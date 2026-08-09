@@ -21,6 +21,10 @@ class ClimaScript(DefaultScript):
         self.desc = "Script global de clima dinámico"
         self.persistent = True
         self.interval = 600     # 10 minutos reales por tick
+        # Sin start_delay=True, Evennia dispara el primer at_repeat() de
+        # inmediato al crear el script (no tras 600s), rifando un cambio
+        # de clima en el instante de creación en vez de esperar el tick.
+        self.start_delay = True
         self.db.clima = "despejado"
 
     def at_repeat(self):

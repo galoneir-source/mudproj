@@ -63,6 +63,15 @@ class TestClimaScript(EvenniaTest):
         count = ScriptDB.objects.filter(db_key="clima_mundial").count()
         self.assertLessEqual(count, 1)
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de forma inmediata al crear el script en vez de esperar
+        600s, rifando un cambio de clima en el instante mismo de creación.
+        """
+        script = obtener_clima_script()
+        self.assertTrue(script.start_delay)
+
 
 # --------------------------------------------------------------------------- #
 #  clima_actual()
