@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `comprobar_y_notificar()` (chequeo de logros) solo se llamaba desde `_completar_todos()` en `features/daily/daily_script.py` — es decir, únicamente cuando un jugador completaba los 5 desafíos diarios el mismo día. Los logros "Primer Desafío" (`total_desafios_completados >= 1`) y "Veterano de Desafíos" (`>= 25`) dependen de ese contador, que sube tras cada desafío individual completado, no solo al llegar a 5/5 — un jugador que nunca completaba los 5 el mismo día (p. ej. hace 1-4 al día de forma habitual) no recibía nunca estos logros, por muchos desafíos que acumulara. Confirmado empíricamente: tras completar 1 solo desafío, `total_desafios_completados=1` pero `"primer_desafio"` nunca entraba en `db.logros`. Fix: `comprobar_y_notificar()` se llama ahora al final de `notificar_progreso()` tras cualquier desafío recién completado (no solo al llegar a 5/5); al ser idempotente, el camino de 5/5 ya existente no cambia de comportamiento. 3 tests de regresión nuevos en `tests/test_daily.py`.
+
 ## [0.71.3] — 2026-08-09
 
 ### Corregido

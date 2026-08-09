@@ -104,13 +104,6 @@ def _completar_todos(jugador, hoy: str):
         lineas.append("  (Mantén la racha mañana para obtener bonificaciones)")
     jugador.msg("\n".join(lineas) + "\n")
 
-    # Logros
-    try:
-        from features.achievements.commands import comprobar_y_notificar
-        comprobar_y_notificar(jugador)
-    except Exception as _e:
-        logger.log_err(f"[Desafíos] comprobar_y_notificar: {_e}")
-
 
 def notificar_progreso(jugador, tipo: str, **datos):
     """
@@ -169,6 +162,17 @@ def notificar_progreso(jugador, tipo: str, **datos):
         total_previo = len(completados_idx) - len(nuevos_completados)
         if len(completados_idx) >= 5 and total_previo < 5:
             _completar_todos(jugador, hoy)
+
+        # Logros: comprobar tras cada desafío completado, no solo al llegar
+        # a 5/5 — total_desafios_completados sube con cada uno individual,
+        # y "Primer Desafío"/"Veterano de Desafíos" dependen de ese contador,
+        # no de completar los 5 el mismo día.
+        if nuevos_completados:
+            try:
+                from features.achievements.commands import comprobar_y_notificar
+                comprobar_y_notificar(jugador)
+            except Exception as _e:
+                logger.log_err(f"[Desafíos] comprobar_y_notificar: {_e}")
 
     except Exception as _e:
         logger.log_err(f"[Desafíos] notificar_progreso: {_e}")

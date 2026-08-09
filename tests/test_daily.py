@@ -203,6 +203,28 @@ class TestNotificarProgreso(EvenniaTest):
         self.assertIn(2, list(self.char1.db.desafios_completados_hoy))
         self.assertIn("DESAFÍO COMPLETADO", self.cap.all())
 
+    def test_completar_un_solo_desafio_desbloquea_logro_primer_desafio(self, _mock):
+        """
+        Regresión: comprobar_y_notificar() sólo se llamaba desde
+        _completar_todos() (al llegar a 5/5 desafíos el mismo día), no tras
+        cada desafío individual. "Primer Desafío" depende de
+        total_desafios_completados >= 1, que sube con cada desafío
+        completado — un jugador que nunca llega a completar los 5 el mismo
+        día no debería quedarse sin el logro para siempre.
+        """
+        self.char1.db.logros = []
+        for _ in range(3):
+            notificar_progreso(self.char1, "apostar_ganar")
+        self.assertEqual(self.char1.db.total_desafios_completados, 1)
+        self.assertIn("primer_desafio", list(self.char1.db.logros))
+
+    def test_progreso_parcial_sin_completar_no_desbloquea_logro(self, _mock):
+        self.char1.db.logros = []
+        notificar_progreso(self.char1, "apostar_ganar")
+        notificar_progreso(self.char1, "apostar_ganar")
+        self.assertEqual(self.char1.db.total_desafios_completados, 0)
+        self.assertNotIn("primer_desafio", list(self.char1.db.logros or []))
+
     def test_completar_los_5_primera_vez_racha_1_sin_bonus(self, _mock):
         _completar_los_5(self.char1)
 
@@ -214,6 +236,13 @@ class TestNotificarProgreso(EvenniaTest):
         # exactamente la suma de las recompensas individuales, sin extra.
         self.assertEqual(self.char1.db.experiencia, xp_total)
         self.assertEqual(self.char1.db.monedas, mon_total)
+
+    def test_completar_los_5_tambien_desbloquea_logros(self, _mock):
+        """No debe perderse el chequeo de logros en el camino de 5/5 al
+        moverlo fuera de _completar_todos()."""
+        self.char1.db.logros = []
+        _completar_los_5(self.char1)
+        self.assertIn("primer_desafio", list(self.char1.db.logros))
 
     def test_racha_continua_si_ultimo_dia_fue_ayer(self, _mock):
         hoy = _hoy_utc().isoformat()
