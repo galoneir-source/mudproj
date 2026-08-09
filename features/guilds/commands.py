@@ -545,6 +545,11 @@ class CmdPromover(Command):
                 f"|Y{objetivo.key}|n es ahora el nuevo |Y{RANGO_LIDER}|n del gremio. "
                 f"{caller.key} pasa a {RANGO_OFICIAL}."
             )
+            # El nuevo Líder puede cumplir ya "es_lider_gremio AND
+            # miembros_gremio>=N" si el gremio ya tenía suficientes
+            # miembros en el momento de la transferencia.
+            from features.achievements.commands import comprobar_y_notificar
+            comprobar_y_notificar(objetivo)
         else:
             caller.msg(f"{objetivo.key} ya es Líder.")
             return

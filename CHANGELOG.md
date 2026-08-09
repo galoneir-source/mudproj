@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `CmdPromover` (`features/guilds/commands.py`) transfería el liderazgo de gremio (`guild.cambiar_rango(objetivo, RANGO_LIDER)`) sin llamar nunca a `comprobar_y_notificar()` para el nuevo Líder. Los logros "Líder Unificador"/"Comandante" dependen de `es_lider_gremio AND miembros_gremio>=5/20` — si el gremio ya tenía suficientes miembros en el momento de la transferencia, el logro no se notificaba en ese instante (a diferencia del bug de logros de Desafíos Diarios de v0.71.4, este se autorreparaba en la siguiente acción cualquiera del nuevo líder que sí disparara el chequeo, así que el impacto era solo una notificación retrasada, no un logro perdido para siempre). Fix: `comprobar_y_notificar(objetivo)` tras la transferencia de liderazgo. 1 test de regresión nuevo en `tests/test_gremios.py`.
+
 ## [0.71.4] — 2026-08-09
 
 ### Corregido

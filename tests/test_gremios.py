@@ -416,6 +416,27 @@ class TestGestionRoster(EvenniaTest):
         self.assertEqual(self.guild.get_rango(self.char2), RANGO_LIDER)
         self.assertEqual(self.guild.get_rango(self.char1), RANGO_OFICIAL)
 
+    def test_promover_a_lider_dispara_chequeo_de_logros(self):
+        """
+        Regresión: CmdPromover transfería el liderazgo (cambiar_rango) sin
+        llamar nunca a comprobar_y_notificar() para el nuevo Líder — si el
+        gremio ya tenía suficientes miembros en ese instante, "Líder
+        Unificador" (es_lider_gremio AND miembros_gremio>=5) no se
+        notificaba en el momento correcto de la transferencia.
+        """
+        from evennia import create_object
+        for i in range(3):
+            relleno = create_object("typeclasses.characters.Character", key=f"relleno_gremio_{i}")
+            self.guild.añadir_miembro(relleno, RANGO_MIEMBRO)
+        self.assertEqual(self.guild.contar_miembros(), 5)
+
+        self.guild.cambiar_rango(self.char2, RANGO_OFICIAL)
+        self.char2.db.logros = []
+        cmd = _make_cmd(CmdPromover, self.char1, self.char2.key)
+        cmd.func()
+
+        self.assertIn("gremio_cinco_miembros", list(self.char2.db.logros or []))
+
     def test_degradar_oficial_a_miembro(self):
         self.guild.cambiar_rango(self.char2, RANGO_OFICIAL)
         cmd = _make_cmd(CmdDegrading, self.char1, self.char2.key)
