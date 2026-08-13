@@ -128,6 +128,25 @@ class TestBulletinScriptRetirar(EvenniaTest):
         self.assertFalse(ok)
         self.assertTrue(msg)
 
+    def test_retirar_uno_de_dos_anuncios_publicados_en_el_mismo_segundo_no_borra_el_otro(self):
+        # Regresión: el id solía derivarse de int(time.time())+autor_dbref,
+        # así que dos anuncios del mismo autor en el mismo segundo compartían
+        # id y retirar() (que filtra por igualdad de id) borraba ambos de
+        # golpe al retirar cualquiera de los dos.
+        self.script.publicar(self.char1, "Segundo anuncio de char1")
+        anuncios = self.script.obtener_anuncios()
+        self.assertEqual(len(anuncios), 2)
+        ids = {a["id"] for a in anuncios}
+        self.assertEqual(len(ids), 2)
+
+        primero_id = anuncios[0]["id"]
+        ok, _ = self.script.retirar(primero_id, self.char1)
+        self.assertTrue(ok)
+
+        restantes = self.script.obtener_anuncios()
+        self.assertEqual(len(restantes), 1)
+        self.assertNotEqual(restantes[0]["id"], primero_id)
+
 
 # --------------------------------------------------------------------------- #
 #  BulletinScript — expiración

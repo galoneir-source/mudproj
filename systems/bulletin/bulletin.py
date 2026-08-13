@@ -9,7 +9,8 @@ este es un tablón libre donde cualquier jugador publica un mensaje corto
 servidor. Comando de juego: 'cartelera'.
 
 Cada anuncio es un dict con los siguientes campos:
-  id            str   — identificador único (timestamp + autor_dbref)
+  id            str   — identificador único (asignado por quien llama, ver
+                        BulletinScript.db.next_id)
   autor         str   — nombre del autor
   autor_dbref   str   — dbref del autor (para permisos de retiro)
   texto         str   — cuerpo del anuncio
@@ -28,11 +29,19 @@ DURACION_SEGUNDOS = 3 * 24 * 3600  # 3 días de vigencia
 #  Construcción
 # --------------------------------------------------------------------------- #
 
-def crear_anuncio(autor: str, autor_dbref: str, texto: str) -> dict:
-    """Crea el dict de un anuncio nuevo."""
+def crear_anuncio(autor: str, autor_dbref: str, texto: str, anuncio_id: str) -> dict:
+    """Crea el dict de un anuncio nuevo.
+
+    El identificador lo asigna quien llama (contador monotónico en
+    BulletinScript.db.next_id) en vez de derivarlo de timestamp+autor: dos
+    anuncios del mismo autor publicados dentro del mismo segundo generarían
+    el mismo id, y `retirar()` borra por igualdad de id, así que un id
+    duplicado borraría ambos anuncios de golpe al retirar cualquiera de
+    los dos.
+    """
     ahora = time.time()
     return {
-        "id":          f"{int(ahora)}_{autor_dbref}",
+        "id":          anuncio_id,
         "autor":       autor,
         "autor_dbref": autor_dbref,
         "texto":       texto.strip(),

@@ -13,6 +13,7 @@ class BulletinScript(DefaultScript):
         self.desc = "Cartelera de anuncios de la ciudad"
         self.persistent = True
         self.db.anuncios = []
+        self.db.next_id = 1
 
     # ------------------------------------------------------------------ #
     #  API pública
@@ -31,7 +32,10 @@ class BulletinScript(DefaultScript):
         if not ok:
             return False, msg
 
-        anuncio = crear_anuncio(autor.key, autor.dbref, texto)
+        anuncio_id = str(self.db.next_id or 1)
+        self.db.next_id = int(self.db.next_id or 1) + 1
+
+        anuncio = crear_anuncio(autor.key, autor.dbref, texto, anuncio_id)
         self.db.anuncios = vigentes + [anuncio]
         return True, ""
 

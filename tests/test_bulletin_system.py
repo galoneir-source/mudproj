@@ -21,7 +21,7 @@ from systems.bulletin.bulletin import (
 # --------------------------------------------------------------------------- #
 
 def test_crear_anuncio_campos_basicos():
-    anuncio = crear_anuncio("Aldric", "#10", "  Se vende espada  ")
+    anuncio = crear_anuncio("Aldric", "#10", "  Se vende espada  ", "1")
     assert anuncio["autor"] == "Aldric"
     assert anuncio["autor_dbref"] == "#10"
     assert anuncio["texto"] == "Se vende espada"
@@ -29,9 +29,14 @@ def test_crear_anuncio_campos_basicos():
     assert "fecha" in anuncio
 
 
-def test_crear_anuncio_id_unico_por_autor_y_momento():
-    a1 = crear_anuncio("Aldric", "#10", "Uno")
-    a2 = crear_anuncio("Vex", "#11", "Dos")
+def test_crear_anuncio_usa_el_id_recibido():
+    # El id lo asigna quien llama (contador de BulletinScript), no se deriva
+    # de timestamp+autor: dos anuncios del mismo autor en el mismo segundo
+    # ya no colisionan porque cada llamada recibe un id distinto.
+    a1 = crear_anuncio("Aldric", "#10", "Uno", "1")
+    a2 = crear_anuncio("Aldric", "#10", "Dos", "2")
+    assert a1["id"] == "1"
+    assert a2["id"] == "2"
     assert a1["id"] != a2["id"]
 
 
@@ -60,7 +65,7 @@ def test_anuncios_vigentes_lista_vacia():
 
 
 def test_anuncios_vigentes_usa_time_time_por_defecto():
-    anuncio = crear_anuncio("Aldric", "#10", "Reciente")
+    anuncio = crear_anuncio("Aldric", "#10", "Reciente", "1")
     assert anuncios_vigentes([anuncio]) == [anuncio]
 
 
@@ -113,15 +118,15 @@ def test_formatear_cartelera_vacia():
 
 
 def test_formatear_cartelera_incluye_autor_y_texto():
-    anuncio = crear_anuncio("Aldric", "#10", "Se vende espada del cazador")
+    anuncio = crear_anuncio("Aldric", "#10", "Se vende espada del cazador", "1")
     texto = formatear_cartelera([anuncio])
     assert "Aldric" in texto
     assert "Se vende espada del cazador" in texto
 
 
 def test_formatear_cartelera_ordena_mas_reciente_primero():
-    viejo = crear_anuncio("Vex", "#11", "Viejo")
+    viejo = crear_anuncio("Vex", "#11", "Viejo", "1")
     viejo["timestamp"] = time.time() - 1000
-    nuevo = crear_anuncio("Aldric", "#10", "Nuevo")
+    nuevo = crear_anuncio("Aldric", "#10", "Nuevo", "2")
     texto = formatear_cartelera([viejo, nuevo])
     assert texto.index("Nuevo") < texto.index("Viejo")
