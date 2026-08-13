@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.6] — 2026-08-13
+
+### Corregido
+- `crear_anuncio()` (`systems/bulletin/bulletin.py`) generaba el `id` de cada anuncio de la cartelera (`cartelera`, v0.67.0) como `f"{int(timestamp)}_{autor_dbref}"`. `cartelera publicar` no tiene ningún cooldown, a diferencia de la mayoría de sistemas del proyecto — así que dos anuncios del mismo autor publicados dentro del mismo segundo (fácil con un cliente rápido o dos comandos pegados) recibían el mismo id. `retirar()` borra por igualdad de id con un filtro de lista (`[a for a in vigentes if a["id"] != anuncio_id]`), así que retirar cualquiera de los dos anuncios colisionados borraba **ambos** de golpe, sin avisar. El único test de unicidad existente (`test_crear_anuncio_id_unico_por_autor_y_momento`) solo comprobaba autores distintos, nunca el mismo autor en el mismo segundo — el hueco real nunca se testeó. Encontrado en la primera ronda de auditoría independiente de la cartelera (nunca revisada tras su implementación, junto con viaje rápido v0.66.0 y subastas v0.68.0, los tres únicos sistemas sin ronda propia). Fix: `BulletinScript.db.next_id`, contador monotónico igual que `MarketScript`/`AuctionScript`; `crear_anuncio()` ya no deriva el id del reloj, lo recibe de quien llama. 1 test de regresión nuevo en `tests/test_bulletin.py`.
+
 ## [0.71.5] — 2026-08-09
 
 ### Corregido
