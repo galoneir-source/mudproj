@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.11] — 2026-08-29
+
+### Corregido
+- `CombatHandler.agregar_participante()` (`features/combat/handler.py`) fusionaba a cualquier tercero en el `CombatHandler` ya activo de la sala sin comprobar nunca si ese combate era un duelo PvP (`modo_duelo=True`). Los duelos no aíslan la sala de nada: un NPC agresivo que reacciona (`_agredir()`, `typeclasses/npc.py`) a un tercer jugador que simplemente entra mientras otros dos están duelando metía tanto al NPC como al recién llegado en el mismo handler que el duelo 1v1 en curso. Como `_fin_duelo()` se dispara para el primer participante que baje al 10 % de HP sea quien sea, si esa pelea ajena (NPC vs. recién llegado) terminaba antes que el duelo original, el duelo se cerraba de golpe sin resolverse: sin ganador ni perdedor registrado, y con la apuesta de los dos duelistas originales "fantasma" fija para siempre — el mismo bug de fondo que v0.71.2 (apuesta que se cobra de verdad en el siguiente duelo sin apuesta explícita), pero por una vía que ese fix no cubría, ya que aquí el handler nunca pasa por `eliminar_participante()`. `_iniciar_combate()` (`features/combat/commands.py`) tenía la misma fusión sin comprobar, aunque en la práctica sus dos únicos puntos de llamada ya descartan un handler existente antes de entrar en esa rama. Encontrado auditando duelos. Fix: `agregar_participante()` devuelve ahora `False` sin añadir nada cuando el combate está en `modo_duelo`; ambos puntos de llamada lo comprueban y desisten de fusionar en ese caso (el NPC simplemente no agrede, `_iniciar_combate()` avisa de que hay un duelo privado en curso). 2 tests de regresión nuevos en `tests/test_duelos.py`.
+
 ## [0.71.10] — 2026-08-29
 
 ### Corregido
