@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.15] — 2026-08-29
+
+### Corregido
+- `buscar_receta()` (`systems/crafting/recipes.py`) resolvía en silencio una coincidencia ambigua por prefijo eligiendo la receta de nombre más corto, en vez de avisar de la ambigüedad. Varias familias de recetas comparten prefijo (`"elixir"` coincide con "elixir arcano", "elixir de restauración", "elixir sombrío" y "elixir de esencia"; `"antí"` con las tres recetas de antídoto; `"tónico"` con las tres de tónico) — `craftear elixir` consumía siempre los ingredientes de "elixir arcano" (la más corta), sin importar cuál de las cuatro quisiera el jugador ni avisar de que había otras, y sin ningún error que delatara que se había craftado algo distinto de lo esperado. Encontrado auditando crafteo/encantamiento. Fix: una coincidencia ambigua por prefijo se trata ahora como no encontrada, igual que ya hace `buscar_destino()` en viaje rápido — el jugador ve "no existe receta" y puede escribir el nombre completo en vez de recibir un resultado adivinado. 3 tests de regresión nuevos en `tests/test_crafteo_equipo_system.py`.
+
 ## [0.71.14] — 2026-08-29
 
 ### Corregido
