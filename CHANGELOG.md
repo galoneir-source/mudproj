@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.25] — 2026-08-30
+
+### Corregido
+- `notificar_progreso()` y `_completar_todos()` (`features/daily/daily_script.py`) otorgaban la recompensa de XP de los desafíos diarios (tanto por desafío individual como el bonus de racha al completar los 5) escribiendo directamente `jugador.db.experiencia`, sin llamar después a `procesar_subida_de_nivel()` — tercera instancia del mismo bug ya corregido en mazmorras (v0.71.23) y jefes de mundo (v0.71.24), encontrada al revisar sistemáticamente todos los puntos del proyecto que otorgan XP. A diferencia de esos dos, los desafíos diarios son la actividad más frecuente y rutinaria del juego, así que el impacto práctico era mayor: cualquier jugador podía acumular XP por encima del umbral de nivel sin subir de nivel de verdad (stats y HP máximo incluidos) hasta su siguiente kill de combate normal. Fix: ambos puntos procesan ahora la subida de nivel igual que el resto de recompensas de XP del proyecto, vía el nuevo helper `_procesar_subida_de_nivel_si_corresponde()`. 2 tests de regresión nuevos en `tests/test_daily.py`; el resto de tests de la suite se ajustaron fijando `nivel=10` en `_preparar_char()` (comprueban el total exacto de XP/monedas otorgado, no la subida de nivel, que `procesar_subida_de_nivel()` alteraría si consumiera XP contra el umbral).
+
 ## [0.71.24] — 2026-08-30
 
 ### Corregido
