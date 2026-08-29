@@ -284,6 +284,50 @@ class TestFlujoDeTorneo(EvenniaTest):
         # Empezó con 1000, pagó 100 de inscripción (900) y cobra el pot.
         self.assertEqual(campeon_obj.db.monedas, 900 + pot_esperado)
 
+    def test_siguiente_combate_no_arrastra_a_un_jugador_ya_en_otro_combate(self):
+        """
+        Regresión candidata: _siguiente_combate() solo comprueba
+        has_account (_resolver_jugador) antes de teleportar a los dos
+        jugadores del próximo emparejamiento a la Arena e iniciar un
+        CombatHandler nuevo en modo_duelo -- nunca comprueba si alguno de
+        los dos ya está en OTRO combate en curso (p.ej. peleando contra
+        un monstruo mientras esperaba su turno de bracket). Arrastrarlo a
+        la fuerza deja su combate anterior con un participante fantasma
+        (su turno se auto-pasa por el timeout, pero el handler nunca lo
+        elimina) y, peor, cuando el duelo de torneo termina,
+        _fin_duelo() pone en_combate=False para ambos -- desincronizando
+        ese flag del handler anterior, que sigue activo y listándolo como
+        participante: a partir de ahí puede usar retar/viajar/gremio como
+        si no estuviera en combate, aunque su primer handler siga vivo.
+        """
+        from evennia.utils import create as _create
+        from features.combat.handler import CombatHandler
+
+        torneo, jugadores = self._torneo_con(2)
+        p1_ref, p2_ref = siguiente_combate(dict(torneo.db.bracket or {}))
+        j0 = jugadores[p1_ref]
+
+        # j0 ya está en otro combate, en otra sala, cuando le toca su
+        # combate de torneo.
+        otra_sala = _create.create_object(Room, key="Bosque")
+        j0.move_to(otra_sala, quiet=True)
+        otro_handler = otra_sala.scripts.add(CombatHandler)
+        npc = _create.create_object("typeclasses.npc.NPC", key="Lobo", location=otra_sala)
+        otro_handler.iniciar([j0, npc])
+        self.assertTrue(j0.db.en_combate)
+
+        torneo._siguiente_combate()
+
+        # No debe haber sido arrastrado a un segundo combate mientras el
+        # primero seguía activo.
+        self.assertEqual(j0.location, otra_sala)
+        self.assertIn(j0, otro_handler.db.participantes)
+        for s in self.arena_sala.scripts.all():
+            self.assertFalse(
+                s.key == "combat_handler" and getattr(s.db, "activo", False),
+                "Se inició un combate de torneo pese a que j0 ya estaba en otro combate.",
+            )
+
     def test_forfeit_si_jugador_no_esta_disponible(self):
         """Un jugador sin sesión activa en el momento del combate (p.ej.
         se desconectó tras inscribirse) no debe bloquear el torneo — el

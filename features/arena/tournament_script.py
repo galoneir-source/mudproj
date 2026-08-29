@@ -238,6 +238,18 @@ class TorneoScript(DefaultScript):
             delay(1, self._siguiente_combate)
             return
 
+        # Si alguno de los dos sigue en otro combate (p.ej. peleando contra
+        # un monstruo mientras esperaba su turno de bracket), esperar a que
+        # se libere en vez de arrastrarlo a la fuerza: eso dejaría su
+        # combate anterior con un participante fantasma (su turno se
+        # auto-pasa por timeout, pero el handler nunca lo elimina) y, al
+        # terminar el duelo de torneo, _fin_duelo() pondría en_combate=False
+        # para ambos, desincronizando ese flag del handler anterior -- que
+        # seguiría activo y listándolo como participante.
+        if getattr(p1.db, "en_combate", False) or getattr(p2.db, "en_combate", False):
+            delay(5, self._siguiente_combate)
+            return
+
         # Teleportar a la arena
         sala = _buscar_sala_arena()
         if not sala:
