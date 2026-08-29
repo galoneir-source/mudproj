@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.27] — 2026-08-30
+
+### Corregido
+- La Runa de Escudo (`reduccion_dano`, `features/combat/handler.py`) solo se aplicaba con la condición `resultado.dano and not resultado.muerto` — es decir, nunca en el golpe que dejaría al portador a 0 HP o menos, justo el único momento en que de verdad importa. Un golpe letal se resolvía siempre con el daño íntegro, sin ninguna reducción, pese a que la descripción de la runa ("reduces N daño recibido en cada ataque") no excluye los golpes letales: un jugador con la runa grabada podía morir por un golpe que, con los 2 puntos de reducción aplicados, le habría dejado con vida. Encontrado auditando runas — ningún test cubría el efecto de la runa en el combate real, solo que se grababa y guardaba correctamente. Fix: la reducción se aplica ahora también en golpes letales, y `hp_restante` se recalcula desde el HP real previo al golpe en vez de sumar la reducción sobre el valor ya recortado a 0 por `resolver_ataque()` (esa suma ingenua habría "revivido" incorrectamente a un objetivo con overkill muy superior al propio valor de la runa). 2 tests de regresión nuevos en `tests/test_handler.py`.
+
 ## [0.71.26] — 2026-08-30
 
 ### Corregido
