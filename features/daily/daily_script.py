@@ -70,6 +70,32 @@ def _reset_progreso_si_nuevo_dia(jugador, hoy: str):
         jugador.db.desafios_completados_hoy = []
 
 
+def _procesar_subida_de_nivel_si_corresponde(jugador):
+    """
+    Comprueba subida de nivel tras otorgar XP de desafíos.
+
+    Igual que quests/contratos/expediciones/mazmorras/jefes de mundo: sin
+    esto, el XP de desafíos diarios se acumulaba por encima del umbral de
+    nivel sin que nivel/stats/HP máximo se actualizaran de verdad hasta el
+    siguiente kill de combate normal del jugador.
+    """
+    try:
+        from features.combat.handler import _get_stats, _set_stat
+        from systems.combat.engine import procesar_subida_de_nivel
+        stats = _get_stats(jugador)
+        subio, nuevos_stats = procesar_subida_de_nivel(stats)
+        if subio:
+            for k, v in nuevos_stats.items():
+                _set_stat(jugador, k, v)
+            jugador.msg(
+                f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
+                f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
+                f"  |gHP restaurado al máximo.|n\n"
+            )
+    except Exception as _e:
+        logger.log_err(f"[Desafíos] subida de nivel: {_e}")
+
+
 def _completar_todos(jugador, hoy: str):
     """Otorga el bonus de racha al completar los 5 desafíos del día."""
     # Actualizar racha
@@ -89,6 +115,7 @@ def _completar_todos(jugador, hoy: str):
         jugador.db.monedas = (getattr(jugador.db, "monedas", 0) or 0) + bonus_m
     if bonus_x > 0:
         jugador.db.experiencia = (getattr(jugador.db, "experiencia", 0) or 0) + bonus_x
+        _procesar_subida_de_nivel_si_corresponde(jugador)
 
     lineas = [
         "\n|Y╔══════════════════════════════════════╗|n",
@@ -155,6 +182,8 @@ def notificar_progreso(jugador, tipo: str, **datos):
                 f"\n|Y✦ ¡DESAFÍO COMPLETADO!|n  |w{desc}|n\n"
                 f"   |g+{d['recompensa_xp']} XP|n  |y+{d['recompensa_monedas']} monedas|n\n"
             )
+            if d["recompensa_xp"] > 0:
+                _procesar_subida_de_nivel_si_corresponde(jugador)
 
         jugador.db.desafios_completados_hoy = completados_idx
 

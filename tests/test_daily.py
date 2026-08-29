@@ -96,6 +96,12 @@ def _preparar_char(char):
     char.db.total_desafios_completados = 0
     char.db.monedas = 0
     char.db.experiencia = 0
+    # Nivel máximo por defecto: la mayoría de estos tests comprueban el
+    # total de XP/monedas otorgado, no la subida de nivel (que tiene su
+    # propio test) -- con MAX_NIVEL, procesar_subida_de_nivel() no toca
+    # db.experiencia y las aserciones de "recibe el total exacto" siguen
+    # midiendo el valor bruto otorgado.
+    char.db.nivel = 10
 
 
 def _completar_los_5(char):
@@ -203,6 +209,27 @@ class TestNotificarProgreso(EvenniaTest):
         self.assertIn(2, list(self.char1.db.desafios_completados_hoy))
         self.assertIn("DESAFÍO COMPLETADO", self.cap.all())
 
+    def test_completar_un_desafio_procesa_subida_de_nivel(self, _mock):
+        """
+        Regresión: notificar_progreso() escribía jugador.db.experiencia
+        directamente sin llamar después a procesar_subida_de_nivel() -a
+        diferencia de quests, contratos, expediciones, mazmorras y jefes de
+        mundo, que sí lo hacen justo tras dar su recompensa de XP-. El XP de
+        desafíos diarios (la actividad más frecuente y rutinaria de todas)
+        se acumulaba por encima del umbral de nivel sin que nivel/stats/HP
+        máximo se actualizaran de verdad hasta el siguiente kill de combate
+        normal del jugador.
+        """
+        self.char1.db.nivel = 1
+        self.char1.db.experiencia = 0
+        fuerza_antes = self.char1.db.fuerza
+        # kill_bandidos (objetivo: 5) da 200 XP al completarse; umbral de
+        # nivel 2 son 100 XP.
+        for _ in range(5):
+            notificar_progreso(self.char1, "kill_faccion", faccion="horda_salvaje")
+        self.assertGreater(self.char1.db.nivel, 1)
+        self.assertGreater(self.char1.db.fuerza, fuerza_antes)
+
     def test_completar_un_solo_desafio_desbloquea_logro_primer_desafio(self, _mock):
         """
         Regresión: comprobar_y_notificar() sólo se llamaba desde
@@ -260,6 +287,23 @@ class TestNotificarProgreso(EvenniaTest):
         mon_total = sum(d["recompensa_monedas"] for d in _DESAFIOS_FIJOS) + 100
         self.assertEqual(self.char1.db.experiencia, xp_total)
         self.assertEqual(self.char1.db.monedas, mon_total)
+
+    def test_bonus_de_racha_tambien_procesa_subida_de_nivel(self, _mock):
+        """Mismo bug que test_completar_un_desafio_procesa_subida_de_nivel,
+        pero en el bonus de racha de _completar_todos() (segundo punto de
+        la función que otorgaba XP sin comprobar nivel)."""
+        hoy = _hoy_utc().isoformat()
+        ayer = (_hoy_utc() - timedelta(days=1)).isoformat()
+        self.char1.db.ultimo_dia_desafios = ayer
+        self.char1.db.racha_desafios = 2
+        self.char1.db.nivel = 1
+        self.char1.db.experiencia = 0
+        fuerza_antes = self.char1.db.fuerza
+
+        _completar_los_5(self.char1)
+
+        self.assertGreater(self.char1.db.nivel, 1)
+        self.assertGreater(self.char1.db.fuerza, fuerza_antes)
 
     def test_racha_se_reinicia_si_ultimo_dia_no_fue_ayer(self, _mock):
         """
