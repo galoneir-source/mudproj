@@ -237,7 +237,7 @@ class CmdTablon(Command):
             caller.msg(
                 f"\n|Y★ ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
                 f"  HP: |w{nuevos_stats['hp_max']}|n  "
-                f"ATQ: |w{nuevos_stats['ataque']}|n  "
+                f"FUE: |w{nuevos_stats['fuerza']}|n  "
                 f"DEF: |w{nuevos_stats['defensa']}|n\n"
             )
 

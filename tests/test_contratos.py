@@ -403,6 +403,30 @@ class TestCmdTablonEntregarKill(EvenniaTest):
         cmd.func()
         self.assertIn("3", self.cap.all())  # faltan 3
 
+    def test_kill_completado_con_subida_de_nivel_no_crashea(self):
+        """
+        Regresión: el mensaje de subida de nivel en _dar_recompensa()
+        (features/contracts/commands.py) leía nuevos_stats['ataque'], una
+        clave que no existe en el dict que devuelve procesar_subida_de_nivel()
+        (systems/combat/engine.py) -- STAT_DEFAULTS no tiene ningún stat
+        "ataque" en todo el proyecto. Completar un contrato con recompensa de
+        XP suficiente para subir de nivel lanzaba un KeyError sin capturar,
+        que interrumpía _entregar() a medias: la recompensa (monedas, XP, y
+        los materiales consumidos en un contrato de entrega) ya se había
+        aplicado, pero contrato_activo nunca se limpiaba -- el jugador se
+        quedaba con "ya tienes un contrato activo" para siempre, sin poder
+        aceptar otro ni ver ningún mensaje de éxito.
+        """
+        self.char1.db.experiencia = 70  # + 40 de recompensa = 110 >= 100 (nivel 2)
+        self.char1.db.kills_totales = 10
+        self.char1.db.contrato_activo = _contrato_kill(5, kills_al_aceptar=0)
+        cmd = _make_cmd(CmdTablon, self.char1, "entregar")
+        cmd.func()  # no debe lanzar KeyError
+
+        self.assertIsNone(self.char1.db.contrato_activo)
+        self.assertEqual(self.char1.db.nivel, 2)
+        self.assertIn("completado", self.cap.all().lower())
+
 
 # --------------------------------------------------------------------------- #
 #  CmdTablon — entregar materiales
@@ -496,6 +520,22 @@ class TestCmdTablonEntregarMateriales(EvenniaTest):
         cmd = _make_cmd(CmdTablon, self.char1, "entregar")
         cmd.func()
         self.assertIn("completado", self.cap.all().lower())
+
+    def test_entrega_con_subida_de_nivel_no_crashea(self):
+        """
+        Mismo bug que en TestCmdTablonEntregarKill, verificado en la ruta de
+        entrega: _dar_recompensa() es la misma función para ambos tipos de
+        contrato, así que un KeyError('ataque') a mitad de la entrega
+        dejaba los materiales ya consumidos y contrato_activo sin limpiar.
+        """
+        self.char1.db.experiencia = 20  # + 80 de recompensa = 100 >= 100 (nivel 2)
+        self.char1.db.contrato_activo = _contrato_entrega(3, "mineral de hierro")
+        self._crear_materiales("mineral de hierro", 3)
+        cmd = _make_cmd(CmdTablon, self.char1, "entregar")
+        cmd.func()  # no debe lanzar KeyError
+
+        self.assertIsNone(self.char1.db.contrato_activo)
+        self.assertEqual(self.char1.db.nivel, 2)
 
 
 # --------------------------------------------------------------------------- #
