@@ -21,6 +21,25 @@ from systems.bounty.bounty import (
 )
 
 
+def _objetivo_siendo_cazado(objetivo) -> bool:
+    """
+    True si hay un combate de caza de recompensa (es_caza_recompensa) en
+    curso contra objetivo ahora mismo. cazar() solo lee/consume el total
+    de recompensas al FINAL del combate (_fin_duelo), no al empezarlo --
+    sin esta comprobación, el emisor podía ver que su objetivo estaba
+    perdiendo y cancelar su recompensa a mitad del combate para no
+    pagarla, dejando al cazador con menos premio del anunciado (o ninguno
+    si era la única recompensa activa) pese a ganar limpiamente.
+    """
+    from features.combat.commands import _get_combat_handler
+    handler = _get_combat_handler(objetivo.location)
+    if not handler:
+        return False
+    if not getattr(handler.db, "es_caza_recompensa", False):
+        return False
+    return objetivo in list(handler.db.participantes or [])
+
+
 class CmdRecompensa(Command):
     """
     Gestionar recompensas sobre jugadores.
@@ -152,6 +171,13 @@ class CmdRecompensa(Command):
             caller.msg(f"No se encontró ningún jugador llamado '|w{nombre_obj}|n'.")
             return
         objetivo = objetivos[0] if isinstance(objetivos, list) else objetivos
+
+        if _objetivo_siendo_cazado(objetivo):
+            caller.msg(
+                "|rHay una caza en curso sobre ese jugador; "
+                "no puedes cancelar tu recompensa hasta que termine.|n"
+            )
+            return
 
         script = obtener_recompensas_script()
         bounties = list(script.db.bounties or [])
