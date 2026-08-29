@@ -92,8 +92,18 @@ class CmdEquipar(Command):
         slot = item.db.slot or "accesorio"
         eq = _get_equipamiento(caller)
 
-        # Desequipar el item actual en ese slot si lo hay
+        # Reequipar el mismo objeto que ya está puesto: el item nunca
+        # cambia de location al equiparse (sigue en el inventario), así que
+        # `equipar <objeto ya equipado>` lo encuentra con normalidad. Sin
+        # este corte, el bloque de abajo no lo trata como una sustitución
+        # (item == actual) y aplica sus bonuses una vez más sobre los que
+        # ya están activos, acumulándolos sin límite con cada repetición.
         actual = eq.get(slot)
+        if actual == item:
+            caller.msg(f"Ya tienes |w{item.key}|n equipado.")
+            return
+
+        # Desequipar el item actual en ese slot si lo hay
         if actual and actual != item:
             bonuses_previos = actual.db.bonuses or {}
             _aplicar_bonuses(caller, bonuses_previos, signo=-1)

@@ -157,6 +157,31 @@ class TestCmdEquipar(EvenniaTest):
         eq = _get_equipamiento(self.char)
         self.assertEqual(eq["arma"], espada)
 
+    def test_reequipar_lo_ya_equipado_no_duplica_bonus(self):
+        """
+        Regresión: equipar un objeto que YA está equipado en su slot no se
+        detectaba como caso especial -- el item nunca cambia de location al
+        equiparse (sigue en el inventario), así que `equipar <mismo
+        objeto>` lo encuentra con normalidad. El bloque de sustitución solo
+        se saltaba si "actual == item", pero después el código aplicaba los
+        bonuses igualmente sin condición, acumulándolos sin límite con cada
+        repetición: 3 veces "equipar espada" con +3 fuerza daba +9, no +3.
+        """
+        self._crear_espada(bonus_fuerza=3)
+        cmd = _make_cmd(CmdEquipar, self.char, args="espada de prueba")
+        cmd.func()
+        self.assertEqual(self.char.db.fuerza, 13)
+
+        cmd2 = _make_cmd(CmdEquipar, self.char, args="espada de prueba")
+        cmd2.func()
+        self.assertEqual(
+            self.char.db.fuerza, 13,
+            "Reequipar el mismo objeto no debe volver a sumar su bonus.",
+        )
+        cmd3 = _make_cmd(CmdEquipar, self.char, args="espada de prueba")
+        cmd3.func()
+        self.assertEqual(self.char.db.fuerza, 13)
+
     def test_equipar_reemplaza_slot_ocupado_y_revierte_bonus_anterior(self):
         self._crear_espada(key="espada vieja", bonus_fuerza=3)
         hacha = create_object("typeclasses.objects.Equipo", key="hacha nueva", location=self.char)
