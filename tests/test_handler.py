@@ -13,7 +13,7 @@ from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
 
 from features.combat.handler import CombatHandler, _get_stats, _generar_loot, _runas_activas
-from systems.combat.engine import STAT_DEFAULTS
+from systems.combat.engine import STAT_DEFAULTS, ResultadoAtaque
 from typeclasses.characters import Character
 
 
@@ -516,6 +516,83 @@ class TestDarXpAGrupoComprobarLogros(EvenniaTest):
             "El logro de nivel no se comprobó para un miembro de grupo que "
             "no era participante del combate.",
         )
+
+
+class TestRunaEscudoGolpeLetal(EvenniaTest):
+    """
+    Regresión: la Runa de Escudo (reduccion_dano) solo se aplicaba con
+    "resultado.dano and not resultado.muerto" -- es decir, nunca en un golpe
+    que dejaría al portador a 0 HP o menos, justo el único momento en que de
+    verdad importa. Un golpe letal se resolvía siempre con el daño íntegro,
+    sin ninguna reducción, pese a que la descripción de la runa ("reduces N
+    daño recibido en cada ataque") no excluye los golpes letales.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+
+        # El defensor con el escudo es un NPC a propósito: un jugador que
+        # muere se manda a 1 HP a casa (_procesar_muerte), lo que taparía la
+        # diferencia entre "el escudo lo salvó" y "el escudo no hizo nada" —
+        # un NPC sin cuenta refleja el HP real calculado, sin ese mecanismo.
+        self.defensor = create_object("typeclasses.npc.NPC", key="Goblin escudado")
+        self.defensor.move_to(self.sala, quiet=True)
+        _set_stats(self.defensor, hp=5, hp_max=100, nivel=1)
+        # Runa de Escudo grabada y "equipada" (basta con que el slot tenga
+        # algo en db.equipamiento; ver _runas_activas()).
+        self.defensor.db.equipamiento = {"armadura": self.defensor}
+        self.defensor.db.runas_equipadas = {"armadura": "RUNA_ESCUDO"}
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.jugador, self.defensor])
+        # Fijar la acción directamente (sin pasar por registrar_accion(),
+        # que resolvería el turno de inmediato con resolver_ataque() real
+        # antes de poder parchear su resultado en cada test).
+        self.handler.db.acciones[self.jugador.dbref] = {
+            "tipo": "atacar", "objetivo": self.defensor, "habilidad": None,
+        }
+
+    def _golpe_letal_simulado(self):
+        return ResultadoAtaque(
+            exito=True,
+            dano=5,
+            critico=False,
+            mensaje_atacante="ataca",
+            mensaje_defensor="te atacan",
+            mensaje_sala="pelean",
+            hp_restante=0,
+            muerto=True,
+        )
+
+    def test_escudo_reduce_un_golpe_que_seria_letal(self):
+        with patch(
+            "features.combat.handler.resolver_ataque",
+            return_value=self._golpe_letal_simulado(),
+        ), patch("features.respawn.respawn.programar_respawn"):
+            self.handler._resolver_turno()
+
+        # 5 HP - (5 daño - 2 de reducción) = 2 HP: el escudo debe salvarlo.
+        self.assertEqual(self.defensor.db.hp, 2)
+
+    def test_escudo_no_revive_un_overkill_muy_superior_a_la_reduccion(self):
+        """Regresión inversa: la reducción no debe "revivir" a un objetivo
+        con un overkill muy superior al propio valor de la runa. Se
+        parchea _procesar_muerte() para poder inspeccionar el HP calculado
+        antes de que la muerte del NPC lo elimine de la base de datos."""
+        golpe = self._golpe_letal_simulado()
+        golpe.dano = 500  # overkill masivo, muy por encima de los 2 de la runa
+        with patch(
+            "features.combat.handler.resolver_ataque",
+            return_value=golpe,
+        ), patch.object(self.handler, "_procesar_muerte") as mock_muerte:
+            self.handler._resolver_turno()
+
+        self.assertEqual(self.defensor.db.hp, 0)
+        mock_muerte.assert_called_once()
 
 
 class TestDesafiosKillBestiaHook(EvenniaTest):

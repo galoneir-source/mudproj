@@ -485,8 +485,21 @@ class CombatHandler(DefaultScript):
                             objetivo.db.hp = umbral
                             self._fin_duelo(ganador=actor, perdedor=objetivo)
                             return
-                    # Runa de Escudo: reducir daño recibido
-                    if resultado.dano and not resultado.muerto:
+                    # Runa de Escudo: reducir daño recibido. Se aplica incluso
+                    # en un golpe letal -- antes el bloque exigía "not
+                    # resultado.muerto", así que el escudo nunca podía
+                    # intervenir justo en el único momento en que de verdad
+                    # importa: un golpe que dejaría al portador a 0 HP o
+                    # menos se resolvía siempre con el daño íntegro, sin
+                    # ninguna reducción, pese a que la descripción de la runa
+                    # ("reduces N daño recibido en cada ataque") no excluye
+                    # los golpes letales. hp_restante se recalcula desde el
+                    # HP real previo al golpe (stats_def), no sumando sobre
+                    # resultado.hp_restante -- ese valor ya venía recortado a
+                    # 0 por resolver_ataque() en un golpe letal, y sumarle la
+                    # reducción ahí revivía a un objetivo con overkill mucho
+                    # mayor que el propio valor de la runa.
+                    if resultado.dano:
                         try:
                             from systems.runes.runes import obtener_efectos
                             reduccion = obtener_efectos(_runas_activas(objetivo)).get(
@@ -495,9 +508,8 @@ class CombatHandler(DefaultScript):
                             if reduccion and resultado.dano > 1:
                                 red_real = min(resultado.dano - 1, reduccion)
                                 resultado.dano -= red_real
-                                resultado.hp_restante = max(
-                                    0, resultado.hp_restante + red_real
-                                )
+                                hp_antes = stats_def.get("hp", 1)
+                                resultado.hp_restante = max(0, hp_antes - resultado.dano)
                                 resultado.muerto = resultado.hp_restante <= 0
                                 objetivo.msg(
                                     f"|gRuna de Escudo:|n -{red_real} daño bloqueado."
