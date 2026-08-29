@@ -7,11 +7,24 @@ Cubre: CmdExpedicion._iniciar y la recolección real del grupo (party).
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_expeditions
 """
+from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
 from features.expeditions.commands import CmdExpedicion, _obtener_script_expedicion
 from features.party.commands import _añadir_miembro, _crear_partido
 from typeclasses.characters import Character
+
+
+class PersonajeConectado(Character):
+    """
+    has_account cuenta sesiones conectadas reales; para simular un segundo
+    jugador realmente presente (además de self.char1, que ya trae sesión
+    real por defecto en esta versión de Evennia) sin montar una sesión
+    real, se sobreescribe la propiedad -- mismo truco que test_guild_wars.py.
+    """
+    @property
+    def has_account(self):
+        return True
 
 
 def _make_cmd(CmdClass, caller, args=""):
@@ -113,3 +126,92 @@ class TestExpedicionInicioGrupo(EvenniaTest):
 
         _make_cmd(CmdExpedicion, self.char1, "abandonar").func()
         self.assertFalse(getattr(self.char1.location.db, "es_expedicion", False))
+
+
+# --------------------------------------------------------------------------- #
+#  Recompensas al completar la expedición entera
+# --------------------------------------------------------------------------- #
+
+class TestExpedicionRecompensaTotal(EvenniaTest):
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.companera = create_object(PersonajeConectado, key="Compañera")
+        _init_char(self.companera)
+        self.char1.db.experiencia = 0
+        self.char1.db.monedas = 0
+        self.companera.db.experiencia = 0
+        self.companera.db.monedas = 0
+        self.companera.move_to(self.char1.location, quiet=True)
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.companera)
+
+    def tearDown(self):
+        script = _obtener_script_expedicion(self.char1)
+        if script:
+            try:
+                script.delete()
+            except Exception:
+                pass
+        super().tearDown()
+
+    def _matar_npcs_de_la_sala(self, sala):
+        for obj in list(sala.contents):
+            if type(obj).__name__ == "NPC":
+                obj.delete()
+
+    def _jugar_expedicion_completa(self, tipo_id="bosque_profundo"):
+        from systems.expeditions.expeditions import total_oleadas
+
+        _make_cmd(CmdExpedicion, self.char1, f"iniciar {tipo_id}").func()
+        script = _obtener_script_expedicion(self.char1)
+        sala = self.char1.location
+
+        n = total_oleadas(tipo_id)
+        for _ in range(n):
+            self._matar_npcs_de_la_sala(sala)
+            script.at_repeat()
+            if script.db.ticks_pausa:
+                script.at_repeat()
+        return script
+
+    def test_completar_expedicion_no_crashea_al_subir_de_nivel(self):
+        """
+        Regresión: _recompensar_oleada()/_completar() llamaban a
+        procesar_subida_de_nivel(nivel, experiencia) -- dos argumentos
+        posicionales y un resultado tratado como dict con claves
+        "subio"/"nuevo_nivel"/"nuevo_hp_max". La función real solo acepta
+        UN argumento (un dict de stats) y devuelve una tupla (bool, dict)
+        con clave "nivel" (sin el prefijo "nuevo_"), como ya hacen
+        correctamente combat/handler.py, quests y contratos. El resultado
+        era un TypeError sin capturar en cuanto se despejaba la primera
+        oleada de CUALQUIER expedición -- at_repeat() nunca llegaba a
+        avanzar de oleada ni a completar nada; la expedición quedaba
+        atascada para siempre hasta expirar por timeout sin recompensa.
+        Nunca se detectó porque ningún test anterior hacía avanzar el
+        script más allá de iniciar().
+        """
+        self._jugar_expedicion_completa()  # no debe lanzar TypeError
+
+    def test_completar_expedicion_no_duplica_la_recompensa_de_la_ultima_oleada(self):
+        """
+        Regresión: at_repeat() llama incondicionalmente a
+        _recompensar_oleada(oleada_idx) para cualquier oleada que se
+        despeja -- incluida la última (el jefe) -- y justo después, si era
+        la última, llama también a _completar(). _completar() usaba
+        calcular_recompensa_total(), que por definición (y su propio test,
+        "El total = por_oleada × num_oleadas + bonus_completar") ya es la
+        suma de TODAS las oleadas más el bonus -- no solo el bonus. El
+        resultado era que la recompensa de cada oleada (incluida la del
+        jefe) se pagaba dos veces: una vez oleada a oleada y otra vez de
+        golpe al completar, en todas las expediciones, siempre.
+        """
+        from systems.expeditions.expeditions import calcular_recompensa_total
+
+        self._jugar_expedicion_completa()
+
+        esperado = calcular_recompensa_total("bosque_profundo", 2)
+        self.assertEqual(self.char1.db.experiencia, esperado["xp"])
+        self.assertEqual(self.char1.db.monedas, esperado["monedas"])

@@ -10,6 +10,7 @@ from systems.expeditions.expeditions import (
     EXPEDICIONES, OLEADAS, TIPOS_VALIDOS,
     tipos_validos, oleadas_de, total_oleadas, es_oleada_jefe,
     puede_iniciar, calcular_recompensa_oleada, calcular_recompensa_total,
+    calcular_bonus_completar,
     formatear_catalogo, formatear_info, formatear_progreso,
 )
 
@@ -214,6 +215,23 @@ class TestRecompensas:
         por_oleada = calcular_recompensa_oleada("bosque_profundo", 2)
         total = calcular_recompensa_total("bosque_profundo", 2)
         assert total["xp"] > por_oleada["xp"] * n
+
+    def test_recompensa_total_es_oleadas_mas_bonus(self):
+        # calcular_recompensa_total() es exactamente la suma de lo pagado
+        # oleada a oleada (calcular_recompensa_oleada() × total_oleadas())
+        # más el bonus de completar -- no el bonus solo ni el doble.
+        n = total_oleadas("fortaleza_caida")
+        por_oleada = calcular_recompensa_oleada("fortaleza_caida", 3)
+        bonus = calcular_bonus_completar("fortaleza_caida", 3)
+        total = calcular_recompensa_total("fortaleza_caida", 3)
+        assert total["xp"] == por_oleada["xp"] * n + bonus["xp"]
+        assert total["monedas"] == por_oleada["monedas"] * n + bonus["monedas"]
+
+    def test_bonus_completar_no_incluye_oleadas(self):
+        bonus = calcular_bonus_completar("bosque_profundo", 2)
+        total = calcular_recompensa_total("bosque_profundo", 2)
+        assert 0 < bonus["xp"] < total["xp"]
+        assert 0 < bonus["monedas"] < total["monedas"]
 
 
 # --------------------------------------------------------------------------- #

@@ -165,15 +165,33 @@ def calcular_recompensa_oleada(tipo_id: str, num_miembros: int) -> dict:
     }
 
 
-def calcular_recompensa_total(tipo_id: str, num_miembros: int) -> dict:
-    """XP y monedas totales al completar la expedición entera (por jugador)."""
-    por_oleada = calcular_recompensa_oleada(tipo_id, num_miembros)
-    n_oleadas = total_oleadas(tipo_id)
+def calcular_bonus_completar(tipo_id: str, num_miembros: int) -> dict:
+    """
+    Bonus adicional (por jugador) por completar la expedición entera, sin
+    contar las recompensas de oleada -- esas ya se pagan una a una, oleada
+    a oleada (incluida la del jefe), a través de calcular_recompensa_oleada().
+    """
     bonus = BONUS_COMPLETAR.get(tipo_id, {"xp": 0, "monedas": 0})
     factor = 1.0 + (num_miembros - 2) * 0.1
     return {
-        "xp":      por_oleada["xp"] * n_oleadas + int(bonus["xp"] * factor),
-        "monedas": por_oleada["monedas"] * n_oleadas + int(bonus["monedas"] * factor),
+        "xp":      int(bonus["xp"] * factor),
+        "monedas": int(bonus["monedas"] * factor),
+    }
+
+
+def calcular_recompensa_total(tipo_id: str, num_miembros: int) -> dict:
+    """
+    XP y monedas acumuladas (por jugador) a lo largo de toda la expedición:
+    suma de la recompensa de cada oleada más el bonus de completar. Uso
+    informativo/de referencia -- no repartir esto de golpe al completar,
+    ya que las oleadas se pagan por separado (ver calcular_bonus_completar).
+    """
+    por_oleada = calcular_recompensa_oleada(tipo_id, num_miembros)
+    n_oleadas = total_oleadas(tipo_id)
+    bonus = calcular_bonus_completar(tipo_id, num_miembros)
+    return {
+        "xp":      por_oleada["xp"] * n_oleadas + bonus["xp"],
+        "monedas": por_oleada["monedas"] * n_oleadas + bonus["monedas"],
     }
 
 

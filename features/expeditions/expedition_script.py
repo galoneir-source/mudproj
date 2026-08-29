@@ -217,6 +217,7 @@ class ExpedicionScript(DefaultScript):
     def _recompensar_oleada(self, oleada_idx: int):
         from systems.expeditions.expeditions import calcular_recompensa_oleada
         from systems.combat.engine import procesar_subida_de_nivel
+        from features.combat.handler import _get_stats, _set_stat
 
         tipo_id = self.db.tipo_id
         miembros = self._miembros_en_sala()
@@ -227,15 +228,12 @@ class ExpedicionScript(DefaultScript):
         for m in miembros:
             xp_actual = getattr(m.db, "experiencia", 0) or 0
             m.db.experiencia = xp_actual + rec["xp"]
-            subida = procesar_subida_de_nivel(
-                getattr(m.db, "nivel", 1) or 1,
-                m.db.experiencia,
-            )
-            if subida["subio"]:
-                m.db.nivel = subida["nuevo_nivel"]
-                m.db.hp_max = subida["nuevo_hp_max"]
-                m.db.hp = m.db.hp_max
-                m.msg(f"\n|Y¡Has subido al nivel {subida['nuevo_nivel']}!|n\n")
+            m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
+            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats(m))
+            if subio:
+                for k, v in nuevos_stats.items():
+                    _set_stat(m, k, v)
+                m.msg(f"\n|Y¡Has subido al nivel {nuevos_stats['nivel']}!|n\n")
                 try:
                     from features.achievements.commands import comprobar_y_notificar
                     comprobar_y_notificar(m)
@@ -244,9 +242,10 @@ class ExpedicionScript(DefaultScript):
 
     def _completar(self):
         from systems.expeditions.expeditions import (
-            EXPEDICIONES, calcular_recompensa_total
+            EXPEDICIONES, calcular_bonus_completar
         )
         from systems.combat.engine import procesar_subida_de_nivel
+        from features.combat.handler import _get_stats, _set_stat
 
         tipo_id = self.db.tipo_id
         exp = EXPEDICIONES[tipo_id]
@@ -262,7 +261,11 @@ class ExpedicionScript(DefaultScript):
                 f"El grupo será teletransportado en |w5|n segundos.\n"
             )
 
-        rec = calcular_recompensa_total(tipo_id, max(len(miembros), 1))
+        # Bonus adicional únicamente -- las recompensas de cada oleada
+        # (incluida la del jefe) ya se pagaron una a una en
+        # _recompensar_oleada(), que at_repeat() llama para toda oleada que
+        # se despeja, sin excluir la última.
+        rec = calcular_bonus_completar(tipo_id, max(len(miembros), 1))
         for m in miembros:
             m.db.expediciones_completadas = (
                 getattr(m.db, "expediciones_completadas", 0) or 0
@@ -272,15 +275,11 @@ class ExpedicionScript(DefaultScript):
             xp_actual = getattr(m.db, "experiencia", 0) or 0
             m.db.experiencia = xp_actual + rec["xp"]
             m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
-            subida = procesar_subida_de_nivel(
-                getattr(m.db, "nivel", 1) or 1,
-                m.db.experiencia,
-            )
-            if subida["subio"]:
-                m.db.nivel = subida["nuevo_nivel"]
-                m.db.hp_max = subida["nuevo_hp_max"]
-                m.db.hp = m.db.hp_max
-                m.msg(f"\n|Y¡Has subido al nivel {subida['nuevo_nivel']}!|n\n")
+            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats(m))
+            if subio:
+                for k, v in nuevos_stats.items():
+                    _set_stat(m, k, v)
+                m.msg(f"\n|Y¡Has subido al nivel {nuevos_stats['nivel']}!|n\n")
             m.msg(
                 f"  Recompensa: |g+{rec['xp']} XP|n  |y+{rec['monedas']} monedas|n"
             )
