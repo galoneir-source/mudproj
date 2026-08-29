@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.16] — 2026-08-29
+
+### Corregido
+- `casa`/`hogar` y `visitar <jugador>` (`features/housing/commands.py`) no comprobaban `en_combate`, a diferencia de `viajar` (viaje rápido, v0.66.0), que sí lo hace. Cualquier jugador con vivienda propia (500 monedas, pago único, muy accesible) podía teletransportarse a un lugar seguro de forma instantánea, gratuita y con éxito garantizado durante cualquier combate contra un NPC — sin pasar por el 50% de fallo real de `huir`, dejando el hueco del combate colgado (se auto-pasa por el timeout de turno de 15s en vez de resolverse limpiamente) en lugar de escapar de verdad. Encontrado auditando vivienda. Fix: `casa` y `visitar` bloquean ahora la teletransporte mientras `en_combate` es verdadero, mismo criterio que `viajar`. 2 tests de regresión nuevos en `tests/test_vivienda.py`.
+
 ## [0.71.15] — 2026-08-29
 
 ### Corregido
