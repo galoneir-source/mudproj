@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.17] — 2026-08-29
+
+### Corregido
+- `TradeSession.ofrecer_objeto()` (`features/trade/trade_session.py`) solo comprobaba `obj.location == jugador` para validar que un objeto ofrecido estuviera en el inventario — pero equipar un objeto no cambia su `location`, así que un arma o armadura equipada pasaba esa comprobación igualmente. A diferencia de banco, mercado, subastas y crafteo (que excluyen explícitamente los objetos equipados vía `_get_equipamiento()`), el intercambio no tenía esa protección: ofrecer y transferir un objeto equipado lo movía de verdad al otro jugador al ejecutarse el intercambio, pero el `equipamiento` de quien lo dio nunca se actualizaba — sus bonuses de stats seguían aplicados permanentemente, y si el receptor también lo equipaba, el bonus quedaba duplicado entre dos personajes. Encontrado auditando intercambio. Fix: `ofrecer_objeto()` rechaza ahora ofrecer un objeto que esté actualmente equipado, mismo criterio que el resto de sistemas económicos del proyecto. 2 tests de regresión nuevos en `tests/test_intercambio.py`.
+
 ## [0.71.16] — 2026-08-29
 
 ### Corregido
