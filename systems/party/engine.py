@@ -26,6 +26,7 @@ def puede_invitar_validar(
     invitante_es_lider: bool,
     objetivo_en_partido: bool,
     misma_sala: bool,
+    objetivo_tiene_invitacion_pendiente: bool = False,
 ) -> tuple[bool, str]:
     """
     Valida las condiciones para enviar una invitación de grupo.
@@ -35,6 +36,12 @@ def puede_invitar_validar(
         return False, "El jugador no está en la misma sala."
     if objetivo_en_partido:
         return False, "El jugador ya pertenece a un grupo."
+    # objetivo.db.invitacion_partido es un slot único: una segunda
+    # invitación de otro líder lo sobrescribiría en silencio sin avisar
+    # nunca al primer invitante, que se quedaría esperando una invitación
+    # que ya no existe.
+    if objetivo_tiene_invitacion_pendiente:
+        return False, "El jugador ya tiene una invitación de grupo pendiente."
     if invitante_en_partido and not invitante_es_lider:
         return False, "Solo el líder puede invitar a nuevos miembros."
     return True, ""

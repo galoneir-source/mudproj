@@ -149,6 +149,9 @@ class CmdInvitar(Command):
             invitante_es_lider=es_lider(caller),
             objetivo_en_partido=esta_en_partido(objetivo),
             misma_sala=(caller.location == objetivo.location),
+            objetivo_tiene_invitacion_pendiente=bool(
+                getattr(objetivo.db, "invitacion_partido", None)
+            ),
         )
         if not ok:
             caller.msg(f"|r{motivo}|n")

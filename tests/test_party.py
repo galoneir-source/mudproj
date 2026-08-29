@@ -290,3 +290,24 @@ class TestPartyCmds(EvenniaTest):
         # char2 ya está en el partido → invitarlo de nuevo debe fallar
         _cmd(CmdInvitar, self.char1, self.char2.key, target=self.char2)
         self.assertEqual(len(get_miembros(self.char1)), 2)
+
+    def test_segundo_lider_no_puede_pisar_una_invitacion_pendiente(self):
+        """
+        Regresión candidata: puede_invitar_validar() no comprueba si el
+        objetivo YA tiene una invitación pendiente de OTRO líder --
+        objetivo.db.invitacion_partido es un slot único que la segunda
+        invitación sobrescribe en silencio, sin avisar nunca al primer
+        invitante. Si el jugador invitado acepta después, se une al grupo
+        del segundo (el último en invitar), y el primer grupo se queda
+        esperando una invitación que ya no existe, sin saber por qué.
+        """
+        char3 = create_object(Character, key="LiderB", location=self.char1.location)
+        char3.msg = lambda text=None, **kw: None
+
+        _cmd(CmdInvitar, self.char1, self.char2.key, target=self.char2)
+        _cmd(CmdInvitar, char3, self.char2.key, target=self.char2)
+
+        self.assertEqual(
+            getattr(self.char2.db, "invitacion_partido", None), self.char1,
+            "La invitación de char1 se perdió en silencio al invitar char3.",
+        )
