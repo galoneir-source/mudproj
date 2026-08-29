@@ -1122,6 +1122,18 @@ class CombatHandler(DefaultScript):
                     f"  |gHP restaurado al máximo.|n\n"
                 )
 
+            # Comprobación de logros: un miembro del grupo puede recibir XP y
+            # subir de nivel aquí sin figurar nunca en self.db.participantes
+            # (solo el atacante y el objetivo se añaden al iniciar el
+            # combate — ver features/combat/commands.py), así que el bucle
+            # de logros de _procesar_muerte() (limitado a "jugadores" =
+            # participantes) nunca lo alcanza. Sin esta llamada, un logro de
+            # nivel (p. ej. nivel_5) quedaba sin notificar hasta la próxima
+            # acción cualquiera del personaje que sí disparara el chequeo.
+            if getattr(m, "has_account", False):
+                from features.achievements.commands import comprobar_y_notificar
+                comprobar_y_notificar(m)
+
     # ------------------------------------------------------------------ #
     #  IA de NPC (compleja / reactiva)
     # ------------------------------------------------------------------ #

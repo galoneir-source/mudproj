@@ -462,6 +462,62 @@ class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
         self.assertTrue(mock_delay.called)
 
 
+class TestDarXpAGrupoComprobarLogros(EvenniaTest):
+    """
+    Regresión: _dar_xp_a_grupo() reparte XP (y aplica subida de nivel, vía
+    procesar_subida_de_nivel) a todos los miembros del grupo presentes en la
+    sala, pero self.db.participantes solo incluye al atacante y al objetivo
+    (ver features/combat/commands.py) -- el resto del grupo nunca aparece en
+    "jugadores" dentro de _procesar_muerte(), que es lo único que dispara
+    comprobar_y_notificar() tras la muerte del NPC. Un miembro de grupo que
+    sube de nivel gracias al XP compartido de una pelea en la que no
+    participó no recibía la comprobación de logros hasta su siguiente acción
+    cualquiera que sí la disparase (kill propio, quest, crafteo...).
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+
+        self.companero = create_object(JugadorFalsoTurno, key="Compañero")
+        self.companero.move_to(self.sala, quiet=True)
+        _set_stats(self.companero, hp=100, hp_max=100, nivel=1)
+        self.companero.db.experiencia = 5  # a 95 XP del nivel 2 (umbral: 100)
+
+        from features.party.commands import _crear_partido, _añadir_miembro
+        _crear_partido(self.jugador)
+        _añadir_miembro(self.jugador, self.companero)
+
+        # Nivel alto para garantizar suficiente XP de grupo pase lo que
+        # pase con la variación aleatoria de calcular_xp_recompensa().
+        self.npc = create_object("typeclasses.npc.NPC", key="Goblin")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=30, hp_max=30, nivel=10)
+
+    def _crear_handler(self):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar([self.jugador, self.npc])  # companero NO es participante
+        return handler
+
+    def test_companero_de_grupo_ajeno_al_combate_recibe_chequeo_de_logros(self):
+        handler = self._crear_handler()
+        with patch("features.respawn.respawn.programar_respawn"):
+            handler._procesar_muerte(self.npc, asesino=self.jugador)
+
+        self.assertGreaterEqual(
+            self.companero.db.nivel, 2,
+            "El compañero de grupo debía subir de nivel con el XP compartido.",
+        )
+        self.assertIn(
+            "nivel_2", list(getattr(self.companero.db, "logros", []) or []),
+            "El logro de nivel no se comprobó para un miembro de grupo que "
+            "no era participante del combate.",
+        )
+
+
 class TestIaNpcCobardeHuida(EvenniaTest):
     """
     Regresión: _ia_npc() ponía 'enraged'=True a CUALQUIER NPC (sin mirar su
