@@ -68,6 +68,12 @@ class TestDistribuirRecompensas(EvenniaTest):
             char.msg = lambda text=None, **kw: None
             char.db.experiencia = 0
             char.db.monedas = 0
+            # Nivel máximo por defecto: estos tests comprueban el reparto y
+            # el tope del pool de XP/monedas, no la subida de nivel (que
+            # tiene su propio test) -- con MAX_NIVEL, procesar_subida_de_nivel()
+            # no toca db.experiencia y las aserciones de "recibe el pool
+            # completo" siguen midiendo el valor bruto otorgado.
+            char.db.nivel = 10
 
     def test_dos_participantes_50_50_no_supera_el_pool(self):
         datos = JEFES_MUNDO["TITAN_PANTANO"]
@@ -99,6 +105,7 @@ class TestDistribuirRecompensas(EvenniaTest):
             c.msg = lambda text=None, **kw: None
             c.db.experiencia = 0
             c.db.monedas = 0
+            c.db.nivel = 10
             personajes.append(c)
 
         tracker = {c.dbref: 50 for c in personajes}  # 20 × 50 = 1000 daño total, 5% cada uno
@@ -110,6 +117,26 @@ class TestDistribuirRecompensas(EvenniaTest):
 
         self.assertLessEqual(xp_repartido, datos["xp_total"])
         self.assertLessEqual(mon_repartido, datos["monedas_total"])
+
+    def test_recompensa_procesa_subida_de_nivel(self):
+        """
+        Regresión: distribuir_recompensas_jefe_mundo() escribía
+        jugador.db.experiencia directamente sin llamar después a
+        procesar_subida_de_nivel() -a diferencia de quests, contratos,
+        expediciones y mazmorras, que sí lo hacen justo tras dar su
+        recompensa de XP-. El jugador acumulaba XP por encima del umbral de
+        nivel sin subir de nivel de verdad (stats y HP máximo incluidos)
+        hasta su siguiente kill de combate normal.
+        """
+        self.char1.db.nivel = 1
+        self.char1.db.experiencia = 50  # umbral de nivel 2: 100 XP
+        fuerza_antes = self.char1.db.fuerza
+        tracker = {self.char1.dbref: 1000}  # único participante -> pool completo (600 XP)
+
+        distribuir_recompensas_jefe_mundo(None, tracker, self.sala, "TITAN_PANTANO")
+
+        self.assertGreater(self.char1.db.nivel, 1)
+        self.assertGreater(self.char1.db.fuerza, fuerza_antes)
 
     def test_un_solo_participante_recibe_el_pool_completo(self):
         datos = JEFES_MUNDO["TITAN_PANTANO"]

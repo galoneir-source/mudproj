@@ -235,6 +235,27 @@ def distribuir_recompensas_jefe_mundo(npc, tracker: dict, sala, boss_id: str | N
             f"  |g+{xp} XP  +{monedas} monedas|n\n"
         )
 
+        # Subida de nivel — igual que quests/contratos/expediciones/mazmorras,
+        # que llaman a procesar_subida_de_nivel() justo tras dar su XP. Sin
+        # esto, el XP del jefe de mundo se acumulaba por encima del umbral
+        # de nivel sin que nivel/stats/HP máximo se actualizaran de verdad
+        # hasta el siguiente kill de combate normal del jugador.
+        try:
+            from features.combat.handler import _get_stats, _set_stat
+            from systems.combat.engine import procesar_subida_de_nivel
+            stats = _get_stats(jugador)
+            subio, nuevos_stats = procesar_subida_de_nivel(stats)
+            if subio:
+                for k, v in nuevos_stats.items():
+                    _set_stat(jugador, k, v)
+                jugador.msg(
+                    f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
+                    f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
+                    f"  |gHP restaurado al máximo.|n\n"
+                )
+        except Exception:
+            logger.log_trace("WorldBossScript: error procesando subida de nivel.")
+
         try:
             from features.achievements.commands import comprobar_y_notificar
             comprobar_y_notificar(jugador)
