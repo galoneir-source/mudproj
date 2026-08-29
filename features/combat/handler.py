@@ -506,13 +506,20 @@ class CombatHandler(DefaultScript):
                             pass
 
                     _set_stat(objetivo, "hp", resultado.hp_restante)
-                    # Tracking de daño en Jefe de Mundo
+                    # Tracking de daño en Jefe de Mundo. En db, no ndb: un
+                    # jefe de mundo tiene mucho HP y la pelea puede durar más
+                    # que el intervalo entre reloads del servidor -- ndb no
+                    # sobrevive a un `evennia reload` (operación rutinaria,
+                    # publicitada como segura para los jugadores), así que
+                    # todo el progreso de daño acumulado hasta ese momento se
+                    # perdía y quien más había golpeado podía quedarse sin
+                    # recompensa si no volvía a golpear después del reload.
                     if (getattr(objetivo.db, "es_jefe_mundo", False)
                             and getattr(actor, "has_account", False)
                             and (resultado.dano or 0) > 0):
-                        tracker = dict(getattr(objetivo.ndb, "dano_por_jugador", None) or {})
+                        tracker = dict(getattr(objetivo.db, "dano_por_jugador", None) or {})
                         tracker[actor.dbref] = tracker.get(actor.dbref, 0) + resultado.dano
-                        objetivo.ndb.dano_por_jugador = tracker
+                        objetivo.db.dano_por_jugador = tracker
 
                 # Runa de Drenaje: robo de vida al golpear
                 if resultado.exito and resultado.dano and not resultado.muerto:
@@ -861,7 +868,7 @@ class CombatHandler(DefaultScript):
                     from features.world_bosses.world_boss_script import (
                         distribuir_recompensas_jefe_mundo,
                     )
-                    tracker = dict(getattr(muerto.ndb, "dano_por_jugador", None) or {})
+                    tracker = dict(getattr(muerto.db, "dano_por_jugador", None) or {})
                     boss_id = getattr(muerto.db, "world_boss_id", None)
                     distribuir_recompensas_jefe_mundo(muerto, tracker, sala, boss_id)
                 except Exception as _wb_err:
@@ -957,12 +964,14 @@ class CombatHandler(DefaultScript):
             return
         hp_obj = max(0, (getattr(objetivo.db, "hp", 0) or 0) - daño)
         _set_stat(objetivo, "hp", hp_obj)
-        # Tracking de daño en Jefe de Mundo (igual que el ataque directo del jugador)
+        # Tracking de daño en Jefe de Mundo (igual que el ataque directo del
+        # jugador, en db para que sobreviva a un reload -- ver comentario junto
+        # al tracking del golpe directo).
         if (getattr(objetivo.db, "es_jefe_mundo", False)
                 and getattr(actor, "has_account", False)):
-            tracker = dict(getattr(objetivo.ndb, "dano_por_jugador", None) or {})
+            tracker = dict(getattr(objetivo.db, "dano_por_jugador", None) or {})
             tracker[actor.dbref] = tracker.get(actor.dbref, 0) + daño
-            objetivo.ndb.dano_por_jugador = tracker
+            objetivo.db.dano_por_jugador = tracker
         nombre_mascota = mascota.get("nombre", "tu mascota")
         self.obj.msg_contents(
             f"|y{nombre_mascota}|n muerde a |r{objetivo.key}|n "

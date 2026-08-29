@@ -269,6 +269,32 @@ class TestCombatHandler(EvenniaTest):
         hp_despues = self.npc.db.hp if self.npc.pk else 0
         self.assertLessEqual(hp_despues, hp_antes)
 
+    def test_dano_a_jefe_mundo_se_registra_en_db_no_en_ndb(self):
+        """
+        Regresión: el tracking de daño contra un jefe de mundo se guardaba
+        en objetivo.ndb.dano_por_jugador -- memoria del proceso que Evennia
+        NO conserva a través de un `evennia reload` (operación rutinaria,
+        publicitada como segura para los jugadores: "recargar sin perder
+        conexiones"). Un jefe de mundo tiene mucho HP y la pelea puede durar
+        más que el intervalo entre reloads, así que uno ocurriendo a mitad
+        de combate borraba todo el progreso de daño acumulado hasta ese
+        momento -- quien más había golpeado podía quedarse sin recompensa
+        si no volvía a golpear después del reload. Debe guardarse en db.
+        """
+        self.npc.db.es_jefe_mundo = True
+        self.npc.db.dano_por_jugador = {}
+        handler = self._crear_handler()
+        handler.db.turno_actual = 0  # jugador ataca primero
+        with patch("systems.combat.engine.random") as mock_rng:
+            mock_rng.random.side_effect = [0.99, 0.99]  # no esquiva, no critico
+            mock_rng.randint.return_value = 4
+            handler.registrar_accion(self.jugador, "atacar", objetivo=self.npc)
+
+        self.assertIsNone(getattr(self.npc.ndb, "dano_por_jugador", None))
+        tracker = dict(getattr(self.npc.db, "dano_por_jugador", None) or {})
+        self.assertIn(self.jugador.dbref, tracker)
+        self.assertGreater(tracker[self.jugador.dbref], 0)
+
     # ------------------------------------------------------------------ #
     #  Timeout de turno (at_repeat)
     # ------------------------------------------------------------------ #

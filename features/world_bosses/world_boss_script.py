@@ -93,7 +93,7 @@ class WorldBossScript(DefaultScript):
             npc.db.es_jefe_mundo = True
             npc.db.world_boss_id = boss_id
             npc.db.npc_prototipo = None   # Sin respawn automático
-            npc.ndb.dano_por_jugador = {}
+            npc.db.dano_por_jugador = {}  # en db: debe sobrevivir a un reload
 
             # Guardar dbref
             activos = dict(self.db.npc_activo or {})
