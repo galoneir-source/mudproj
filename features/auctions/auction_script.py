@@ -124,13 +124,15 @@ class AuctionScript(DefaultScript):
         Puja por una subasta activa. Devuelve (True, "") o (False, msg_error).
         Retiene las monedas de la puja; reembolsa al pujador anterior si lo hay.
         """
-        from systems.auctions.auctions import validar_puja
+        from systems.auctions.auctions import validar_puja, subasta_expirada
         subastas = dict(self.db.subastas or {})
 
         if aid not in subastas:
             return False, "No existe esa subasta."
 
         entry = subastas[aid]
+        if subasta_expirada(entry["timestamp_inicio"], time.time()):
+            return False, "Esta subasta ya ha finalizado."
         if entry["vendedor_dbref"] == pujador.dbref:
             return False, "No puedes pujar en tu propia subasta."
 

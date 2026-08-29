@@ -296,6 +296,25 @@ class TestAuctionScriptCierre(EvenniaTest):
         self.assertEqual(item.location, self.char1)
         self.assertNotIn(aid, self.script.obtener_subastas())
 
+    def test_pujar_en_subasta_expirada_falla(self):
+        """
+        Regresión candidata: pujar() no comprueba subasta_expirada() -- solo
+        lo hace el tick automático de at_repeat() (cada 60s). Una subasta que
+        ya superó sus 30 minutos pero cuyo cierre automático aún no ha
+        corrido (ventana de hasta 59s) sigue aceptando pujas ganadoras,
+        a diferencia de retos de duelo/propuestas de matrimonio, que sí
+        comprueban su expiración de forma perezosa en el propio comando.
+        """
+        item = _crear_item(self.char1, "vara tardía")
+        _, aid = self.script.publicar(self.char1, item, 100)
+        self.char2.db.monedas = 1000
+        self._expirar(aid)
+
+        ok, msg = self.script.pujar(aid, self.char2, puja_minima(100))
+
+        self.assertFalse(ok)
+        self.assertIn("finaliz", msg.lower())
+
     def test_subasta_no_expirada_no_se_cierra(self):
         item = _crear_item(self.char1, "objeto reciente")
         _, aid = self.script.publicar(self.char1, item, 100)
