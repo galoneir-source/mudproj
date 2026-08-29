@@ -171,6 +171,47 @@ class GuildWarScript(DefaultScript):
                 gremio.notificar_miembros(mensaje)
         return True, ""
 
+    def cancelar_por_disolucion(self, gremio_nombre: str):
+        """
+        Limpia cualquier reto o guerra que referenciara a un gremio que
+        acaba de disolverse. Las guerras y retos guardan el nombre del
+        gremio como string, no una referencia al GuildScript -- al
+        disolverse, ese nombre queda libre para que cualquiera funde un
+        gremio nuevo con él, y sin esta limpieza el gremio refundado
+        heredaría una guerra o un reto ajenos por simple coincidencia de
+        nombre, sin haberlos declarado ni aceptado.
+        """
+        retos = dict(self.db.retos or {})
+        cambiado = False
+        if gremio_nombre in retos:
+            del retos[gremio_nombre]
+            cambiado = True
+        for objetivo, reto in list(retos.items()):
+            if reto.get("gremio_retador") == gremio_nombre:
+                del retos[objetivo]
+                cambiado = True
+        if cambiado:
+            self.db.retos = retos
+
+        war_id, entry = self.guerra_de(gremio_nombre)
+        if not war_id:
+            return
+
+        from systems.guild_wars.guild_wars import rival_de
+        from features.guilds.guild_script import obtener_gremio_por_nombre
+
+        rival = rival_de(entry, gremio_nombre)
+        guerras = dict(self.db.guerras or {})
+        guerras.pop(war_id, None)
+        self.db.guerras = guerras
+
+        if rival:
+            gremio_rival = obtener_gremio_por_nombre(rival)
+            if gremio_rival:
+                gremio_rival.notificar_miembros(
+                    f"|y{gremio_nombre} se ha disuelto.|n |Y¡{rival} gana la guerra!|n"
+                )
+
     def registrar_kill_si_en_guerra(self, asesino, muerto) -> bool:
         """
         Si asesino y muerto pertenecen a gremios enfrentados en una guerra

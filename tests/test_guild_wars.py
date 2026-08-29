@@ -347,6 +347,30 @@ class TestGuildWarScriptRegistrarKill(EvenniaTest):
         finally:
             guild_c.delete()
 
+    def test_gremio_disuelto_y_refundado_con_el_mismo_nombre_no_hereda_la_guerra(self):
+        """
+        Regresión candidata: la guerra referencia a los gremios por su
+        nombre (string), no por el GuildScript en sí. disolver() borra el
+        script de "Los Lobos" sin avisar a GuildWarScript, así que la
+        entrada de guerra en self.db.guerras sigue diciendo
+        gremio_a="Los Lobos" -- y como el nombre ya ha quedado libre,
+        cualquiera puede fundar un gremio nuevo con el mismo nombre
+        (obtener_gremio_por_nombre ya no encuentra colisión) y heredar,
+        sin haberla declarado ni aceptado, una guerra activa ajena.
+        """
+        char3 = create_object("typeclasses.characters.Character", key="Refundador")
+        self.guild_a.disolver(devolver_banco_a=self.char1)
+
+        guild_a_nueva = _crear_guild("Los Lobos", char3)
+        try:
+            registrado = self.script.registrar_kill_si_en_guerra(char3, self.char2)
+            self.assertFalse(
+                registrado,
+                "El gremio 'Los Lobos' refundado heredó una guerra que nunca declaró.",
+            )
+        finally:
+            guild_a_nueva.delete()
+
 
 # --------------------------------------------------------------------------- #
 #  GuildWarScript — cierre automático (at_repeat)

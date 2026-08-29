@@ -126,6 +126,16 @@ class GuildScript(DefaultScript):
         if devolver_banco_a and self.db.banco:
             monedas = getattr(devolver_banco_a.db, "monedas", 0) or 0
             devolver_banco_a.db.monedas = monedas + (self.db.banco or 0)
+
+        # Un gremio nuevo con el mismo nombre podría fundarse en cuanto este
+        # se borre -- sin avisar a guerras de gremios, heredaría cualquier
+        # reto o guerra activa referenciado por este nombre.
+        try:
+            from features.guild_wars.guild_war_script import obtener_guerra_script
+            obtener_guerra_script().cancelar_por_disolucion(self.db.nombre)
+        except Exception:
+            pass
+
         self.db.miembros = {}
         self.delete()
 
