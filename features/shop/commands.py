@@ -359,6 +359,18 @@ class CmdVender(Command):
         if comerciante is None:
             return
 
+        # Aplicar el mismo veto de reputación que comprar/tienda: un
+        # comerciante que se niega a hacer negocios con un Enemigo no debería
+        # aceptarle ventas tampoco.
+        faccion_npc = getattr(comerciante.db, "faccion", None)
+        if faccion_npc:
+            from systems.reputation.engine import obtener_rep, descuento_tienda
+            rep_dict = getattr(caller.db, "reputacion", {}) or {}
+            pts = obtener_rep(rep_dict, faccion_npc)
+            if descuento_tienda(pts) is None:
+                caller.msg(f"|r{comerciante.key} se niega a hacer negocios contigo.|n")
+                return
+
         # Verificar que el item no está equipado
         from features.equipment.commands import _get_equipamiento
         eq = _get_equipamiento(caller)

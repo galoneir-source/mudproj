@@ -14,7 +14,7 @@ from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
 from features.reputation.commands import CmdReputacion
-from features.shop.commands import CmdComprar, CmdTienda
+from features.shop.commands import CmdComprar, CmdTienda, CmdVender
 from systems.reputation.engine import modificar_rep
 
 
@@ -163,6 +163,28 @@ class TestShopReputacion(EvenniaTest):
         _run_cmd(self.char1, CmdTienda)
         output = "\n".join(msgs)
         self.assertIn("niega", output)
+
+    def test_enemigo_rechazado_no_puede_vender(self):
+        """
+        Regresión: CmdVender no comprobaba la reputación en absoluto, a
+        diferencia de CmdComprar/CmdTienda (que rechazan con "se niega a
+        hacer negocios contigo" si descuento_tienda() devuelve None). Un
+        jugador con rango Enemigo (rep < -3000) con la facción del
+        comerciante podía venderle objetos con total normalidad, aunque ese
+        mismo comerciante se negara a venderle nada.
+        """
+        item = create_object(
+            "typeclasses.objects.Object", key="daga vieja", location=self.char1
+        )
+        item.db.valor = 20
+        _set_rep(self.char1, "ciudadanos", -5000)  # Enemigo
+        monedas_antes = self.char1.db.monedas
+        msgs = []
+        self.char1.msg = lambda text, **kw: msgs.append(text)
+        _run_cmd(self.char1, CmdVender, args="daga vieja")
+        output = "\n".join(msgs)
+        self.assertIn("niega", output)
+        self.assertEqual(self.char1.db.monedas, monedas_antes)
 
     def test_npc_sin_faccion_precio_base_siempre(self):
         self.comerciante.db.faccion = None
