@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.22] — 2026-08-30
+
+### Corregido
+- `CmdVender` (`features/shop/commands.py`) no comprobaba la reputación del jugador con la facción del comerciante, a diferencia de `CmdComprar`/`CmdTienda` (que rechazan la operación con "se niega a hacer negocios contigo" cuando `descuento_tienda()` devuelve `None`, es decir, rango Enemigo). Un jugador con reputación Enemiga (< -3000 puntos) con la facción de un comerciante no podía comprarle nada, pero podía venderle objetos con total normalidad al mismo NPC — el veto de reputación era solo la mitad de la promesa "se niega a hacer negocios contigo". El caso es alcanzable en la práctica: la reacción de agresión de un NPC hacia un Enemigo (`typeclasses/npc.py`) solo se evalúa al entrar el jugador en la sala, no de forma continua, así que un jugador cuya reputación cae por debajo del umbral Enemigo mientras ya está en la sala del comerciante (p. ej. al completar una misión con penalización de rep) puede quedarse ahí y vender sin que el NPC reaccione. Encontrado auditando reputación. Fix: `CmdVender` aplica ahora el mismo veto de `descuento_tienda()` que `comprar`/`tienda`. 1 test de regresión nuevo en `tests/test_reputation.py`.
+
 ## [0.71.21] — 2026-08-30
 
 ### Corregido
