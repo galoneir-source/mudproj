@@ -518,6 +518,71 @@ class TestDarXpAGrupoComprobarLogros(EvenniaTest):
         )
 
 
+class TestDesafiosKillBestiaHook(EvenniaTest):
+    """
+    Regresión: el desafío diario "kill_bestias" (systems/daily/daily.py,
+    "Caza a 8 bestias salvajes") empareja por faccion="bestias", pero esa
+    facción política solo la llevan los 3 jefes de mundo (cooldown de 6-8h,
+    un solo kill por aparición) -- las bestias normales y farmeables del
+    mundo (TROLL, SERPIENTE_PANTANO, ARANA_CUEVA) tienen su propia facción
+    política real (sombras_pantano/horda_salvaje) para aggro y reputación,
+    no "bestias". Sin una notificación adicional basada en la clasificación
+    tipo=="bestia" del bestiario, el desafío era irrealizable en un día
+    para cualquier jugador siempre que le tocara -- rompiendo en silencio
+    su racha de "5/5 desafíos" y el progreso hacia "racha_legendaria".
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=5)
+
+        self.npc = create_object("typeclasses.npc.NPC", key="Troll de prueba")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=1, hp_max=30, nivel=5)
+        self.npc.db.npc_prototipo = "TROLL"
+        self.npc.db.faccion = "sombras_pantano"
+
+    def _crear_handler(self):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar([self.jugador, self.npc])
+        return handler
+
+    def test_kill_de_bestia_farmeable_notifica_tambien_bestias(self):
+        handler = self._crear_handler()
+        llamadas_faccion = []
+
+        def _fake_notificar(jugador, tipo, **kw):
+            llamadas_faccion.append(kw.get("faccion"))
+
+        with patch("features.respawn.respawn.programar_respawn"), \
+             patch("features.daily.daily_script.notificar_progreso", side_effect=_fake_notificar):
+            handler._procesar_muerte(self.npc, asesino=self.jugador)
+
+        self.assertIn("sombras_pantano", llamadas_faccion)
+        self.assertIn("bestias", llamadas_faccion)
+
+    def test_kill_no_bestia_no_notifica_bestias_extra(self):
+        """Regresión inversa: un kill que ya es de faccion="bestias" (jefe
+        de mundo) no debe notificarse dos veces, y un kill que no es de
+        tipo "bestia" en el bestiario no debe notificar "bestias" nunca."""
+        self.npc.db.npc_prototipo = "GOBLIN"
+        self.npc.db.faccion = "horda_salvaje"
+        handler = self._crear_handler()
+        llamadas_faccion = []
+
+        def _fake_notificar(jugador, tipo, **kw):
+            llamadas_faccion.append(kw.get("faccion"))
+
+        with patch("features.respawn.respawn.programar_respawn"), \
+             patch("features.daily.daily_script.notificar_progreso", side_effect=_fake_notificar):
+            handler._procesar_muerte(self.npc, asesino=self.jugador)
+
+        self.assertEqual(llamadas_faccion, ["horda_salvaje"])
+
+
 class TestIaNpcCobardeHuida(EvenniaTest):
     """
     Regresión: _ia_npc() ponía 'enraged'=True a CUALQUIER NPC (sin mirar su

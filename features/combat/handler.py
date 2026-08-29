@@ -833,6 +833,25 @@ class CombatHandler(DefaultScript):
                         notificar_progreso(j, "kill_faccion", faccion=faccion_npc)
                     except Exception as _de:
                         logger.log_err(f"Desafíos kill hook: {_de}")
+                # El desafío "kill_bestias" (systems/daily/daily.py, "Caza a
+                # 8 bestias salvajes") usa faccion="bestias" para el
+                # emparejamiento, pero esa facción política solo la llevan
+                # los 3 jefes de mundo (cooldown de 6-8h, un solo kill por
+                # aparición) — las bestias normales y farmeables del mundo
+                # (TROLL, SERPIENTE_PANTANO, ARANA_CUEVA) tienen su propia
+                # facción política real (sombras_pantano/horda_salvaje) para
+                # aggro y reputación. Sin esto el desafío era irrealizable en
+                # un día para cualquier jugador siempre que le tocara.
+                # tipo=="bestia" en el bestiario sí identifica a esas bestias
+                # farmeables, así que se notifica también bajo "bestias".
+                if proto and faccion_npc != "bestias":
+                    from systems.bestiary.bestiary import CATALOGO
+                    if CATALOGO.get(proto, {}).get("tipo") == "bestia":
+                        try:
+                            from features.daily.daily_script import notificar_progreso
+                            notificar_progreso(j, "kill_faccion", faccion="bestias")
+                        except Exception as _de:
+                            logger.log_err(f"Desafíos kill hook (bestias): {_de}")
 
         # Loot: generar items desde la tabla db.loot
         items_generados = _generar_loot(muerto, sala)
