@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.10] — 2026-08-29
+
+### Corregido
+- `GuildScript.disolver()` (`features/guilds/guild_script.py`) borraba el gremio sin avisar a `GuildWarScript`. Las guerras y retos de gremios (`features/guild_wars/`) referencian a cada bando por su nombre (string), no por el `GuildScript` en sí — así que en cuanto un gremio en guerra se disolvía, su nombre quedaba libre para que cualquiera fundara un gremio nuevo con él (`obtener_gremio_por_nombre()` ya no encontraba colisión), y ese gremio recién fundado heredaba, sin haberla declarado ni aceptado, cualquier guerra o reto pendiente que siguiera referenciando ese nombre en `self.db.guerras`/`self.db.retos`. Confirmado con un gremio disuelto en plena guerra y refundado al instante con el mismo nombre: las bajas del bando rival empezaban a contar para el "nuevo" gremio de inmediato. Encontrado auditando el sistema de gremios. Fix: `GuildWarScript.cancelar_por_disolucion(nombre)`, llamado desde `disolver()` antes de borrar el script, limpia cualquier reto (saliente o entrante) y cierra cualquier guerra activa de ese nombre, declarando ganador al rival igual que `rendirse()`. 1 test de regresión nuevo en `tests/test_guild_wars.py`.
+
 ## [0.71.9] — 2026-08-29
 
 ### Corregido
