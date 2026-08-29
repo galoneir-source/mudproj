@@ -186,9 +186,12 @@ class CmdRetirar(Command):
         # Coincidencia exacta primero (evita que un nombre parcial ambiguo
         # devuelva el objeto equivocado según el orden de la lista, p.ej.
         # "retirar poción de vida" con "poción de vida mayor" también en
-        # el banco).
+        # el banco). Si hay más de una coincidencia exacta (dos objetos con
+        # el mismo nombre, p.ej. dos pociones idénticas) no se pide
+        # desambiguar -- no hay forma de "ser más específico" cuando los
+        # nombres son idénticos, así que se toma cualquiera de ellas.
         exactas = [it for it in banco if it.key.lower() == args_lower]
-        if len(exactas) == 1:
+        if exactas:
             item = exactas[0]
         else:
             parciales = [it for it in banco if args_lower in it.key.lower()]

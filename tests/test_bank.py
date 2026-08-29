@@ -209,6 +209,28 @@ class TestCmdRetirar(EvenniaTest):
         self.assertIn(normal, self.char1.contents)
         self.assertNotIn(mayor, self.char1.contents)
 
+    def test_retirar_dos_items_con_nombre_identico(self):
+        """
+        Regresión candidata: si hay DOS objetos con el mismo nombre exacto
+        en el banco (p.ej. dos pociones de vida idénticas), 'exactas' tiene
+        longitud 2 -> no entra por la rama de coincidencia única y cae al
+        fallback de 'parciales', que también encuentra las mismas 2
+        coincidencias (el nombre exacto siempre es substring de sí mismo)
+        -> siempre se considera ambiguo. Como ambas se llaman igual, no hay
+        ninguna forma de "ser más específico": el jugador no puede volver
+        a sacar NINGUNA de las dos del banco.
+        """
+        item1 = self._depositar("poción de vida")
+        item2 = _item("poción de vida", self.char1)
+        _make_cmd(CmdDepositar, self.char1, "poción de vida").func()
+
+        _make_cmd(CmdRetirar, self.char1, "poción de vida").func()
+
+        self.assertTrue(
+            item1 in self.char1.contents or item2 in self.char1.contents,
+            "Ninguna de las dos pociones idénticas pudo retirarse del banco.",
+        )
+
     def test_retirar_ambiguo_sin_coincidencia_exacta_avisa_y_no_retira(self):
         mayor = self._depositar("poción de vida mayor")
         suprema = self._depositar("poción de vida suprema")
