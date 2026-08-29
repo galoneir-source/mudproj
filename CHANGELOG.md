@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.7] — 2026-08-29
+
+### Corregido
+- `MazmorraScript._completar()` (`features/dungeons/dungeon_script.py`) repartía XP, monedas y el registro de mazmorra completada a todo `db.jugadores` sin comprobar si cada uno seguía físicamente dentro de la instancia. Esa lista solo se depura en `salir()` (comando `mazmorra salir`) — cualquier otra forma de abandonar la mazmorra es un `move_to()` plano que nunca la toca, y `viajar` (viaje rápido, v0.66.0, la única forma de teleportarse fuera de una sala explorada sin restricción de ubicación) no comprueba en ningún momento si el personaje está dentro de una mazmorra activa. Resultado: un jugador podía entrar en grupo, huir con `viajar` justo antes de la sala del jefe y seguir cobrando recompensa completa cuando el resto del grupo terminaba — exactamente el caso que el propio comentario de `salir()` ("ya no cuenta como miembro activo") daba por cubierto, pero solo lo estaba para quien usaba ese comando. Mismo problema, en sentido inverso, en el timeout de `at_repeat()`: al expirar la instancia, se buscaba y teleportaba de vuelta al vestíbulo a todo `db.jugadores` sin comprobar presencia, así que alguien que ya se había ido por su cuenta con `viajar` era arrancado de golpe de dondequiera que estuviese (mercado, gremio, otra mazmorra) para "expulsarlo" de una instancia que ya había abandonado hacía rato. Encontrado auditando viaje rápido (v0.66.0, nunca revisado desde su implementación junto con subastas v0.68.0, el único sistema restante sin ronda propia). Fix: ambos puntos filtran ahora por `_jugadores_dentro()` (ya usado por `salir()` para decidir si limpiar la instancia), que comprueba la ubicación real en vez de fiarse de `db.jugadores`. 1 test de regresión nuevo en `tests/test_mazmorras.py`.
+
 ## [0.71.6] — 2026-08-13
 
 ### Corregido
