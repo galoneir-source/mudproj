@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.20] — 2026-08-30
+
+### Corregido
+- `puede_invitar_validar()` (`systems/party/engine.py`) no comprobaba si el objetivo de una invitación de grupo YA tenía una invitación pendiente de otro líder. `objetivo.db.invitacion_partido` es un slot único: si un líder A invitaba a un jugador y, antes de que respondiera, un líder B (con un grupo distinto) también lo invitaba, la segunda invitación sobrescribía la primera en silencio, sin avisar nunca al líder A. Si el jugador aceptaba después, se unía al grupo de B (el último en invitar) mientras A se quedaba esperando indefinidamente una invitación que ya no existía, sin ningún mensaje que explicara por qué. Encontrado auditando el sistema de grupos — la lógica de transferencia de liderazgo y disolución de grupo en `_quitar_miembro()` (`features/party/commands.py`) se revisó a fondo en varios escenarios y resultó correcta. Fix: `puede_invitar_validar()` recibe un nuevo parámetro `objetivo_tiene_invitacion_pendiente` (con valor por defecto `False`, compatible con las llamadas existentes) y rechaza la invitación si ya hay una pendiente, mismo criterio de slot único que ya protege el resto de negociaciones 1-a-1 del proyecto (comercio, duelos). 1 test de regresión nuevo en `tests/test_party.py`.
+
 ## [0.71.19] — 2026-08-29
 
 ### Corregido
