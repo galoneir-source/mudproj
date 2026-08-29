@@ -176,15 +176,13 @@ class MazmorraScript(DefaultScript):
     def at_repeat(self):
         """Llamado tras 3600s; limpia la instancia por timeout."""
         if self.db.estado == "activa":
-            for dbref in (self.db.jugadores or []):
-                chars = search_object(dbref)
-                if chars:
-                    destino = self._sala_salida()
-                    if destino:
-                        chars[0].move_to(destino, quiet=True)
-                    chars[0].msg(
-                        "|rLa mazmorra ha expirado por tiempo. Has sido expulsado.|n"
-                    )
+            for jugador in self._jugadores_dentro():
+                destino = self._sala_salida()
+                if destino:
+                    jugador.move_to(destino, quiet=True)
+                jugador.msg(
+                    "|rLa mazmorra ha expirado por tiempo. Has sido expulsado.|n"
+                )
         self._limpiar()
 
     # ---------------------------------------------------------------------- #
@@ -243,7 +241,14 @@ class MazmorraScript(DefaultScript):
         dif_txt = NOMBRES_DIFICULTAD.get(dificultad, dificultad)
         destino = self._sala_salida()
 
+        # db.jugadores solo se depura en salir() -- cualquier otra forma de
+        # abandonar la instancia (viajar, una muerte que manda a casa, etc.)
+        # es un move_to() plano que nunca lo toca. Filtrar por presencia real
+        # evita recompensar a quien ya no está físicamente en la mazmorra.
+        presentes = {c.dbref for c in self._jugadores_dentro()}
         for dbref in (self.db.jugadores or []):
+            if dbref not in presentes:
+                continue
             chars = search_object(dbref)
             if not chars:
                 continue

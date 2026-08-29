@@ -205,6 +205,31 @@ class TestMazmorraCompletar(MazmorrasTestBase):
         self.assertGreater(self.char1.db.experiencia, 0)
         self.assertIsNone(_instancia_del_jugador(self.char1))
 
+    def test_completar_no_recompensa_a_quien_se_fue_sin_usar_salir(self):
+        """
+        Regresión candidata: a diferencia de 'mazmorra salir' (que sí depura
+        db.jugadores), CUALQUIER otro modo de abandonar la mazmorra -viajar,
+        una muerte que manda a casa, etc.- solo mueve al personaje con
+        move_to() sin pasar por MazmorraScript.salir(). ¿_completar() sigue
+        recompensando a quien ya no está físicamente dentro?
+        """
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+
+        # char2 abandona la instancia SIN llamar a instancia.salir() -- p.ej.
+        # exactamente lo que hace 'viajar' (features/fast_travel/commands.py):
+        # un move_to() plano que nunca toca db.jugadores.
+        self.char2.move_to(self.vestibulo, quiet=True)
+        xp_char2_antes = self.char2.db.experiencia
+
+        while instancia.db.estado == "activa":
+            self._limpiar_sala_actual(instancia)
+            instancia.avanzar(self.char1)
+
+        self.assertEqual(self.char2.db.experiencia, xp_char2_antes)
+
     def test_completar_marca_mazmorra_completada_en_char(self):
         instancia = self._entrar_solo()
         while instancia.db.estado == "activa":
