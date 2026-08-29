@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.24] — 2026-08-30
+
+### Corregido
+- `distribuir_recompensas_jefe_mundo()` (`features/world_bosses/world_boss_script.py`) otorgaba la recompensa de XP de un jefe de mundo escribiendo directamente `jugador.db.experiencia`, sin llamar después a `procesar_subida_de_nivel()` — mismo bug que el recién corregido en mazmorras (v0.71.23), y la misma inconsistencia con quests, contratos y expediciones. Derrotar un jefe de mundo con XP suficiente para cruzar el umbral de nivel dejaba al personaje con la experiencia acumulada por encima del umbral pero sin subir de nivel de verdad, hasta su siguiente kill de combate normal. Encontrado al revisar si el mismo patrón se repetía en otros sistemas de recompensa a tanto alzado tras el fix de mazmorras. Fix: se procesa la subida de nivel igual que el resto de recompensas de XP del proyecto. 1 test de regresión nuevo en `tests/test_jefes_mundo.py`; los 3 tests existentes de reparto de pool se ajustaron para fijar `nivel=10` en los personajes de prueba (no comprueban subida de nivel, sino el tope del pool repartido, que `procesar_subida_de_nivel()` alteraría si consumiera XP contra el umbral).
+
 ## [0.71.23] — 2026-08-30
 
 ### Corregido
