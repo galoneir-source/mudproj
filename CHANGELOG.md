@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.9] — 2026-08-29
+
+### Corregido
+- `CmdRetirar` (`features/bank/commands.py`) dejaba objetos del banco personal permanentemente atrapados en cuanto había dos con el nombre exacto idéntico (p. ej. dos pociones de vida iguales). El matching por nombre solo tomaba la coincidencia exacta cuando había exactamente una (`len(exactas) == 1`); con dos o más caía al fallback de coincidencia parcial, que también encontraba las mismas dos (un nombre exacto siempre es substring de sí mismo) y las reportaba como ambiguas pidiendo "sé más específico" — imposible cuando ambos nombres son idénticos carácter a carácter. `retirar <nombre>` repetía el mismo resultado ambiguo indefinidamente: ninguna de las dos copias podía volver a salir del banco jamás. Encontrado auditando el banco. Fix: cualquier coincidencia exacta (una o varias) se acepta directamente, tomando la primera; el fallback ambiguo queda solo para cuando no hay ninguna coincidencia exacta. 1 test de regresión nuevo en `tests/test_bank.py`.
+
 ## [0.71.8] — 2026-08-29
 
 ### Corregido
