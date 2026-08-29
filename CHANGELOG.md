@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.8] — 2026-08-29
+
+### Corregido
+- `AuctionScript.pujar()` (`features/auctions/auction_script.py`) no comprobaba `subasta_expirada()` antes de aceptar una puja — solo lo hacía el tick automático de `at_repeat()` (cada 60s). Cualquier subasta que ya hubiera superado sus 30 minutos pero cuyo cierre automático aún no hubiera corrido (ventana de hasta 59s en cada subasta, siempre presente) seguía aceptando pujas ganadoras con normalidad, a diferencia de retos de duelo y propuestas de matrimonio, que sí comprueban su expiración de forma perezosa (`reto_expirado()`/`propuesta_expirada()`) en el propio comando además del cierre periódico. Encontrado auditando subastas (v0.68.0, nunca revisada desde su implementación — el único sistema restante sin ronda propia, tras viaje rápido v0.66.0 en v0.71.7 y cartelera v0.67.0 en v0.71.6). Fix: `pujar()` comprueba ahora `subasta_expirada()` igual que los demás sistemas de reto/propuesta con expiración, antes de aceptar cualquier puja. 1 test de regresión nuevo en `tests/test_auctions.py`.
+
 ## [0.71.7] — 2026-08-29
 
 ### Corregido
