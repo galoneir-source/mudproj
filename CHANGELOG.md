@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.21] — 2026-08-30
+
+### Corregido
+- `_dar_xp_a_grupo()` (`features/combat/handler.py`) reparte XP (y aplica subida de nivel, vía `procesar_subida_de_nivel`) a todos los miembros del grupo presentes en la sala del combate — pero `self.db.participantes` solo incluye al atacante y al objetivo que iniciaron la pelea (`features/combat/commands.py`), no al resto del grupo. `comprobar_y_notificar()` tras la muerte del NPC solo se llama para "jugadores" = `self.db.participantes`, así que un miembro de grupo que sube de nivel gracias al XP compartido de una pelea en la que no participó directamente nunca entraba en ese bucle: los logros de progresión (`nivel_2`, `nivel_5`, `nivel_10`) quedaban sin comprobar hasta la siguiente acción cualquiera de ese personaje que sí disparase el chequeo (kill propio, quest, crafteo...) — mismo patrón de notificación retrasada ya visto y corregido en la transferencia de liderazgo de gremio (ver entrada anterior de logros de gremio). Encontrado auditando el sistema de logros. Fix: `_dar_xp_a_grupo()` llama ahora a `comprobar_y_notificar()` para cada miembro del grupo que recibe XP, no solo para quien remató. 1 test de regresión nuevo en `tests/test_handler.py`.
+
 ## [0.71.20] — 2026-08-30
 
 ### Corregido
