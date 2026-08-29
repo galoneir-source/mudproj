@@ -119,6 +119,21 @@ class TestCasaYDecorar(ViviendaTestBase):
         _make_cmd(CmdDecorar, self.char1, "una sala de prueba").func()
         self.assertEqual(sala.db.desc_personalizada, "una sala de prueba")
 
+    def test_casa_bloqueada_en_combate(self):
+        """
+        Regresión candidata: a diferencia de 'viajar' (que sí comprueba
+        en_combate), 'casa' no tenía ninguna restricción -- cualquier
+        jugador con vivienda (500 monedas, una sola vez) podía teletransportarse
+        a un lugar seguro de forma instantánea y sin coste durante cualquier
+        combate, sin pasar por el 50% de fallo real de 'huir' y dejando el
+        combate colgado (el hueco se auto-pasa por timeout de turno) en vez
+        de resolverse.
+        """
+        self.char1.db.en_combate = True
+        _make_cmd(CmdCasa, self.char1).func()
+        gestor = obtener_gestor_script()
+        self.assertNotEqual(self.char1.location, gestor.obtener_sala(self.char1))
+
 
 class TestAccesoYVisitas(ViviendaTestBase):
     def setUp(self):
@@ -139,6 +154,13 @@ class TestAccesoYVisitas(ViviendaTestBase):
     def test_quitar_acceso_revoca_la_visita(self):
         _make_cmd(CmdVivienda, self.char1, f"acceso dar {self.char2.key}").func()
         _make_cmd(CmdVivienda, self.char1, f"acceso quitar {self.char2.key}").func()
+        _make_cmd(CmdVisitar, self.char2, self.char1.key).func()
+        gestor = obtener_gestor_script()
+        self.assertNotEqual(self.char2.location, gestor.obtener_sala(self.char1))
+
+    def test_visitar_bloqueado_en_combate(self):
+        _make_cmd(CmdVivienda, self.char1, f"acceso dar {self.char2.key}").func()
+        self.char2.db.en_combate = True
         _make_cmd(CmdVisitar, self.char2, self.char1.key).func()
         gestor = obtener_gestor_script()
         self.assertNotEqual(self.char2.location, gestor.obtener_sala(self.char1))

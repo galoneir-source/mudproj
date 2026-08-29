@@ -169,6 +169,11 @@ class CmdCasa(Command):
 
     def func(self):
         caller = self.caller
+
+        if getattr(caller.db, "en_combate", False):
+            caller.msg("No puedes viajar a tu vivienda mientras estás en combate.")
+            return
+
         gestor = obtener_gestor_script()
         sala = gestor.obtener_sala(caller)
 
@@ -202,6 +207,10 @@ class CmdVisitar(Command):
         caller = self.caller
         if not self.args.strip():
             caller.msg("Uso: |wvisitar <jugador>|n")
+            return
+
+        if getattr(caller.db, "en_combate", False):
+            caller.msg("No puedes visitar viviendas mientras estás en combate.")
             return
 
         objetivo = caller.search(self.args.strip(), global_search=True)
