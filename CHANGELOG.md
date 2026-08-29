@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.26] — 2026-08-30
+
+### Corregido
+- El desafío diario "kill_bestias" (`systems/daily/daily.py`, "Caza a 8 bestias salvajes") empareja por `faccion="bestias"` en el hook de kill de `features/combat/handler.py` — pero esa facción política solo la llevan los 3 jefes de mundo (`TITAN_PANTANO`, `GUARDIAN_FORJA`, `DRAGON_CENIZA`; cooldown de 6-8h, un solo kill por aparición y compartido por todo el servidor). Las bestias normales y farmeables del mundo abierto (`TROLL`, `SERPIENTE_PANTANO`, `ARANA_CUEVA`, con respawn) tienen su propia facción política real (`sombras_pantano`/`horda_salvaje`) para aggro y reputación, no `"bestias"` — así que el desafío era irrealizable en un día para cualquier jugador siempre que le tocara en el sorteo diario, rompiendo en silencio tanto ese desafío individual como la racha de "5/5 desafíos" del día y, por extensión, el progreso hacia el logro "Racha Legendaria" (7 días consecutivos). Encontrado auditando el bestiario al cruzar la clasificación `tipo` del catálogo (`systems/bestiary/bestiary.py`) contra la facción política real de cada NPC. Fix: el hook de kill notifica también `faccion="bestias"` cuando el prototipo muerto tiene `tipo=="bestia"` en el catálogo del bestiario, sin tocar la facción política real del NPC (aggro y reputación quedan intactos). 2 tests de regresión nuevos en `tests/test_handler.py`.
+
 ## [0.71.25] — 2026-08-30
 
 ### Corregido
