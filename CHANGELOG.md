@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.19] — 2026-08-29
+
+### Corregido
+- `_dar_recompensa()` (`features/contracts/commands.py`) leía `nuevos_stats['ataque']` en el mensaje de subida de nivel — una clave que no existe en el dict que devuelve `procesar_subida_de_nivel()` (`systems/combat/engine.py`); `STAT_DEFAULTS` no define ningún stat "ataque" en todo el proyecto. Completar un contrato del tablón (matar o entregar) con recompensa de XP suficiente para subir de nivel lanzaba un `KeyError` sin capturar que interrumpía `_entregar()` a medias: la recompensa (monedas, XP y, en un contrato de entrega, los materiales ya consumidos del inventario) ya se había aplicado, pero `contrato_activo` nunca se limpiaba — el jugador se quedaba con "ya tienes un contrato activo" para siempre, sin poder aceptar otro ni ver ningún mensaje de éxito, pese a haber pagado el coste real de completarlo. Encontrado auditando el tablón de contratos — ningún test anterior completaba un contrato con XP suficiente para cruzar el umbral de nivel. Fix: el mensaje usa ahora `nuevos_stats['fuerza']` (la clave real que sí devuelve `procesar_subida_de_nivel()`), igual que el resto de mensajes de subida de nivel del proyecto. 2 tests de regresión nuevos en `tests/test_contratos.py` (rutas de matar y de entrega, ambas comparten `_dar_recompensa()`).
+
 ## [0.71.18] — 2026-08-29
 
 ### Corregido
