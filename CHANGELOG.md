@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.28] — 2026-08-30
+
+### Corregido
+- `CmdEquipar` (`features/equipment/commands.py`) no comprobaba si el objeto que se iba a equipar era el mismo que ya estaba puesto en ese slot. Un objeto equipado nunca cambia de `location` en Evennia (sigue en el inventario del personaje, solo se marca en `db.equipamiento`), así que `equipar <objeto ya equipado>` lo encontraba con normalidad — el bloque de sustitución se saltaba correctamente (no desequipaba nada, al ser `actual == item`), pero justo después el código aplicaba los bonuses del objeto de todas formas, sin ninguna condición. Repetir el mismo comando ("equipar espada de hierro" varias veces seguidas mientras ya la llevas puesta) acumulaba sus bonuses de stats sin límite: 3 repeticiones con +3 fuerza daban +9, no +3. Encontrado auditando equipamiento — ningún test cubría reequipar el mismo objeto, solo sustituirlo por otro distinto. Fix: `CmdEquipar` corta ahora con "Ya tienes X equipado" en cuanto detecta `actual == item`, antes de aplicar ningún bonus. 1 test de regresión nuevo en `tests/test_equipment.py`.
+
 ## [0.71.27] — 2026-08-30
 
 ### Corregido
