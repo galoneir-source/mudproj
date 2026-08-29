@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.23] — 2026-08-30
+
+### Corregido
+- `MazmorraScript._completar()` (`features/dungeons/dungeon_script.py`) otorgaba la recompensa de XP de la mazmorra escribiendo directamente `char.db.experiencia`, sin llamar después a `procesar_subida_de_nivel()` — a diferencia de quests, contratos y expediciones, que sí lo hacen justo tras dar su recompensa de XP. Completar una mazmorra con XP suficiente para cruzar el umbral de nivel dejaba al personaje con la experiencia ya acumulada por encima del umbral pero sin subir de nivel de verdad: ni el nivel, ni fuerza/constitución/defensa, ni el HP máximo se actualizaban, ni aparecía el mensaje de subida — hasta el siguiente kill de combate normal del personaje (el único otro punto que sí llama a `procesar_subida_de_nivel()` con el total acumulado). Encontrado auditando mazmorras. Fix: `_completar()` procesa ahora la subida de nivel igual que el resto de recompensas de XP del proyecto. 1 test de regresión nuevo en `tests/test_mazmorras.py`.
+
 ## [0.71.22] — 2026-08-30
 
 ### Corregido
