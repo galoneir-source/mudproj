@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.12] — 2026-08-29
+
+### Corregido
+- Las expediciones grupales (`features/expeditions/expedition_script.py`) estaban completamente rotas desde su implementación, por tres bugs independientes que se enmascaraban entre sí:
+  - `_recompensar_oleada()` y `_completar()` llamaban a `procesar_subida_de_nivel(nivel, experiencia)` con dos argumentos posicionales y trataban el resultado como un dict con claves `"subio"`/`"nuevo_nivel"`/`"nuevo_hp_max"`. La función real (`systems/combat/engine.py`, ya usada correctamente en `combat/handler.py`, `quests` y `contracts`) solo acepta un dict de stats y devuelve una tupla `(bool, dict)` con clave `"nivel"` sin prefijo. El resultado era un `TypeError` sin capturar en cuanto se despejaba la primera oleada de cualquier expedición: `at_repeat()` nunca llegaba a avanzar de oleada ni a completar nada, y el grupo quedaba atascado hasta expirar por el timeout de 30 minutos sin ninguna recompensa. Nunca se detectó porque ningún test anterior hacía avanzar el script más allá de `iniciar()`.
+  - Una vez corregido ese `TypeError`, `_recompensar_oleada()` resultó no pagar nunca las monedas de recompensa por oleada — solo sumaba la XP (`calcular_recompensa_oleada()` calcula ambas, pero el bucle solo escribía `m.db.experiencia`).
+  - `_completar()` usaba `calcular_recompensa_total()`, que por definición ya es la suma de TODAS las oleadas más el bonus (confirmado por su propio test: "El total = por_oleada × num_oleadas + bonus_completar"). Como `at_repeat()` llama a `_recompensar_oleada()` para toda oleada que se despeja, incluida la última (el jefe), antes de comprobar si procede completar, la recompensa de cada oleada se pagaba dos veces: una vez oleada a oleada y otra de golpe al completar.
+
+  Encontrado auditando expediciones — el único sistema del catálogo donde ningún test previo llegaba a ejecutar `at_repeat()` más allá del arranque. Fix: `calcular_bonus_completar()` nueva (`systems/expeditions/expeditions.py`), que devuelve solo el bonus sin las oleadas; `_completar()` la usa en vez de `calcular_recompensa_total()` (que se conserva sin cambios de comportamiento, para quien quiera el total informativo). `_recompensar_oleada()` ahora paga también las monedas y llama a `procesar_subida_de_nivel()` con la firma real, igual que el resto del proyecto. 4 tests de regresión nuevos (2 en `tests/test_expeditions.py`, 2 en `tests/test_expeditions_system.py`).
+
 ## [0.71.11] — 2026-08-29
 
 ### Corregido
