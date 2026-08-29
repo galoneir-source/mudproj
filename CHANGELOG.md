@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.13] — 2026-08-29
+
+### Corregido
+- `TorneoScript._siguiente_combate()` (`features/arena/tournament_script.py`) solo comprobaba `has_account` (vía `_resolver_jugador()`) antes de teleportar a los dos jugadores del próximo emparejamiento a la Arena e iniciar un `CombatHandler` nuevo en `modo_duelo` — nunca comprobaba si alguno de los dos ya estaba en OTRO combate en curso (p. ej. peleando contra un monstruo mientras esperaba su turno de bracket, algo perfectamente normal durante la inscripción o entre rondas). Arrastrarlo a la fuerza dejaba su combate anterior con un participante fantasma (su turno se auto-pasa por el timeout de turno, pero el handler nunca lo elimina) y, al terminar el duelo de torneo, `_fin_duelo()` ponía `en_combate=False` para ambos duelistas — desincronizando ese flag del handler anterior, que seguía activo y listándolo como participante: a partir de ahí el jugador podía usar `retar`/`viajar`/comandos de gremio como si no estuviera en combate, aunque su primer combate siguiera vivo. Encontrado auditando torneos de arena. Fix: `_siguiente_combate()` comprueba ahora `en_combate` en ambos jugadores antes de teleportarlos; si alguno sigue ocupado, reintenta en 5s en vez de arrastrarlo, mismo patrón ya usado para esperar a que la sala Arena quede libre. 1 test de regresión nuevo en `tests/test_arena.py`.
+
 ## [0.71.12] — 2026-08-29
 
 ### Corregido
