@@ -541,6 +541,73 @@ class TestApuestaTrasHuidaDeDuelo(EvenniaTest):
 
 
 # ---------------------------------------------------------------------------
+# Duelo corrompido por un tercero uniéndose al mismo CombatHandler
+# ---------------------------------------------------------------------------
+
+class TestDueloCorrompidoPorTercero(EvenniaTest):
+    """
+    _agredir() (typeclasses/npc.py) y _iniciar_combate() (features/combat/
+    commands.py) fusionan a cualquiera en el CombatHandler YA ACTIVO de la
+    sala vía agregar_participante() sin comprobar nunca si ese handler está
+    en modo_duelo=True. Un NPC agresivo que reacciona a un tercer jugador
+    que simplemente entra a la sala mientras dos jugadores están duelando
+    (nada lo impide: los duelos no aíslan la sala) mete a ambos -NPC y
+    recién llegado- en el mismo CombatHandler que el duelo 1v1 en curso.
+    Si esa pelea ajena termina antes que el duelo original (_fin_duelo se
+    dispara para cualquier golpe que baje a alguien del 10% HP, sea quien
+    sea), el duelo original se cierra de golpe sin resolverse: sin ganador,
+    sin transferir la apuesta, y con apuesta_duelo "fantasma" todavía fija
+    en los dos duelistas originales -- el mismo bug de fondo que v0.71.2,
+    por una vía distinta que ese fix no cubre.
+    """
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1, monedas=100)
+        _init_char(self.char2, monedas=100)
+        self.char1.move_to(self.room1, quiet=True)
+        self.char2.move_to(self.room1, quiet=True)
+        self.room1.msg_contents = lambda m, **kw: None
+
+        from features.combat.handler import CombatHandler
+        self.handler = self.room1.scripts.add(CombatHandler)
+        self.handler.db.modo_duelo = True
+        self.handler.iniciar([self.char1, self.char2])
+        self.char1.db.apuesta_duelo = 40
+        self.char2.db.apuesta_duelo = 40
+
+    def test_agregar_participante_rechaza_terceros_en_modo_duelo(self):
+        from evennia.utils import create
+        npc_agresivo = create.create_object("typeclasses.npc.NPC", key="Lobo salvaje", location=self.room1)
+        recien_llegado = create.create_object("typeclasses.characters.Character", key="Bystander", location=self.room1)
+
+        añadido_npc = self.handler.agregar_participante(npc_agresivo)
+        añadido_bystander = self.handler.agregar_participante(recien_llegado)
+
+        self.assertFalse(añadido_npc)
+        self.assertFalse(añadido_bystander)
+        self.assertNotIn(npc_agresivo, self.handler.db.participantes)
+        self.assertNotIn(recien_llegado, self.handler.db.participantes)
+
+        # El duelo original entre char1 y char2 sigue intacto: nada de lo
+        # anterior debe haberlo tocado.
+        self.assertEqual(list(self.handler.db.participantes), [self.char1, self.char2])
+        self.assertEqual(self.char1.db.apuesta_duelo, 40)
+        self.assertEqual(self.char2.db.apuesta_duelo, 40)
+
+    def test_npc_agresivo_no_se_une_a_duelo_en_curso(self):
+        from evennia.utils import create
+        npc_agresivo = create.create_object("typeclasses.npc.NPC", key="Lobo salvaje", location=self.room1)
+        recien_llegado = create.create_object("typeclasses.characters.Character", key="Bystander", location=self.room1)
+
+        npc_agresivo._agredir(recien_llegado)
+
+        self.assertNotIn(npc_agresivo, self.handler.db.participantes)
+        self.assertNotIn(recien_llegado, self.handler.db.participantes)
+        self.assertFalse(getattr(recien_llegado.db, "en_combate", False))
+
+
+# ---------------------------------------------------------------------------
 # CmdRendirse
 # ---------------------------------------------------------------------------
 

@@ -43,7 +43,11 @@ def _iniciar_combate(atacante, defensor):
     sala = atacante.location
     handler = _get_combat_handler(sala)
     if handler:
-        handler.agregar_participante(atacante)
+        if not handler.agregar_participante(atacante):
+            # Combate en curso es un duelo PvP privado: no se le puede
+            # arrastrar a un tercero ajeno (ver agregar_participante()).
+            atacante.msg("Hay un duelo privado en curso; no puedes unirte a ese combate ahora mismo.")
+            return handler
         handler.agregar_participante(defensor)
         _añadir_partido_a_lista(atacante, sala, handler.db.participantes)
         sala.msg_contents(f"{atacante.key} se une al combate contra {defensor.key}!")

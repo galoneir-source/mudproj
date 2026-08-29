@@ -130,9 +130,12 @@ class NPC(DefaultCharacter):
         from features.combat.commands import _get_combat_handler, _iniciar_combate
         handler = _get_combat_handler(self.location)
         if handler:
-            self.location.msg_contents(f"|r{self.key} se une al combate!|n")
-            handler.agregar_participante(self)
+            if not handler.agregar_participante(self):
+                # Combate en curso es un duelo PvP privado: no se le puede
+                # arrastrar a un tercero ajeno (ver agregar_participante()).
+                return
             handler.agregar_participante(objetivo)
+            self.location.msg_contents(f"|r{self.key} se une al combate!|n")
         else:
             self.location.msg_contents(f"|r{self.key} te ataca!|n")
             _iniciar_combate(self, objetivo)

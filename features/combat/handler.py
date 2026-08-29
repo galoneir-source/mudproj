@@ -276,12 +276,27 @@ class CombatHandler(DefaultScript):
         }
         self._resolver_turno()
 
-    def agregar_participante(self, obj):
-        """Añade un participante al combate en curso."""
+    def agregar_participante(self, obj) -> bool:
+        """
+        Añade un participante al combate en curso. Devuelve False sin
+        añadir nada si el combate es un duelo PvP (modo_duelo).
+
+        Los duelos son siempre 1 contra 1: fusionar aquí a un tercero ajeno
+        (p.ej. un NPC agresivo que reacciona a alguien que entra en la sala
+        mientras dos jugadores duelan) rompe la resolución del duelo
+        original -- _fin_duelo() se dispara para el primer participante
+        que baje al 10% HP, sea quien sea, cerrando el handler sin
+        ganador/perdedor entre los duelistas originales y dejando su
+        apuesta "fantasma" fija para siempre, igual que el bug de v0.71.2
+        pero por una vía distinta.
+        """
+        if self.db.modo_duelo:
+            return False
         if obj not in self.db.participantes:
             self.db.participantes.append(obj)
             if hasattr(obj, "db"):
                 obj.db.en_combate = True
+        return True
 
     def eliminar_participante(self, obj):
         """Elimina un participante (muerto o huido)."""
