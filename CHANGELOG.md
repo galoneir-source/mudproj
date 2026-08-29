@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.18] — 2026-08-29
+
+### Corregido
+- El tracking de daño contra un jefe de mundo (`features/combat/handler.py`) se guardaba en `objetivo.ndb.dano_por_jugador` — memoria del proceso que Evennia no conserva a través de un `evennia reload`, operación rutinaria y publicitada como segura para los jugadores ("recargar sin perder conexiones", ver comandos esenciales del proyecto). Un jefe de mundo tiene mucho HP y una pelea real puede durar más que el intervalo habitual entre reloads del servidor, así que uno ocurriendo a mitad de combate borraba en silencio todo el progreso de daño acumulado hasta ese momento — quien más había golpeado antes del reload podía terminar sin ninguna recompensa (XP, monedas, ni siquiera opción al loot único) si no volvía a golpear después. Encontrado auditando jefes de mundo — el sistema ya tenía otra corrección documentada de una ronda anterior (el mínimo garantizado del 10% del pool por participante, que sin reescalar podía superar el 100% del reparto total con muchos participantes), pero esta fuga de `ndb` nunca se había cubierto. Fix: el tracker pasa a `db` en los tres puntos que lo leen o escriben (golpe directo, ataque de mascota, lectura al morir el jefe) y en su inicialización al spawnear el jefe. 1 test de regresión nuevo en `tests/test_handler.py`; los 2 tests existentes que comprobaban `ndb` en `tests/test_mascotas.py` se actualizaron a `db`.
+
 ## [0.71.17] — 2026-08-29
 
 ### Corregido
