@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.14] — 2026-08-29
+
+### Corregido
+- `recompensa cancelar` (`features/bounty/commands.py`) no comprobaba si el objetivo estaba, en ese mismo instante, en un combate de caza de recompensa activo. `cazar <jugador>` solo lee y consume el total de recompensas al FINAL del combate (`_fin_duelo()` → `cobrar_recompensa_por_duelo()`), nunca al empezarlo — así que el emisor podía ver, por los mensajes de la sala, que su objetivo estaba perdiendo el duelo de caza y cancelar su recompensa a mitad de combate para no pagarla. El cazador ganaba limpiamente pero cobraba menos del premio anunciado al aceptar la caza, o nada en absoluto si era la única recompensa activa sobre el objetivo — sin ningún aviso de por qué. Encontrado auditando cazarrecompensas, el único sistema del catálogo sin ningún test de integración previo (`tests/test_bounty_system.py` solo cubría la lógica pura). Fix: `recompensa cancelar` comprueba ahora si hay un combate `es_caza_recompensa` activo contra el objetivo y, de ser así, rechaza la cancelación hasta que termine. 3 tests de integración nuevos en `tests/test_bounty.py` (primer test de integración de este sistema).
+
 ## [0.71.13] — 2026-08-29
 
 ### Corregido
