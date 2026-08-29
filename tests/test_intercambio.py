@@ -114,6 +114,56 @@ class TestFlujoCompleto(TradeTestBase):
 
         self.assertEqual(self.espada.location, self.char1)
 
+    def test_no_se_puede_ofrecer_un_objeto_equipado(self):
+        """
+        Regresión candidata: ofrecer_objeto() solo comprobaba
+        obj.location == jugador (un objeto equipado sigue teniendo esa
+        location, equipar no la cambia) -- a diferencia de banco, mercado,
+        subastas y crafteo, que excluyen explícitamente los objetos
+        equipados vía _get_equipamiento(). Ofrecer y transferir un arma
+        equipada dejaba sus bonuses aplicados de forma permanente en las
+        stats del que la dio (equipamiento nunca se actualizaba) mientras
+        el objeto físico pasaba de verdad al otro jugador -- que podía
+        equiparlo también y duplicar el bonus entre dos personajes.
+        """
+        self.char1.db.equipamiento = {
+            "arma": self.espada, "armadura": None, "accesorio": None,
+        }
+        self.espada.db.bonuses = {"fuerza": 5}
+
+        _make_cmd(CmdIntercambiar, self.char1, self.char2.key).func()
+        _make_cmd(CmdIntercambiar, self.char2, "aceptar").func()
+        _make_cmd(CmdOfrecer, self.char1, "espada de prueba").func()
+
+        sesion = self.char1.ndb.trade_session
+        self.assertEqual(sesion.db.lado_a["objetos"], [])
+
+    def test_objeto_equipado_no_se_duplica_tras_ejecutar_el_intercambio(self):
+        """
+        Mismo bug que arriba, verificado de punta a punta: si de alguna
+        forma un objeto equipado llegara a ejecutarse en un intercambio,
+        el dueño original seguiría disfrutando sus bonuses (equipamiento
+        nunca se actualiza) mientras el objeto pasa de verdad al otro
+        jugador -- que podría equiparlo y duplicar el bonus. Con el fix,
+        ofrecerlo ya falla, así que el intercambio se ejecuta vacío y el
+        arma se queda donde estaba, equipada y con sus bonuses intactos
+        para su único dueño real.
+        """
+        self.char1.db.equipamiento = {
+            "arma": self.espada, "armadura": None, "accesorio": None,
+        }
+        self.espada.db.bonuses = {"fuerza": 5}
+        fuerza_antes = self.char1.db.fuerza
+
+        _make_cmd(CmdIntercambiar, self.char1, self.char2.key).func()
+        _make_cmd(CmdIntercambiar, self.char2, "aceptar").func()
+        _make_cmd(CmdOfrecer, self.char1, "espada de prueba").func()
+        _make_cmd(CmdConfirmarIntercambio, self.char1).func()
+        _make_cmd(CmdConfirmarIntercambio, self.char2).func()
+
+        self.assertEqual(self.espada.location, self.char1)
+        self.assertEqual(self.char1.db.fuerza, fuerza_antes)
+
 
 class TestRechazoYCancelacion(TradeTestBase):
     def test_receptor_puede_declinar_una_propuesta_pendiente(self):

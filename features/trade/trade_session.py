@@ -87,6 +87,16 @@ class TradeSession(DefaultScript):
         if obj.location != jugador:
             jugador.msg("|rEse objeto no está en tu inventario.|n")
             return
+        # Un objeto equipado sigue teniendo location == jugador (equipar no
+        # la cambia), así que el check anterior no basta -- sin esto, el
+        # objeto se transfería de verdad al ejecutar el intercambio pero
+        # sus bonuses seguían aplicados al que lo dio (equipamiento nunca
+        # se actualiza), permitiendo duplicarlos si el receptor lo equipaba
+        # también. Mismo criterio que banco/mercado/subastas/crafteo.
+        from features.equipment.commands import _get_equipamiento
+        if obj in _get_equipamiento(jugador).values():
+            jugador.msg("|rTienes ese objeto equipado. Desequípalo antes de ofrecerlo.|n")
+            return
         ok, err = agregar_objeto(lado, obj.dbref, obj.key)
         if not ok:
             jugador.msg(f"|r{err}|n")
