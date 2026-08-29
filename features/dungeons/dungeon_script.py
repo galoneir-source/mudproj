@@ -269,6 +269,27 @@ class MazmorraScript(DefaultScript):
                 f"\n|Y¡¡ {nombre_maz} completada !! |n(dificultad {dif_txt})\n"
                 f"|g+{xp_bonus} XP  +{monedas_bonus} monedas|n\n"
             )
+            # Subida de nivel — a diferencia de quests/contratos/expediciones,
+            # esta recompensa nunca procesaba el XP recién otorgado contra
+            # procesar_subida_de_nivel(): el personaje acumulaba experiencia
+            # por encima del umbral sin subir de nivel de verdad (ni stats,
+            # ni HP máximo, ni el mensaje de subida) hasta su siguiente kill
+            # de combate normal, que sí llama a _dar_xp_a_grupo().
+            try:
+                from features.combat.handler import _get_stats, _set_stat
+                from systems.combat.engine import procesar_subida_de_nivel
+                stats = _get_stats(char)
+                subio, nuevos_stats = procesar_subida_de_nivel(stats)
+                if subio:
+                    for k, v in nuevos_stats.items():
+                        _set_stat(char, k, v)
+                    char.msg(
+                        f"\n|Y🌟 ¡SUBISTE AL NIVEL {nuevos_stats['nivel']}!|n\n"
+                        f"  +1 Fuerza, +1 Constitución, +1 Defensa, +10 HP máximo\n"
+                        f"  |gHP restaurado al máximo.|n\n"
+                    )
+            except Exception:
+                logger.log_trace("MazmorraScript: error procesando subida de nivel.")
             # Comprobar logros
             try:
                 from features.achievements.commands import comprobar_y_notificar

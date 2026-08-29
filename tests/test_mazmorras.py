@@ -230,6 +230,29 @@ class TestMazmorraCompletar(MazmorrasTestBase):
 
         self.assertEqual(self.char2.db.experiencia, xp_char2_antes)
 
+    def test_completar_procesa_subida_de_nivel(self):
+        """
+        Regresión: a diferencia de quests/contratos/expediciones (que llaman
+        a procesar_subida_de_nivel() justo después de otorgar XP),
+        _completar() solo escribía char.db.experiencia directamente. El
+        personaje acumulaba XP por encima del umbral de nivel sin subir de
+        nivel de verdad -stats, HP máximo y mensaje incluidos- hasta su
+        siguiente kill de combate normal.
+        """
+        instancia = self._entrar_solo()
+        # Nivel 5 -> umbral de nivel 6 son 1400 XP (XP_POR_NIVEL). La cripta
+        # de ceniza en dificultad normal da 150 XP: con 1300 de partida cruza
+        # el umbral exactamente al completarla.
+        self.char1.db.experiencia = 1300
+        fuerza_antes = self.char1.db.fuerza
+
+        while instancia.db.estado == "activa":
+            self._limpiar_sala_actual(instancia)
+            instancia.avanzar(self.char1)
+
+        self.assertEqual(self.char1.db.nivel, 6)
+        self.assertEqual(self.char1.db.fuerza, fuerza_antes + 1)
+
     def test_completar_marca_mazmorra_completada_en_char(self):
         instancia = self._entrar_solo()
         while instancia.db.estado == "activa":
