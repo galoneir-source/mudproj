@@ -278,6 +278,31 @@ class TestRecetasEquipo(unittest.TestCase):
         self.assertIsNotNone(receta)
         self.assertIn("arcana", nombre)
 
+    def test_buscar_receta_ambigua_no_elige_al_azar(self):
+        """
+        Regresión: con varias recetas de la misma familia por startswith
+        ("elixir arcano", "elixir de restauración", "elixir sombrío",
+        "elixir de esencia" coinciden todas con "elixir"), buscar_receta()
+        elegía en silencio la de nombre más corto en vez de avisar de la
+        ambigüedad -- craftear consumía los ingredientes de la receta
+        "adivinada", no la que el jugador quería, sin ningún error visible.
+        Ambiguo debe tratarse como no encontrado, igual que buscar_destino()
+        en fast_travel.
+        """
+        nombre, receta = buscar_receta("elixir")
+        self.assertIsNone(nombre)
+        self.assertIsNone(receta)
+
+    def test_buscar_receta_ambigua_antidoto(self):
+        nombre, receta = buscar_receta("antí")
+        self.assertIsNone(nombre)
+        self.assertIsNone(receta)
+
+    def test_buscar_receta_ambigua_tonico(self):
+        nombre, receta = buscar_receta("tónico")
+        self.assertIsNone(nombre)
+        self.assertIsNone(receta)
+
 
 # --------------------------------------------------------------------------- #
 #  Integración mínima: flujo completo sin Evennia

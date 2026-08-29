@@ -201,8 +201,15 @@ def buscar_receta(nombre: str) -> tuple[str | None, dict | None]:
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
-        matches.sort(key=lambda x: len(x[0]))
-        return matches[0]
+        # Ambiguo entre varias recetas de la misma familia (p.ej. "elixir"
+        # coincide con "elixir arcano", "elixir de restauración" y "elixir
+        # sombrío") -- se trataba como si solo hubiera una, eligiendo en
+        # silencio la de nombre más corto sin avisar nunca de las demás.
+        # craftear consumía los ingredientes de esa receta "adivinada" en
+        # vez de la que el jugador quería, sin ningún error que lo delatara.
+        # Mismo criterio que buscar_destino() en fast_travel: ambiguo se
+        # trata como no encontrado, no como "elige cualquiera".
+        return None, None
 
     matches = [(k, v) for k, v in RECETAS.items() if nombre_lower in k]
     if len(matches) == 1:
