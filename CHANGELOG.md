@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.29] — 2026-08-30
+
+### Corregido
+- `TorneoScript._siguiente_combate()` (`features/arena/tournament_script.py`) reiniciaba el timer de `TIMEOUT_COMBATE` (`self.start(interval=...)`) de forma incondicional al principio de la función — incluido el reintento de 5 segundos que se dispara cuando alguno de los dos jugadores del próximo emparejamiento ya está en otro combate (p. ej. peleando contra un monstruo mientras esperaba su turno de bracket). Ese reintento nunca es "un combate nuevo", es la misma espera repetida por el mismo combate — pero al reiniciar el timer en cada uno, un jugador que se quedara `en_combate=True` para siempre (un combate huérfano que nunca termina, el mismo escenario que ya describía el comentario de esta función) dejaba el torneo reintentando cada 5s eternamente, sin que `TIMEOUT_COMBATE` — pensado explícitamente para detectar "no pasa nada" y cancelar — llegase a dispararse nunca. Encontrado auditando el sistema de arena, cuyo propio historial ya documentaba dos fixes previos sobre este mismo mecanismo de timer. Fix: el reintento por jugador ocupado ya no reinicia el timer; el resto de ramas (bye, forfeit, inicio real de combate) sí lo siguen haciendo, igual que antes. 1 test de regresión nuevo en `tests/test_arena.py`.
+
 ## [0.71.28] — 2026-08-30
 
 ### Corregido
