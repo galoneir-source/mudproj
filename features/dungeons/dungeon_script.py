@@ -321,6 +321,19 @@ class MazmorraScript(DefaultScript):
     def _limpiar(self):
         """Elimina todas las salas temporales y el propio script."""
         for sala in (self.db.salas or []):
+            # Un combate puede seguir activo en la sala (el timeout de
+            # 3600s no espera a que termine ningún combate en curso).
+            # CombatHandler es un script hijo de la sala: si se borrase
+            # la sala directamente, el script se borraría en cascada sin
+            # pasar por _terminar_combate(), dejando a sus participantes
+            # con db.en_combate=True para siempre -- mismo bug ya
+            # corregido en vivienda (v0.71.34).
+            for script in sala.scripts.all():
+                if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                    try:
+                        script._terminar_combate()
+                    except Exception:
+                        logger.log_trace("MazmorraScript: error terminando combate al limpiar.")
             try:
                 sala.delete()
             except Exception:

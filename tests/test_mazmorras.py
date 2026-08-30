@@ -12,6 +12,7 @@ Ejecutar con:
 from evennia import create_script
 from evennia.utils.test_resources import EvenniaTest
 
+from features.combat.handler import CombatHandler
 from features.dungeons.commands import (
     CmdAvanzar,
     CmdMazmorra,
@@ -260,6 +261,44 @@ class TestMazmorraCompletar(MazmorrasTestBase):
             instancia.avanzar(self.char1)
         self.assertEqual(
             dict(self.char1.db.mazmorras_completadas or {}).get("cripta_ceniza"), 1
+        )
+
+
+# --------------------------------------------------------------------------- #
+#  Limpieza de instancia (timeout/completar) con combate activo dentro
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraLimpiezaConCombateActivo(MazmorrasTestBase):
+    """
+    Regresión: MazmorraScript._limpiar() borra directamente todas las salas
+    temporales de la instancia (al completarse o por timeout de 3600s) sin
+    comprobar antes si hay un combate activo en alguna de ellas. CombatHandler
+    es un script hijo de la sala -- exactamente el mismo bug ya corregido en
+    vivienda (v0.71.34): si el timeout de la mazmorra se dispara justo
+    mientras un jugador sigue peleando contra un NPC de la sala actual (el
+    caso normal: avanzar() exige la sala despejada, pero nada impide que el
+    timeout de 1 hora llegue a mitad de un combate en curso), el script de
+    combate se borra en cascada junto con la sala sin pasar nunca por
+    _terminar_combate(), dejando al jugador con db.en_combate=True para
+    siempre.
+    """
+
+    def test_timeout_termina_el_combate_activo_en_la_sala(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+        sala = instancia.db.salas[instancia.db.sala_actual]
+
+        npc = next(o for o in sala.contents if type(o).__name__ == "NPC")
+        handler = sala.scripts.add(CombatHandler)
+        handler.iniciar([self.char1, npc])
+
+        instancia.at_repeat()
+
+        self.assertFalse(
+            getattr(self.char1.db, "en_combate", False),
+            "El jugador debía salir del combate al expirar la mazmorra con "
+            "él dentro, no quedarse bloqueado para siempre por la sala "
+            "borrada.",
         )
 
 

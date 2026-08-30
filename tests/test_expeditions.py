@@ -10,6 +10,7 @@ Ejecutar con:
 from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
+from features.combat.handler import CombatHandler
 from features.expeditions.commands import CmdExpedicion, _obtener_script_expedicion
 from features.party.commands import _añadir_miembro, _crear_partido
 from typeclasses.characters import Character
@@ -215,3 +216,50 @@ class TestExpedicionRecompensaTotal(EvenniaTest):
         esperado = calcular_recompensa_total("bosque_profundo", 2)
         self.assertEqual(self.char1.db.experiencia, esperado["xp"])
         self.assertEqual(self.char1.db.monedas, esperado["monedas"])
+
+
+class TestExpedicionLimpiezaConCombateActivo(EvenniaTest):
+    """
+    Regresión: ExpedicionScript._limpiar() teletransporta a los jugadores y
+    borra la sala temporal directamente, sin comprobar antes si hay un
+    combate activo dentro -- mismo bug ya corregido en vivienda (v0.71.34)
+    y en mazmorras. El timeout global de 30 minutos (at_repeat()) se
+    dispara sin esperar a que termine ningún combate en curso contra los
+    NPCs de la oleada actual: si el jugador sigue peleando justo cuando
+    expira, CombatHandler (script hijo de la sala) se borra en cascada
+    junto con ella sin pasar por _terminar_combate(), dejándolo con
+    db.en_combate=True para siempre.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        self.companera = create_object(PersonajeConectado, key="Compañera")
+        _init_char(self.companera)
+        self.companera.move_to(self.char1.location, quiet=True)
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.companera)
+
+    def test_timeout_termina_el_combate_activo_en_la_sala(self):
+        import time
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+        script = _obtener_script_expedicion(self.char1)
+        sala = self.char1.location
+
+        npc = next(o for o in sala.contents if type(o).__name__ == "NPC")
+        handler = sala.scripts.add(CombatHandler)
+        handler.iniciar([self.char1, npc])
+
+        from features.expeditions.expedition_script import _TIMEOUT_SEGS
+        script.db.tiempo_inicio = time.time() - _TIMEOUT_SEGS - 10
+
+        script.at_repeat()
+
+        self.assertFalse(
+            getattr(self.char1.db, "en_combate", False),
+            "El jugador debía salir del combate al expirar la expedición "
+            "con él dentro, no quedarse bloqueado para siempre por la "
+            "sala borrada.",
+        )

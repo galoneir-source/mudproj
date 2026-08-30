@@ -308,6 +308,19 @@ class ExpedicionScript(DefaultScript):
         # Teleportar a todos de vuelta
         sala = self._sala()
         if sala:
+            # El timeout global (30 min) o un abandono pueden llegar con un
+            # combate todavía activo contra los NPCs de la oleada actual.
+            # CombatHandler es un script hijo de la sala: si se borrase la
+            # sala directamente, el script se borraría en cascada sin pasar
+            # por _terminar_combate(), dejando a sus participantes con
+            # db.en_combate=True para siempre -- mismo bug ya corregido en
+            # vivienda (v0.71.34) y en mazmorras.
+            for script in sala.scripts.all():
+                if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                    try:
+                        script._terminar_combate()
+                    except Exception:
+                        logger.log_trace("ExpedicionScript: error terminando combate al limpiar.")
             for obj in list(sala.contents):
                 if hasattr(obj, "has_account") and obj.has_account:
                     self._teleportar_a_origen(obj)
