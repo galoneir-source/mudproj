@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.31] — 2026-08-30
+
+### Corregido
+- Todos los puntos del proyecto que procesan una subida de nivel (`_dar_xp_a_grupo` en `features/combat/handler.py`, mazmorras, jefes de mundo, desafíos diarios, quests, contratos y expediciones ×2) construían el dict de stats de entrada con `_get_stats()`, que además del valor persistido en `db` suma los bonos EFÍMEROS de combate: evento de mundo activo (`bonus_inteligencia`), buffs de taberna (`buff_stat` de fuerza/destreza/inteligencia), runas grabadas (`bonus_fuerza`/`bonus_inteligencia`) y montura activa. Esa función existe para calcular el daño/HP de un turno de combate, nunca pensada para persistirse — pero `procesar_subida_de_nivel()` devuelve el dict de stats íntegro (no solo las claves que cambian al subir de nivel), y todos esos sitios escribían de vuelta en `db.*` cada clave del resultado con un `for k, v in nuevos_stats.items(): _set_stat(...)`. Cualquier jugador con una poción de fuerza, una runa, el evento de tormenta mágica o una montura activos en el instante exacto de subir de nivel se quedaba con ese bono horneado para siempre en su stat base, incluso después de que expirase — por ejemplo, +5 de fuerza de una poción de taberna que debía durar 20 minutos pasaba a ser permanente. Encontrado auditando el sistema de buffs, al revisar todos los usos reales de `bonus_stat()`. Fix: nueva `_get_stats_base()` (solo valores persistidos, sin ningún bono efímero) usada como entrada de `procesar_subida_de_nivel()` en los 8 sitios afectados; `_get_stats()` sigue existiendo tal cual para el cálculo de combate real, ahora construida sobre `_get_stats_base()`. 1 test de regresión nuevo en `tests/test_handler.py`.
+
 ## [0.71.30] — 2026-08-30
 
 ### Corregido
