@@ -38,19 +38,41 @@ def _runas_activas(obj) -> dict:
 _SIN_EVENTO_RESUELTO = object()
 
 
-def _get_stats(obj, evento_activo=_SIN_EVENTO_RESUELTO) -> dict:
+def _get_stats_base(obj) -> dict:
     """
-    Lee stats de combate de un objeto Evennia.
+    Lee los stats de combate PERSISTIDOS de un objeto Evennia, sin ningún
+    bono efímero (evento de mundo, buffs de taberna, runas, montura).
 
-    `evento_activo`: id del evento mundial ya resuelto por el llamador (p.
-    ej. una sola vez por turno en _resolver_turno, en vez de una vez por
-    participante). Si no se pasa, se resuelve aquí como antes.
+    Usar siempre esta función -- nunca _get_stats() -- como entrada de
+    procesar_subida_de_nivel() cuando el resultado se vaya a escribir de
+    vuelta en obj.db: _get_stats() existe para calcular el daño/HP de un
+    turno de combate y sus bonos son efímeros por diseño, pero
+    procesar_subida_de_nivel() devuelve el dict de stats íntegro (no solo
+    las claves que cambian al subir de nivel), así que si se le pasara la
+    versión con bonos, cualquier buff, runa, evento de mundo o montura
+    activos en el instante exacto de un level-up quedarían horneados para
+    siempre en la stat base del personaje, incluso después de expirar.
     """
     stats = {}
     for key, default in STAT_DEFAULTS.items():
         stats[key] = getattr(obj.db, key, None)
         if stats[key] is None:
             stats[key] = default
+    return stats
+
+
+def _get_stats(obj, evento_activo=_SIN_EVENTO_RESUELTO) -> dict:
+    """
+    Lee stats de combate de un objeto Evennia, incluidos los bonos
+    efímeros (evento de mundo, buffs, runas, montura). Solo para calcular
+    daño/HP de un turno de combate -- ver _get_stats_base() para el uso
+    como entrada de procesar_subida_de_nivel().
+
+    `evento_activo`: id del evento mundial ya resuelto por el llamador (p.
+    ej. una sola vez por turno en _resolver_turno, en vez de una vez por
+    participante). Si no se pasa, se resuelve aquí como antes.
+    """
+    stats = _get_stats_base(obj)
     # Evento: tormenta mágica (+INT para jugadores)
     if getattr(obj, "has_account", False):
         try:
@@ -1141,7 +1163,7 @@ class CombatHandler(DefaultScript):
                 xp_txt += f" (Total: {m.db.experiencia})"
             m.msg(xp_txt)
 
-            stats = _get_stats(m)
+            stats = _get_stats_base(m)
             subio, nuevos_stats = procesar_subida_de_nivel(stats)
             if subio:
                 for k, v in nuevos_stats.items():

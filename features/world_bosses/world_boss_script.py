@@ -241,9 +241,9 @@ def distribuir_recompensas_jefe_mundo(npc, tracker: dict, sala, boss_id: str | N
         # de nivel sin que nivel/stats/HP máximo se actualizaran de verdad
         # hasta el siguiente kill de combate normal del jugador.
         try:
-            from features.combat.handler import _get_stats, _set_stat
+            from features.combat.handler import _get_stats_base, _set_stat
             from systems.combat.engine import procesar_subida_de_nivel
-            stats = _get_stats(jugador)
+            stats = _get_stats_base(jugador)
             subio, nuevos_stats = procesar_subida_de_nivel(stats)
             if subio:
                 for k, v in nuevos_stats.items():

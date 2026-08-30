@@ -276,9 +276,9 @@ class MazmorraScript(DefaultScript):
             # ni HP máximo, ni el mensaje de subida) hasta su siguiente kill
             # de combate normal, que sí llama a _dar_xp_a_grupo().
             try:
-                from features.combat.handler import _get_stats, _set_stat
+                from features.combat.handler import _get_stats_base, _set_stat
                 from systems.combat.engine import procesar_subida_de_nivel
-                stats = _get_stats(char)
+                stats = _get_stats_base(char)
                 subio, nuevos_stats = procesar_subida_de_nivel(stats)
                 if subio:
                     for k, v in nuevos_stats.items():

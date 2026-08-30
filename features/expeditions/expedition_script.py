@@ -217,7 +217,7 @@ class ExpedicionScript(DefaultScript):
     def _recompensar_oleada(self, oleada_idx: int):
         from systems.expeditions.expeditions import calcular_recompensa_oleada
         from systems.combat.engine import procesar_subida_de_nivel
-        from features.combat.handler import _get_stats, _set_stat
+        from features.combat.handler import _get_stats_base, _set_stat
 
         tipo_id = self.db.tipo_id
         miembros = self._miembros_en_sala()
@@ -229,7 +229,7 @@ class ExpedicionScript(DefaultScript):
             xp_actual = getattr(m.db, "experiencia", 0) or 0
             m.db.experiencia = xp_actual + rec["xp"]
             m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
-            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats(m))
+            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats_base(m))
             if subio:
                 for k, v in nuevos_stats.items():
                     _set_stat(m, k, v)
@@ -245,7 +245,7 @@ class ExpedicionScript(DefaultScript):
             EXPEDICIONES, calcular_bonus_completar
         )
         from systems.combat.engine import procesar_subida_de_nivel
-        from features.combat.handler import _get_stats, _set_stat
+        from features.combat.handler import _get_stats_base, _set_stat
 
         tipo_id = self.db.tipo_id
         exp = EXPEDICIONES[tipo_id]
@@ -275,7 +275,7 @@ class ExpedicionScript(DefaultScript):
             xp_actual = getattr(m.db, "experiencia", 0) or 0
             m.db.experiencia = xp_actual + rec["xp"]
             m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
-            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats(m))
+            subio, nuevos_stats = procesar_subida_de_nivel(_get_stats_base(m))
             if subio:
                 for k, v in nuevos_stats.items():
                     _set_stat(m, k, v)

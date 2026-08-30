@@ -54,7 +54,7 @@ def _dar_reputacion(caller, rep_reward: dict):
 
 def _dar_recompensa(caller, recompensa: dict):
     """Aplica XP, monedas e items de recompensa al caller."""
-    from features.combat.handler import _get_stats, _set_stat
+    from features.combat.handler import _get_stats_base, _set_stat
     from systems.combat.engine import procesar_subida_de_nivel
 
     xp = recompensa.get("xp", 0)
@@ -65,7 +65,7 @@ def _dar_recompensa(caller, recompensa: dict):
         xp_actual = getattr(caller.db, "experiencia", 0) or 0
         caller.db.experiencia = xp_actual + xp
         caller.msg(f"|g+{xp} XP|n (Total: {caller.db.experiencia})")
-        stats = _get_stats(caller)
+        stats = _get_stats_base(caller)
         subio, nuevos = procesar_subida_de_nivel(stats)
         if subio:
             for k, v in nuevos.items():

@@ -518,6 +518,64 @@ class TestDarXpAGrupoComprobarLogros(EvenniaTest):
         )
 
 
+class TestSubidaDeNivelNoHorneaBonosTemporales(EvenniaTest):
+    """
+    Regresión: _dar_xp_a_grupo() construye los stats para
+    procesar_subida_de_nivel() con _get_stats(), que además del valor base
+    de db suma los bonos EFÍMEROS de combate (buffs de taberna, runas,
+    evento de mundo, montura) -- pensados solo para calcular daño/HP de un
+    turno, nunca para persistirse. Al subir de nivel, el resultado íntegro
+    de procesar_subida_de_nivel() (fuerza/destreza/inteligencia ya
+    infladas por el bono, más el +1 propio del nivel) se escribía de
+    vuelta en obj.db con _set_stat() para TODAS las claves del dict, no
+    solo las que de verdad cambian al subir de nivel. Cualquier jugador
+    con una poción de fuerza activa (o una runa, el evento de tormenta
+    mágica, o montado) en el instante exacto de un level-up se quedaba
+    para siempre con el bono horneado en su stat base, incluso después de
+    que el buff expirase.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1, fuerza=10)
+        # A 10 XP del nivel 2 (umbral: 100)
+        self.jugador.db.experiencia = 90
+        # Poción de fuerza activa: +5 fuerza durante 20 minutos
+        self.jugador.db.buffs_activos = [{
+            "tipo": "buff_stat", "bonus": 5, "stat": "fuerza",
+            "nombre": "Poción de fuerza", "expira": __import__("time").time() + 1200,
+        }]
+
+        self.npc = create_object("typeclasses.npc.NPC", key="Goblin")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=30, hp_max=30, nivel=1)
+
+    def _crear_handler(self):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar([self.jugador, self.npc])
+        return handler
+
+    def test_buff_de_fuerza_activo_no_se_hornea_al_subir_de_nivel(self):
+        handler = self._crear_handler()
+        with patch("features.combat.handler.calcular_xp_recompensa", return_value=50), \
+             patch("features.respawn.respawn.programar_respawn"):
+            handler._procesar_muerte(self.npc, asesino=self.jugador)
+
+        self.assertEqual(
+            self.jugador.db.nivel, 2,
+            "El personaje debía subir a nivel 2 con la XP otorgada.",
+        )
+        self.assertEqual(
+            self.jugador.db.fuerza, 11,
+            "La fuerza base tras subir de nivel debía ser 10 (base) + 1 "
+            "(subida de nivel) = 11, sin hornear el +5 del buff de "
+            f"taberna; quedó en {self.jugador.db.fuerza}.",
+        )
+
+
 class TestRunaEscudoGolpeLetal(EvenniaTest):
     """
     Regresión: la Runa de Escudo (reduccion_dano) solo se aplicaba con

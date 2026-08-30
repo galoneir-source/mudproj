@@ -217,7 +217,7 @@ class CmdTablon(Command):
 
     def _dar_recompensa(self, caller, recompensa: dict):
         from systems.combat.engine import procesar_subida_de_nivel
-        from features.combat.handler import _get_stats, _set_stat
+        from features.combat.handler import _get_stats_base, _set_stat
 
         monedas = recompensa.get("monedas", 0)
         xp_ganado = recompensa.get("xp", 0)
@@ -229,7 +229,7 @@ class CmdTablon(Command):
         caller.db.experiencia = xp_actual + xp_ganado
 
         # Comprobar subida de nivel
-        stats = _get_stats(caller)
+        stats = _get_stats_base(caller)
         subio, nuevos_stats = procesar_subida_de_nivel(stats)
         if subio:
             for k, v in nuevos_stats.items():
