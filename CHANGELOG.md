@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.39] — 2026-08-31
+
+### Corregido
+- El buff de XP de taberna (`buff_xp`, p. ej. Estofado Vigorizante, "+15% XP durante 30 minutos") solo se aplicaba en `_dar_xp_a_grupo()` (kills de combate normal contra NPCs) desde que se introdujo en v0.34.0 — quests, contratos, mazmorras, jefes de mundo, desafíos diarios (en sus dos puntos de otorgar XP) y expediciones (en sus dos puntos de otorgar XP) se fueron añadiendo después sin retomar nunca esta integración, así que el mismo consumible que promete "+15% XP" sin ninguna excepción de alcance solo beneficiaba a una de las muchas formas de ganar experiencia del juego. Encontrado auditando buffs de taberna al revisar todos los usos reales de `factor_xp()` fuera del módulo de combate. Fix: nuevo helper `_xp_con_buff()` (`features/combat/handler.py`, junto a `_get_stats_base`/`_set_stat`) que aplica el multiplicador de `buffs_activos` del receptor a una cantidad de XP; se invoca ahora en los 8 puntos de otorgamiento de XP que antes escribían `db.experiencia` sin pasar por él. 8 tests de regresión nuevos, uno por punto de otorgamiento, repartidos en `tests/test_contratos.py`, `tests/test_quests.py`, `tests/test_mazmorras.py`, `tests/test_jefes_mundo.py`, `tests/test_daily.py` (×2) y `tests/test_expeditions.py` (×2).
+
 ## [0.71.38] — 2026-08-31
 
 ### Corregido
