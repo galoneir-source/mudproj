@@ -37,6 +37,8 @@ class GuildWarScript(DefaultScript):
             if guerra_expirada(entry["timestamp_inicio"], ahora):
                 self._cerrar_guerra(war_id, entry)
 
+        self._purgar_retos_expirados()
+
     def _cerrar_guerra(self, war_id: str, entry: dict):
         from systems.guild_wars.guild_wars import formatear_resultado
         from features.guilds.guild_script import obtener_gremio_por_nombre
@@ -67,6 +69,30 @@ class GuildWarScript(DefaultScript):
             return True
         return any(reto["gremio_retador"] == gremio_nombre for reto in retos.values())
 
+    def _purgar_retos_expirados(self) -> dict:
+        """
+        Elimina de `self.db.retos` cualquier reto cuyo plazo de aceptación
+        ya venció. Sin este saneo, un reto que nadie acepta ni rechaza a
+        tiempo se queda para siempre en el dict: `_ocupado_en_retos` lo
+        sigue viendo como pendiente y tanto el retador como el retado
+        quedan bloqueados de por vida para declarar o recibir cualquier
+        guerra nueva, aunque el reto original ya no tenga validez. Se
+        invoca tanto en el tick (`at_repeat`) como al declarar, para que
+        el saneo no dependa de que el tick ya haya pasado.
+        """
+        from systems.guild_wars.guild_wars import reto_expirado
+
+        retos = dict(self.db.retos or {})
+        ahora = time.time()
+        vivos = {
+            objetivo: reto
+            for objetivo, reto in retos.items()
+            if not reto_expirado(reto["timestamp"], ahora)
+        }
+        if len(vivos) != len(retos):
+            self.db.retos = vivos
+        return vivos
+
     def declarar(self, gremio_a_nombre: str, gremio_b_nombre: str) -> tuple[bool, str]:
         if gremio_a_nombre == gremio_b_nombre:
             return False, "No puedes declararle la guerra a tu propio gremio."
@@ -75,7 +101,7 @@ class GuildWarScript(DefaultScript):
         if self.guerra_de(gremio_b_nombre)[0]:
             return False, "Ese gremio ya está en guerra con otro."
 
-        retos = dict(self.db.retos or {})
+        retos = self._purgar_retos_expirados()
         if self._ocupado_en_retos(retos, gremio_a_nombre):
             return False, "Tu gremio ya tiene un reto de guerra pendiente. Espera a que expire o sea respondido."
         if self._ocupado_en_retos(retos, gremio_b_nombre):

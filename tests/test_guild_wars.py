@@ -144,6 +144,41 @@ class TestGuildWarScriptDeclarar(EvenniaTest):
         finally:
             guild_c.delete()
 
+    def test_declarar_reto_expirado_no_bloquea_al_retador_indefinidamente(self):
+        """
+        Un reto que nadie acepta ni rechaza en los 5 minutos de plazo no
+        debe dejar a ninguno de los dos gremios bloqueado para siempre:
+        sin un saneo de retos vencidos, `_ocupado_en_retos` seguiría
+        viendo el reto expirado como pendiente y Los Lobos jamás podría
+        declarar una guerra nueva, aunque el reto original ya no tenga
+        validez alguna.
+        """
+        self.script.declarar("Los Lobos", "Cuervos Negros")
+        retos = dict(self.script.db.retos)
+        retos["Cuervos Negros"]["timestamp"] -= TIMEOUT_RETO_SEGUNDOS + 10
+        self.script.db.retos = retos
+
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            ok, msg = self.script.declarar("Los Lobos", "Tercer Gremio")
+            self.assertTrue(ok, msg)
+        finally:
+            guild_c.delete()
+
+    def test_declarar_reto_expirado_libera_tambien_al_retado(self):
+        """Mismo saneo visto desde el lado del retado (Cuervos Negros)."""
+        self.script.declarar("Los Lobos", "Cuervos Negros")
+        retos = dict(self.script.db.retos)
+        retos["Cuervos Negros"]["timestamp"] -= TIMEOUT_RETO_SEGUNDOS + 10
+        self.script.db.retos = retos
+
+        guild_c = _crear_guild("Tercer Gremio", self.char1)
+        try:
+            ok, msg = self.script.declarar("Tercer Gremio", "Cuervos Negros")
+            self.assertTrue(ok, msg)
+        finally:
+            guild_c.delete()
+
     def test_declarar_contra_gremio_que_ya_es_retador_falla(self):
         """
         No se puede declarar la guerra a un gremio que ya está retando a
