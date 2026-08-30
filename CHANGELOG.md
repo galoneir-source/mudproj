@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.32] — 2026-08-30
+
+### Corregido
+- La Runa de Drenaje (`robo_vida`, `features/combat/handler.py`) y los efectos de curación de habilidad (`drenar_vida`, `golpe_sagrado`, `drenar_esencia`) exigían `resultado.exito and ... and not resultado.muerto` para curar al ATACANTE — el mismo guard que sí es correcto para impedir aplicar un ESTADO (veneno, sangrado) a un objetivo ya muerto (no se le puede envenenar un cadáver), copiado aquí sin querer. Pero curar al atacante no depende en nada de si el objetivo sobrevive: la Runa de Drenaje promete "Recupera N HP por cada golpe exitoso" (`systems/runes/runes.py`, sin excepción) y las tres habilidades prometen curar un % del daño infligido (`systems/skills/trees.py`, tampoco con excepción) — así que el golpe que remata a un enemigo, el momento en que más se necesita el drenaje de vida, nunca lo otorgaba. Encontrado auditando habilidades/clases al revisar los efectos post-combate de las habilidades de subclase, y generalizado tras notar el mismo guard copiado en la Runa de Drenaje — mismo patrón que la Runa de Escudo (v0.71.27), que sufría la inconsistencia inversa (una reducción de daño que debía aplicarse justo en el golpe letal). Fix: ambos bloques curan ahora también en el golpe letal; los guards que sí deben excluir un objetivo muerto (aplicar estados, sangrado de la Runa de Filo, ataque de mascota) quedan intactos. 2 tests de regresión nuevos en `tests/test_handler.py`.
+
 ## [0.71.31] — 2026-08-30
 
 ### Corregido
