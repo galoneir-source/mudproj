@@ -254,6 +254,29 @@ class TestMazmorraCompletar(MazmorrasTestBase):
         self.assertEqual(self.char1.db.nivel, 6)
         self.assertEqual(self.char1.db.fuerza, fuerza_antes + 1)
 
+    def test_completar_aplica_buff_de_xp(self):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- mazmorras nunca
+        retomó esta integración, así que el mismo buff que promete "+N%
+        XP" sin excepción de alcance no tenía ningún efecto al completar
+        una mazmorra. Cripta de Ceniza en normal da 150 XP fijos.
+        """
+        import time
+
+        instancia = self._entrar_solo()
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+
+        while instancia.db.estado == "activa":
+            self._limpiar_sala_actual(instancia)
+            instancia.avanzar(self.char1)
+
+        self.assertEqual(self.char1.db.experiencia, int(150 * 1.5))
+
     def test_completar_marca_mazmorra_completada_en_char(self):
         instancia = self._entrar_solo()
         while instancia.db.estado == "activa":

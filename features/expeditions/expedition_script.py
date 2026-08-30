@@ -226,8 +226,10 @@ class ExpedicionScript(DefaultScript):
 
         rec = calcular_recompensa_oleada(tipo_id, len(miembros))
         for m in miembros:
+            from features.combat.handler import _xp_con_buff
+            xp_final = _xp_con_buff(m, rec["xp"])
             xp_actual = getattr(m.db, "experiencia", 0) or 0
-            m.db.experiencia = xp_actual + rec["xp"]
+            m.db.experiencia = xp_actual + xp_final
             m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
             subio, nuevos_stats = procesar_subida_de_nivel(_get_stats_base(m))
             if subio:
@@ -272,8 +274,10 @@ class ExpedicionScript(DefaultScript):
             ) + 1
             if tipo_id == "fortaleza_caida":
                 m.db.fortaleza_completada = True
+            from features.combat.handler import _xp_con_buff
+            xp_final = _xp_con_buff(m, rec["xp"])
             xp_actual = getattr(m.db, "experiencia", 0) or 0
-            m.db.experiencia = xp_actual + rec["xp"]
+            m.db.experiencia = xp_actual + xp_final
             m.db.monedas = (getattr(m.db, "monedas", 0) or 0) + rec["monedas"]
             subio, nuevos_stats = procesar_subida_de_nivel(_get_stats_base(m))
             if subio:
@@ -281,7 +285,7 @@ class ExpedicionScript(DefaultScript):
                     _set_stat(m, k, v)
                 m.msg(f"\n|Y¡Has subido al nivel {nuevos_stats['nivel']}!|n\n")
             m.msg(
-                f"  Recompensa: |g+{rec['xp']} XP|n  |y+{rec['monedas']} monedas|n"
+                f"  Recompensa: |g+{xp_final} XP|n  |y+{rec['monedas']} monedas|n"
             )
             try:
                 from features.achievements.commands import comprobar_y_notificar

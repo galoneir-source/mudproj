@@ -123,6 +123,28 @@ def _set_stat(obj, key: str, value):
     setattr(obj.db, key, value)
 
 
+def _xp_con_buff(personaje, xp_base: int) -> int:
+    """
+    Aplica el multiplicador de XP de buffs_activos (p. ej. Estofado
+    Vigorizante, +15% XP) a una cantidad de XP a punto de otorgarse.
+
+    factor_xp() solo se aplicaba en _dar_xp_a_grupo() (kills de combate
+    normal) desde que se introdujo este buff en v0.34.0 -- quests,
+    contratos, mazmorras, jefes de mundo, desafíos diarios y expediciones
+    se fueron añadiendo después sin retomar nunca esta integración, así
+    que el mismo buff que promete "+15% XP" sin ninguna excepción de
+    alcance solo se aplicaba a una de las muchas formas de ganar XP del
+    juego.
+    """
+    try:
+        from systems.buffs.buffs import factor_xp, buffs_vigentes
+        buffs = list(getattr(personaje.db, "buffs_activos", None) or [])
+        factor = factor_xp(buffs_vigentes(buffs))
+        return int(xp_base * factor)
+    except Exception:
+        return xp_base
+
+
 def _subir_vinculo_mascota(char, delta: int):
     """Aumenta (o reduce) el vínculo de la mascota del personaje."""
     mascota = dict(getattr(char.db, "mascota", None) or {})

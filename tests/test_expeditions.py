@@ -178,6 +178,58 @@ class TestExpedicionRecompensaTotal(EvenniaTest):
                 script.at_repeat()
         return script
 
+    def test_recompensar_oleada_aplica_buff_de_xp(self):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- expediciones nunca
+        retomó esta integración en _recompensar_oleada(), así que el mismo
+        buff que promete "+N% XP" sin excepción de alcance no tenía ningún
+        efecto al superar una oleada.
+        """
+        import time
+        from systems.expeditions.expeditions import calcular_recompensa_oleada
+
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+        script = _obtener_script_expedicion(self.char1)
+        script._recompensar_oleada(0)
+
+        rec = calcular_recompensa_oleada("bosque_profundo", 2)
+        self.assertEqual(self.char1.db.experiencia, int(rec["xp"] * 1.5))
+
+    def test_completar_bonus_aplica_buff_de_xp(self):
+        """
+        Mismo bug que test_recompensar_oleada_aplica_buff_de_xp, pero en
+        el bonus adicional de _completar() -- llamado en aislamiento
+        (sin pasar por las oleadas) para no depender del bug preexistente
+        y no relacionado de doble recompensa en la última oleada. Se
+        parchea notificar_progreso() del sistema de desafíos diarios (que
+        _completar() dispara como efecto secundario) para que su propia
+        recompensa de XP -si "expedicion" resulta ser el desafío del
+        día- no se mezcle con la aserción de este test.
+        """
+        import time
+        from unittest.mock import patch
+        from systems.expeditions.expeditions import calcular_bonus_completar
+
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+        script = _obtener_script_expedicion(self.char1)
+        with patch("features.daily.daily_script.notificar_progreso"):
+            script._completar()
+
+        bonus = calcular_bonus_completar("bosque_profundo", 2)
+        self.assertEqual(self.char1.db.experiencia, int(bonus["xp"] * 1.5))
+
     def test_completar_expedicion_no_crashea_al_subir_de_nivel(self):
         """
         Regresión: _recompensar_oleada()/_completar() llamaban a

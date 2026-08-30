@@ -217,10 +217,10 @@ class CmdTablon(Command):
 
     def _dar_recompensa(self, caller, recompensa: dict):
         from systems.combat.engine import procesar_subida_de_nivel
-        from features.combat.handler import _get_stats_base, _set_stat
+        from features.combat.handler import _get_stats_base, _set_stat, _xp_con_buff
 
         monedas = recompensa.get("monedas", 0)
-        xp_ganado = recompensa.get("xp", 0)
+        xp_ganado = _xp_con_buff(caller, recompensa.get("xp", 0))
 
         monedas_actuales = getattr(caller.db, "monedas", 0) or 0
         caller.db.monedas = monedas_actuales + monedas

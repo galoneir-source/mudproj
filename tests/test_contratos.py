@@ -360,6 +360,27 @@ class TestCmdTablonEntregarKill(EvenniaTest):
         cmd.func()
         self.assertEqual(self.char1.db.experiencia, 40)
 
+    def test_kill_completado_aplica_buff_de_xp(self):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- contratos nunca
+        retomó esta integración, así que el mismo buff que promete "+N%
+        XP" sin excepción de alcance no tenía ningún efecto al entregar
+        un contrato.
+        """
+        import time
+
+        self.char1.db.kills_totales = 10
+        self.char1.db.contrato_activo = _contrato_kill(5, kills_al_aceptar=0)
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+        cmd = _make_cmd(CmdTablon, self.char1, "entregar")
+        cmd.func()
+        self.assertEqual(self.char1.db.experiencia, int(40 * 1.5))
+
     def test_kill_completado_limpia_contrato(self):
         self.char1.db.kills_totales = 10
         self.char1.db.contrato_activo = _contrato_kill(5, kills_al_aceptar=0)

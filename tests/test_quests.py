@@ -197,6 +197,27 @@ class TestCmdEntregar(QuestTestBase):
         self.assertGreater(self.jugador.db.experiencia, 0)
         self.assertGreater(self.jugador.db.monedas, 0)
 
+    def test_quest_kill_completada_aplica_buff_de_xp(self):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- quests nunca
+        retomó esta integración, así que el mismo buff que promete "+N%
+        XP" sin excepción de alcance no tenía ningún efecto al entregar
+        una misión. "problema_goblins" da 150 XP fijos.
+        """
+        import time
+
+        self.jugador.db.quests = {"problema_goblins": {"estado": "completada", "progreso": {"kills": 3}}}
+        self.jugador.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+        self._crear_npc("guardia de la ciudad")
+        cmd = _make_cmd(CmdEntregar, self.jugador, args="problema goblins")
+        cmd.func()
+        self.assertEqual(self.jugador.db.experiencia, int(150 * 1.5))
+
     def test_quest_kill_completada_npc_ausente_da_error(self):
         self.jugador.db.quests = {"problema_goblins": {"estado": "completada", "progreso": {"kills": 3}}}
         cmd = _make_cmd(CmdEntregar, self.jugador, args="problema goblins")

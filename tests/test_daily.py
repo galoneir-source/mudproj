@@ -230,6 +230,25 @@ class TestNotificarProgreso(EvenniaTest):
         self.assertGreater(self.char1.db.nivel, 1)
         self.assertGreater(self.char1.db.fuerza, fuerza_antes)
 
+    def test_completar_un_desafio_aplica_buff_de_xp(self, _mock):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- desafíos diarios
+        nunca retomó esta integración, así que el mismo buff que promete
+        "+N% XP" sin excepción de alcance no tenía ningún efecto al
+        completar un desafío individual.
+        """
+        import time
+
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+        for _ in range(3):
+            notificar_progreso(self.char1, "apostar_ganar")
+        self.assertEqual(self.char1.db.experiencia, int(100 * 1.5))
+
     def test_completar_un_solo_desafio_desbloquea_logro_primer_desafio(self, _mock):
         """
         Regresión: comprobar_y_notificar() sólo se llamaba desde
@@ -304,6 +323,34 @@ class TestNotificarProgreso(EvenniaTest):
 
         self.assertGreater(self.char1.db.nivel, 1)
         self.assertGreater(self.char1.db.fuerza, fuerza_antes)
+
+    def test_bonus_de_racha_aplica_buff_de_xp(self, _mock):
+        """
+        Mismo bug que test_completar_un_desafio_aplica_buff_de_xp, pero en
+        el bonus de racha de _completar_todos() (segundo punto de la
+        función que otorgaba XP sin aplicar factor_xp()). El buff está
+        activo durante toda la secuencia, así que se aplica tanto a cada
+        una de las 5 recompensas individuales como al bonus de racha,
+        cada una con su propio truncamiento a entero.
+        """
+        import time
+
+        hoy = _hoy_utc().isoformat()
+        ayer = (_hoy_utc() - timedelta(days=1)).isoformat()
+        self.char1.db.ultimo_dia_desafios = ayer
+        self.char1.db.racha_desafios = 2
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+
+        _completar_los_5(self.char1)
+
+        # bonus_racha_xp(3) == 200
+        xp_esperado = sum(
+            int(d["recompensa_xp"] * 1.5) for d in _DESAFIOS_FIJOS
+        ) + int(200 * 1.5)
+        self.assertEqual(self.char1.db.experiencia, xp_esperado)
 
     def test_racha_se_reinicia_si_ultimo_dia_no_fue_ayer(self, _mock):
         """

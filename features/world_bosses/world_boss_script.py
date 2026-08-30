@@ -221,6 +221,8 @@ def distribuir_recompensas_jefe_mundo(npc, tracker: dict, sala, boss_id: str | N
         monedas = max(1, int(mon_bruto * escala_mon))
         pct = int(dano / dano_total * 100)
 
+        from features.combat.handler import _xp_con_buff
+        xp = _xp_con_buff(jugador, xp)
         jugador.db.experiencia = (jugador.db.experiencia or 0) + xp
         jugador.db.monedas = (jugador.db.monedas or 0) + monedas
 

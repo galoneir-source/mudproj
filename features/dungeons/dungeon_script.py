@@ -253,8 +253,11 @@ class MazmorraScript(DefaultScript):
             if not chars:
                 continue
             char = chars[0]
-            # XP
-            char.db.experiencia = (char.db.experiencia or 0) + xp_bonus
+            # XP (con el multiplicador de buffs de cada jugador, p.ej.
+            # Estofado Vigorizante -- cada uno puede tener uno activo o no)
+            from features.combat.handler import _xp_con_buff
+            xp_final = _xp_con_buff(char, xp_bonus)
+            char.db.experiencia = (char.db.experiencia or 0) + xp_final
             # Monedas
             char.db.monedas = (char.db.monedas or 0) + monedas_bonus
             # Registrar mazmorra completada
@@ -267,7 +270,7 @@ class MazmorraScript(DefaultScript):
 
             char.msg(
                 f"\n|Y¡¡ {nombre_maz} completada !! |n(dificultad {dif_txt})\n"
-                f"|g+{xp_bonus} XP  +{monedas_bonus} monedas|n\n"
+                f"|g+{xp_final} XP  +{monedas_bonus} monedas|n\n"
             )
             # Subida de nivel — a diferencia de quests/contratos/expediciones,
             # esta recompensa nunca procesaba el XP recién otorgado contra

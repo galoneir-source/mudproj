@@ -146,3 +146,25 @@ class TestDistribuirRecompensas(EvenniaTest):
 
         self.assertEqual(self.char1.db.experiencia, datos["xp_total"])
         self.assertEqual(self.char1.db.monedas, datos["monedas_total"])
+
+    def test_recompensa_aplica_buff_de_xp(self):
+        """
+        Regresión: factor_xp() (buffs_activos, p.ej. Estofado Vigorizante)
+        solo se aplicaba en _dar_xp_a_grupo() (kills de combate normal)
+        desde que se introdujo este buff en v0.34.0 -- jefes de mundo
+        nunca retomó esta integración, así que el mismo buff que promete
+        "+N% XP" sin excepción de alcance no tenía ningún efecto al
+        repartir la recompensa de un jefe.
+        """
+        import time
+
+        datos = JEFES_MUNDO["TITAN_PANTANO"]
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+        tracker = {self.char1.dbref: 1000}
+
+        distribuir_recompensas_jefe_mundo(None, tracker, self.sala, "TITAN_PANTANO")
+
+        self.assertEqual(self.char1.db.experiencia, int(datos["xp_total"] * 1.5))

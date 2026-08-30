@@ -114,6 +114,8 @@ def _completar_todos(jugador, hoy: str):
     if bonus_m > 0:
         jugador.db.monedas = (getattr(jugador.db, "monedas", 0) or 0) + bonus_m
     if bonus_x > 0:
+        from features.combat.handler import _xp_con_buff
+        bonus_x = _xp_con_buff(jugador, bonus_x)
         jugador.db.experiencia = (getattr(jugador.db, "experiencia", 0) or 0) + bonus_x
         _procesar_subida_de_nivel_si_corresponde(jugador)
 
@@ -172,15 +174,17 @@ def notificar_progreso(jugador, tipo: str, **datos):
             jugador.db.total_desafios_completados = (
                 int(getattr(jugador.db, "total_desafios_completados", 0) or 0) + 1
             )
+            from features.combat.handler import _xp_con_buff
+            xp_final = _xp_con_buff(jugador, d["recompensa_xp"])
             jugador.db.experiencia = (
                 getattr(jugador.db, "experiencia", 0) or 0
-            ) + d["recompensa_xp"]
+            ) + xp_final
             jugador.db.monedas = (
                 getattr(jugador.db, "monedas", 0) or 0
             ) + d["recompensa_monedas"]
             jugador.msg(
                 f"\n|Y✦ ¡DESAFÍO COMPLETADO!|n  |w{desc}|n\n"
-                f"   |g+{d['recompensa_xp']} XP|n  |y+{d['recompensa_monedas']} monedas|n\n"
+                f"   |g+{xp_final} XP|n  |y+{d['recompensa_monedas']} monedas|n\n"
             )
             if d["recompensa_xp"] > 0:
                 _procesar_subida_de_nivel_si_corresponde(jugador)
