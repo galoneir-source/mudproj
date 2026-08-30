@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.35] — 2026-08-31
+
+### Corregido
+- El mismo bug corregido en vivienda (v0.71.34) — borrar una sala con un combate activo dentro deja a los combatientes con `db.en_combate=True` para siempre, porque `CombatHandler` es un script hijo de la sala y se borra en cascada sin pasar por `_terminar_combate()` — estaba presente también en los otros dos sistemas del proyecto que crean y destruyen salas temporales dinámicamente: **mazmorras** (`MazmorraScript._limpiar()`, disparable por el timeout de 3600s con un jugador aún peleando contra el último NPC de la sala actual) y **expediciones** (`ExpedicionScript._limpiar()`, disparable por el timeout global de 30 minutos con una oleada todavía en curso). En ambos casos, a diferencia de un servidor caído (donde `_limpiar_actividad_huerfana()` limpia el script "zombie" al reiniciar), el script desaparecía del todo junto con la sala, así que ni un reinicio del servidor podía arreglarlo después. Encontrado auditando sistemáticamente todos los sistemas del proyecto que crean salas dinámicamente, tras localizar el bug original en vivienda. Fix: ambos `_limpiar()` terminan ahora cualquier combate activo de la sala (vía `_terminar_combate()`) antes de mover a los ocupantes y borrarla. 2 tests de regresión nuevos (`tests/test_mazmorras.py`, `tests/test_expeditions.py`).
+
 ## [0.71.34] — 2026-08-31
 
 ### Corregido
