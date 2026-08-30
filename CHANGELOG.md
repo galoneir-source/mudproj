@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.30] — 2026-08-30
+
+### Corregido
+- `GuildWarScript` (`features/guild_wars/guild_war_script.py`) nunca limpiaba un reto de guerra vencido: `TIMEOUT_RETO_SEGUNDOS` (5 minutos) solo se comprobaba de forma perezosa dentro de `aceptar()`, así que un reto que nadie aceptaba ni rechazaba a tiempo se quedaba para siempre en `self.db.retos`. `_ocupado_en_retos()` lo seguía viendo como pendiente indefinidamente, así que tanto el retador como el retado quedaban bloqueados de por vida: ni podían declarar una guerra nueva ni ser retados por un tercer gremio, aunque el reto original llevara horas o días sin ninguna validez. El tick de `at_repeat()` (cada 60s) ya cerraba las guerras activas expiradas con este mismo patrón, pero no tocaba los retos. Encontrado auditando guerras de gremios — ningún test cubría qué pasaba con un reto ignorado más allá del plazo, solo el caso de intentar aceptarlo tarde. Fix: nuevo `_purgar_retos_expirados()` que elimina del dict cualquier reto vencido, invocado tanto en `at_repeat()` (saneo periódico en segundo plano) como al principio de `declarar()` (para que el saneo no dependa de que el tick ya haya pasado). 2 tests de regresión nuevos en `tests/test_guild_wars.py`.
+
 ## [0.71.29] — 2026-08-30
 
 ### Corregido
