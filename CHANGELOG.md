@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.36] — 2026-08-31
+
+### Corregido
+- El pie del mapa (`formatear_mapa()`, `systems/cartography/cartography.py`) decía desde el primer commit de este sistema (v0.46.0) "Usa |wexplorar|n al llegar a una sala para registrarla" — pero el registro de exploración siempre ha sido automático en `Room.at_object_receive()` al entrar en la sala; el comando `explorar` nunca ha existido en el proyecto. Cualquier jugador que consultara `mapa` (el comando principal de esta feature) recibía la instrucción de usar un comando inexistente para algo que ya sucede solo, sin que ningún test cubriera el texto del pie. Encontrado auditando cartografía al contrastar el mensaje contra la lista real de comandos registrados. Fix: el pie ahora dice "Cada sala se registra sola al entrar en ella." 1 test de regresión nuevo en `tests/test_cartography_system.py`.
+
 ## [0.71.35] — 2026-08-31
 
 ### Corregido
