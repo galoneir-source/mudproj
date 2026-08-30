@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.38] — 2026-08-31
+
+### Corregido
+- `TradeSession._ejecutar()` (`features/trade/trade_session.py`) solo revalidaba, al ejecutar un intercambio, que cada objeto ofrecido siguiera existiendo y en el inventario del oferente (`obj.location == jugador`) — pero `ofrecer_objeto()` ya excluye explícitamente un objeto que esté equipado EN EL MOMENTO DE OFRECERLO, y la ejecución la dispara la confirmación del OTRO jugador, que puede tardar cualquier tiempo en llegar. Si el oferente ofrecía el objeto, confirmaba, y LUEGO se lo equipaba antes de que el otro confirmara, el intercambio se ejecutaba igualmente: el objeto pasaba de verdad al receptor mientras el equipamiento y los bonuses de stats del oferente original seguían intactos (equipar no cambia `location`) — el mismo bug de duplicación que el propio código ya documentaba y corregía en el momento de ofrecer, pero sin cubrir esta ventana entre ofrecer y ejecutar. Encontrado auditando intercambio, al notar que la comprobación de "equipado" vivía solo en `ofrecer_objeto()` y preguntarme si `_ejecutar()` la repetía. Fix: `_buscar_obj()` (usado tanto para revalidar como para transferir) también descarta ahora un objeto que se haya equipado mientras tanto, cancelando el intercambio con el mismo aviso que un objeto ya no disponible. 1 test de regresión nuevo en `tests/test_intercambio.py`.
+
 ## [0.71.37] — 2026-08-31
 
 ### Corregido
