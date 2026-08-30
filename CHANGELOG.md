@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.37] — 2026-08-31
+
+### Corregido
+- `CmdSubasta._publicar()` (`features/auctions/commands.py`) buscaba el objeto a subastar con el mismo `next()` manual (coincidencia exacta, luego "empieza por") que `mercado vender` tenía antes del fix v0.71.33 — literalmente copiado de allí, según su propio comentario ("mismo criterio que 'mercado vender'"), pero nunca actualizado cuando ese fix cambió a `caller.search()`. Ante dos objetos que empiezan igual (p. ej. "espada oxidada" y "espada legendaria"), se quedaba silenciosamente con el primero que encontrara recorriendo el inventario, publicándolo a subasta sin que el jugador hubiera especificado cuál de los dos quería subastar. Encontrado auditando subastas al contrastar su búsqueda de objeto con el fix ya aplicado en mercado. Fix: `_publicar()` usa ahora `caller.search()` con `candidates` restringido a los objetos no equipados, igual que mercado. 1 test de regresión nuevo en `tests/test_auctions.py`.
+
 ## [0.71.36] — 2026-08-31
 
 ### Corregido
