@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.34] — 2026-08-31
+
+### Corregido
+- `GestorViviendasScript.abandonar()` (`features/housing/housing_script.py`) movía a todos los ocupantes fuera de la vivienda y borraba la sala directamente, sin comprobar antes si había un combate activo dentro. El PvP es libre en cualquier sala (no existe ningún concepto de "zona segura" en el motor de combate), así que el propietario y un invitado pueden acabar peleando dentro de la vivienda; `CombatHandler` es un script hijo de la sala, así que al borrarla se borraba en cascada junto con ella sin pasar nunca por `_terminar_combate()`, dejando a ambos combatientes con `db.en_combate=True` para siempre — bloqueados de `casa`, `visitar`, duelos, torneos, viaje rápido y grupos. A diferencia de un servidor caído, donde `_limpiar_actividad_huerfana()` (`server/conf/at_server_startstop.py`) encuentra el script "zombie" al reiniciar y lo limpia, aquí el script desaparecía por completo junto con la sala, así que ni siquiera un reinicio del servidor podía arreglarlo después. Encontrado auditando vivienda, al notar que solo `casa`/`visitar` comprobaban `en_combate` y preguntarme qué pasaba si el combate ocurría dentro de la propia vivienda. Fix: `abandonar()` termina primero cualquier combate activo de la sala (vía el mismo `_terminar_combate()` que ya usa la limpieza de arranque) antes de mover a los ocupantes y borrarla. 1 test de regresión nuevo en `tests/test_vivienda.py`.
+
 ## [0.71.33] — 2026-08-30
 
 ### Corregido
