@@ -405,6 +405,30 @@ class TestCmdSubastaPublicar(EvenniaTest):
         _make_cmd(CmdSubasta, self.char1, "publicar solo_nombre").func()
         self.assertIn("uso", self.cap.all().lower())
 
+    def test_publicar_nombre_ambiguo_no_elige_arbitrariamente(self):
+        """
+        Regresión: igual que 'mercado vender' antes de v0.71.33 (de donde
+        se copió literalmente este mismo criterio de búsqueda, según su
+        propio comentario), _publicar() buscaba el objeto con un next()
+        manual (coincidencia exacta, luego "empieza por") en vez de
+        caller.search() -- así que ante dos objetos que empiezan igual,
+        se quedaba silenciosamente con el primero que apareciera en
+        caller.contents, publicándolo a subasta sin que el jugador
+        hubiera especificado cuál de los dos quería subastar.
+        """
+        _crear_item(self.char1, "espada oxidada")
+        _crear_item(self.char1, "espada legendaria")
+        _make_cmd(CmdSubasta, self.char1, "publicar espada 100").func()
+
+        self.assertEqual(
+            len(self.script.obtener_subastas()), 0,
+            "Ante un nombre ambiguo no debía publicarse ningún objeto "
+            "sin que el jugador aclarase cuál.",
+        )
+        nombres_inventario = [o.key for o in self.char1.contents]
+        self.assertIn("espada oxidada", nombres_inventario)
+        self.assertIn("espada legendaria", nombres_inventario)
+
 
 # --------------------------------------------------------------------------- #
 #  CmdSubasta — pujar

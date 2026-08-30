@@ -122,28 +122,26 @@ class CmdSubasta(Command):
             caller.msg(f"|r{msg}|n")
             return
 
-        # Buscar item en inventario, excluyendo equipados (mismo criterio
-        # que 'mercado vender' en features/market/commands.py)
+        # Buscar item en inventario, excluyendo equipados, con
+        # caller.search() -- mismo criterio que 'mercado vender' en
+        # features/market/commands.py desde su fix v0.71.33: un next()
+        # manual con coincidencia "empieza por" se queda silenciosamente
+        # con el primer objeto que encuentre ante un nombre ambiguo,
+        # publicándolo a subasta sin que el jugador haya especificado
+        # cuál de los dos quería subastar. caller.search() avisa de la
+        # ambigüedad y deja elegir.
         eq = _get_equipamiento(caller)
         equipped_ids = {item.id for item in eq.values() if item}
-        nombre_lower = nombre_obj.strip().lower()
+        candidatos = [obj for obj in caller.contents if obj.id not in equipped_ids]
 
-        item = next(
-            (obj for obj in caller.contents
-             if obj.id not in equipped_ids and obj.key.lower() == nombre_lower),
-            None,
+        item = caller.search(
+            nombre_obj.strip(),
+            candidates=candidatos,
+            nofound_string=(
+                f"No tienes '{nombre_obj.strip()}' en el inventario (o está equipado)."
+            ),
         )
         if not item:
-            item = next(
-                (obj for obj in caller.contents
-                 if obj.id not in equipped_ids
-                 and obj.key.lower().startswith(nombre_lower)),
-                None,
-            )
-        if not item:
-            caller.msg(
-                f"No tienes '{nombre_obj.strip()}' en el inventario (o está equipado)."
-            )
             return
 
         ok, resultado = script.publicar(caller, item, int(precio_str))
