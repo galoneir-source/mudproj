@@ -177,12 +177,6 @@ class TorneoScript(DefaultScript):
         """Inicia el próximo combate del bracket o declara al campeón."""
         from systems.arena.arena import siguiente_combate, registrar_ganador, campeon
 
-        # TIMEOUT_COMBATE es "por combate", no un presupuesto total para todo
-        # el torneo: hay que reiniciar el timer real en cada ronda (igual que
-        # en iniciar()), o un torneo de varias rondas que en conjunto supere
-        # los 5 min se cancelaría entero aunque los combates vayan con normalidad.
-        self.start(interval=TIMEOUT_COMBATE)
-
         bracket = dict(self.db.bracket or {})
         if not bracket:
             return
@@ -196,6 +190,12 @@ class TorneoScript(DefaultScript):
 
         # Bye: avanzar automáticamente
         if p2_ref is None:
+            # TIMEOUT_COMBATE es "por combate", no un presupuesto total para
+            # todo el torneo: hay que reiniciar el timer real en cada ronda
+            # (igual que en iniciar()), o un torneo de varias rondas que en
+            # conjunto supere los 5 min se cancelaría entero aunque los
+            # combates vayan con normalidad.
+            self.start(interval=TIMEOUT_COMBATE)
             _anunciar_global(
                 f"|cArena:|n |w{self.db.nombres.get(p1_ref,'???')}|n avanza automáticamente."
             )
@@ -215,11 +215,13 @@ class TorneoScript(DefaultScript):
 
         # Forfeit si algún jugador no está disponible
         if not p1 and not p2:
+            self.start(interval=TIMEOUT_COMBATE)
             bracket = registrar_ganador(bracket, p1_ref)  # arbitrario
             self.db.bracket = bracket
             delay(1, self._siguiente_combate)
             return
         if not p1:
+            self.start(interval=TIMEOUT_COMBATE)
             _anunciar_global(
                 f"|cArena:|n {nombres.get(p1_ref,'???')} no está disponible. "
                 f"Forfeit → |w{nombres.get(p2_ref,'???')}|n avanza."
@@ -229,6 +231,7 @@ class TorneoScript(DefaultScript):
             delay(1, self._siguiente_combate)
             return
         if not p2:
+            self.start(interval=TIMEOUT_COMBATE)
             _anunciar_global(
                 f"|cArena:|n {nombres.get(p2_ref,'???')} no está disponible. "
                 f"Forfeit → |w{nombres.get(p1_ref,'???')}|n avanza."
@@ -246,9 +249,21 @@ class TorneoScript(DefaultScript):
         # terminar el duelo de torneo, _fin_duelo() pondría en_combate=False
         # para ambos, desincronizando ese flag del handler anterior -- que
         # seguiría activo y listándolo como participante.
+        #
+        # Importante: NO reiniciar aquí el timer de TIMEOUT_COMBATE. Cada
+        # reintento de 5s no es un combate nuevo, es la misma espera por el
+        # mismo combate -- si se reiniciara en cada reintento (como hacía
+        # antes, al arrancar la función), un jugador que se quedara
+        # en_combate=True para siempre (p.ej. un combate huérfano que nunca
+        # termina, justo el escenario que describe el comentario de arriba)
+        # dejaría el torneo reintentando cada 5s eternamente, sin que
+        # TIMEOUT_COMBATE -pensado justamente para detectar "no pasa nada"-
+        # llegase a disparar nunca.
         if getattr(p1.db, "en_combate", False) or getattr(p2.db, "en_combate", False):
             delay(5, self._siguiente_combate)
             return
+
+        self.start(interval=TIMEOUT_COMBATE)
 
         # Teleportar a la arena
         sala = _buscar_sala_arena()

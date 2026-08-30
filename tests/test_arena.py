@@ -328,6 +328,37 @@ class TestFlujoDeTorneo(EvenniaTest):
                 "Se inició un combate de torneo pese a que j0 ya estaba en otro combate.",
             )
 
+    def test_esperar_a_un_jugador_ocupado_no_reinicia_el_timeout(self):
+        """
+        Regresión: _siguiente_combate() reiniciaba TIMEOUT_COMBATE
+        (self.start(interval=...)) al principio de la función,
+        incondicionalmente -- incluido el reintento de 5s cuando alguno de
+        los dos jugadores ya está en otro combate (rama de arriba). Un
+        jugador que se quedara en_combate=True para siempre (un combate
+        huérfano que nunca termina) dejaba el torneo reintentando cada 5s
+        eternamente, porque cada reintento reiniciaba la cuenta atrás de
+        TIMEOUT_COMBATE ("si no pasa nada, se cancela") antes de que
+        pudiera dispararse nunca.
+        """
+        from unittest.mock import patch
+        from evennia.utils import create as _create
+        from features.combat.handler import CombatHandler
+
+        torneo, jugadores = self._torneo_con(2)
+        p1_ref, p2_ref = siguiente_combate(dict(torneo.db.bracket or {}))
+        j0 = jugadores[p1_ref]
+
+        otra_sala = _create.create_object(Room, key="Bosque")
+        j0.move_to(otra_sala, quiet=True)
+        otro_handler = otra_sala.scripts.add(CombatHandler)
+        npc = _create.create_object("typeclasses.npc.NPC", key="Lobo", location=otra_sala)
+        otro_handler.iniciar([j0, npc])
+
+        with patch.object(torneo, "start") as mock_start:
+            torneo._siguiente_combate()
+
+        mock_start.assert_not_called()
+
     def test_forfeit_si_jugador_no_esta_disponible(self):
         """Un jugador sin sesión activa en el momento del combate (p.ej.
         se desconectó tras inscribirse) no debe bloquear el torneo — el
