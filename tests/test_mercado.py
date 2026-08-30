@@ -353,6 +353,33 @@ class TestCmdMercadoVender(EvenniaTest):
         texto = self.cap.all().lower()
         self.assertTrue("uso" in texto or "precio" in texto)
 
+    def test_vender_nombre_ambiguo_no_elige_arbitrariamente(self):
+        """
+        Regresión: _vender() buscaba el item en el inventario con un
+        next() manual (coincidencia exacta primero, luego "empieza
+        por") en vez de caller.search() -- el mismo mecanismo nativo de
+        Evennia que ya usan 'equipar' y 'usar' para objetos del
+        inventario, y que avisa al jugador y le deja elegir cuando el
+        texto buscado es ambiguo. Ante dos objetos que empiezan igual,
+        el next() manual se quedaba silenciosamente con el primero que
+        apareciera en caller.contents, publicándolo a la venta sin que
+        el jugador hubiera especificado cuál de los dos quería vender.
+        """
+        _crear_item(self.char1, "espada oxidada")
+        _crear_item(self.char1, "espada legendaria")
+        cmd = _make_cmd(CmdMercado, self.char1, "vender espada 100")
+        cmd.func()
+
+        listings = self.script.obtener_listings()
+        self.assertEqual(
+            len(listings), 0,
+            "Ante un nombre ambiguo no debía publicarse ningún objeto "
+            "sin que el jugador aclarase cuál.",
+        )
+        nombres_inventario = [o.key for o in self.char1.contents]
+        self.assertIn("espada oxidada", nombres_inventario)
+        self.assertIn("espada legendaria", nombres_inventario)
+
 
 # --------------------------------------------------------------------------- #
 #  CmdMercado — comprar
