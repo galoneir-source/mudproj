@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.33] — 2026-08-30
+
+### Corregido
+- `CmdMercado._vender()` (`features/market/commands.py`) buscaba el objeto a vender en el inventario con un `next()` manual escrito a mano (coincidencia exacta primero, luego "empieza por") en vez de `caller.search()` -- el mecanismo nativo de Evennia que ya usan `equipar` y `usar` para localizar objetos del inventario, y que avisa al jugador y le deja elegir cuando el texto buscado es ambiguo. Ante dos objetos que empezaran igual (p. ej. "espada oxidada" y "espada legendaria"), el `next()` con "empieza por" se quedaba silenciosamente con el primero que encontrara recorriendo el inventario, publicándolo a la venta sin que el jugador hubiera especificado cuál de los dos quería vender -- el jugador podía acabar poniendo a la venta (y perdiendo) el objeto equivocado sin ningún aviso. Encontrado auditando el mercado, contrastando su búsqueda manual con el patrón ya establecido en el resto del proyecto para localizar objetos del inventario por nombre. Fix: `_vender()` usa ahora `caller.search()` con `candidates` restringido a los objetos no equipados (se mantiene la exclusión de equipados ya existente), heredando el mismo aviso de ambigüedad del resto de comandos. 1 test de regresión nuevo en `tests/test_mercado.py`.
+
 ## [0.71.32] — 2026-08-30
 
 ### Corregido
