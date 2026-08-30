@@ -205,3 +205,17 @@ class TestFormatearMapa:
         assert "1" in txt
         # Las zonas no construidas no aparecen
         assert "Catacumbas" not in txt
+
+    def test_pie_no_recomienda_un_comando_explorar_inexistente(self):
+        """
+        Regresión: desde el primer commit de este sistema (v0.46.0,
+        "registrado automáticamente en Room.at_object_receive"), el
+        registro de exploración siempre ha sido automático al entrar en
+        la sala -- nunca ha existido ningún comando "explorar" en el
+        proyecto. Pero el pie del mapa llevaba diciendo desde el
+        principio "Usa 'explorar' al llegar a una sala para
+        registrarla", indicando a los jugadores un comando que no existe
+        para algo que ya sucede solo.
+        """
+        txt = formatear_mapa(set(), self._zonas_mock())
+        assert "explorar" not in txt.lower()

@@ -142,6 +142,6 @@ def formatear_mapa(
 
     porcentaje = int(exploradas_count / total_mundo * 100) if total_mundo else 0
     lineas.append(f"\n  Progreso global: |w{porcentaje}%|n completado.")
-    lineas.append(f"  Usa |wexplorar|n al llegar a una sala para registrarla.")
+    lineas.append(f"  Cada sala se registra sola al entrar en ella.")
     lineas.append(f"{sep}\n")
     return "\n".join(lineas)
