@@ -653,6 +653,81 @@ class TestRunaEscudoGolpeLetal(EvenniaTest):
         mock_muerte.assert_called_once()
 
 
+class TestLifestealNoExcluyeGolpeLetal(EvenniaTest):
+    """
+    Regresión: tanto la Runa de Drenaje (robo_vida) como los efectos de
+    curación de habilidad (drenar_vida, golpe_sagrado, drenar_esencia)
+    exigían "resultado.exito and ... and not resultado.muerto" para curar
+    al ATACANTE -- el mismo guard que sí es correcto para impedir aplicar
+    un ESTADO (veneno, sangrado) a un objetivo ya muerto, copiado aquí sin
+    querer. Pero curar al atacante no depende de si el objetivo sobrevive:
+    la Runa de Drenaje promete "Recupera N HP por cada golpe exitoso" (sin
+    excepción) y drenar_vida/golpe_sagrado/drenar_esencia prometen curar
+    un % del daño infligido (tampoco con excepción) -- así que el golpe
+    que remata a un enemigo, el momento en que más se necesita el
+    drenaje de vida, nunca lo otorgaba.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=50, hp_max=100, nivel=1)
+
+        self.objetivo = create_object("typeclasses.npc.NPC", key="Goblin")
+        self.objetivo.move_to(self.sala, quiet=True)
+        _set_stats(self.objetivo, hp=10, hp_max=10, nivel=1)
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.jugador, self.objetivo])
+
+    def _golpe_letal_simulado(self, dano=20):
+        return ResultadoAtaque(
+            exito=True,
+            dano=dano,
+            critico=False,
+            mensaje_atacante="ataca",
+            mensaje_defensor="te atacan",
+            mensaje_sala="pelean",
+            hp_restante=0,
+            muerto=True,
+        )
+
+    def test_runa_de_drenaje_cura_incluso_en_golpe_letal(self):
+        self.jugador.db.equipamiento = {"arma": self.jugador}
+        self.jugador.db.runas_equipadas = {"arma": "RUNA_DRENAJE"}
+        self.handler.db.acciones[self.jugador.dbref] = {
+            "tipo": "atacar", "objetivo": self.objetivo, "habilidad": None,
+        }
+        with patch(
+            "features.combat.handler.resolver_ataque",
+            return_value=self._golpe_letal_simulado(),
+        ), patch("features.respawn.respawn.programar_respawn"):
+            self.handler._resolver_turno()
+
+        self.assertGreater(
+            self.jugador.db.hp, 50,
+            "La Runa de Drenaje debía curar al atacante también en el golpe letal.",
+        )
+
+    def test_drenar_vida_cura_incluso_en_golpe_letal(self):
+        self.handler.db.acciones[self.jugador.dbref] = {
+            "tipo": "habilidad", "objetivo": self.objetivo, "habilidad": "drenar_vida",
+        }
+        with patch(
+            "features.combat.handler.resolver_ataque",
+            return_value=self._golpe_letal_simulado(dano=20),
+        ), patch("features.respawn.respawn.programar_respawn"):
+            self.handler._resolver_turno()
+
+        self.assertEqual(
+            self.jugador.db.hp, 60,
+            "Drenar Vida debía curar el 50% del daño infligido incluso en "
+            "el golpe letal.",
+        )
+
+
 class TestDesafiosKillBestiaHook(EvenniaTest):
     """
     Regresión: el desafío diario "kill_bestias" (systems/daily/daily.py,

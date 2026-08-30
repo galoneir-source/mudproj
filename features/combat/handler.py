@@ -555,8 +555,17 @@ class CombatHandler(DefaultScript):
                         tracker[actor.dbref] = tracker.get(actor.dbref, 0) + resultado.dano
                         objetivo.db.dano_por_jugador = tracker
 
-                # Runa de Drenaje: robo de vida al golpear
-                if resultado.exito and resultado.dano and not resultado.muerto:
+                # Runa de Drenaje: robo de vida al golpear. Se aplica también
+                # en un golpe letal -- la descripción de la runa promete
+                # curar "por cada golpe exitoso", sin excepción, pero un
+                # "not resultado.muerto" copiado del guard de aplicar
+                # ESTADOS (que sí debe excluir un objetivo ya muerto: no se
+                # le puede envenenar un cadáver) excluía también curar al
+                # ATACANTE, que no depende en nada de si el objetivo
+                # sobrevive -- justo el golpe que remata a un enemigo, el
+                # momento en que más se necesita el drenaje de vida, nunca
+                # lo otorgaba.
+                if resultado.exito and resultado.dano:
                     try:
                         from systems.runes.runes import obtener_efectos
                         robo = obtener_efectos(_runas_activas(actor)).get("robo_vida", 0)
@@ -573,9 +582,12 @@ class CombatHandler(DefaultScript):
                     except Exception:
                         pass
 
-                # Efectos de curación post-ataque (drenar vida / sagrado / esencia)
-                if (tipo == "habilidad" and habilidad and resultado.exito
-                        and not resultado.muerto):
+                # Efectos de curación post-ataque (drenar vida / sagrado /
+                # esencia). Igual que la Runa de Drenaje: se aplican también
+                # en un golpe letal, pues curan al ATACANTE en base al daño
+                # infligido, sin ninguna excepción en su descripción para
+                # cuando ese golpe remata al objetivo.
+                if tipo == "habilidad" and habilidad and resultado.exito:
                     efecto = efecto_postcombat(habilidad)
                     if efecto in ("drenar_vida", "drenar_esencia"):
                         cura = max(1, resultado.dano // 2)
