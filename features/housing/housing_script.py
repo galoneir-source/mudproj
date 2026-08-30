@@ -133,6 +133,25 @@ class GestorViviendasScript(DefaultScript):
         if not sala:
             return False, "No tienes vivienda."
 
+        # El PvP es libre en cualquier sala (no hay "zona segura" en el
+        # motor de combate), así que puede haber un combate activo dentro
+        # de la vivienda -- p. ej. el propietario y un invitado peleando.
+        # CombatHandler es un script hijo de la sala: si se borrase la
+        # sala sin terminar el combate primero, el script se borraría en
+        # cascada junto con ella sin pasar nunca por
+        # _terminar_combate(), y los participantes se quedarían con
+        # db.en_combate=True para siempre. A diferencia de un servidor
+        # caído (donde _limpiar_actividad_huerfana() encuentra el script
+        # "zombie" al reiniciar y lo limpia), aquí el script desaparece
+        # del todo junto con la sala, así que ni un reinicio del
+        # servidor podría arreglarlo después.
+        for script in sala.scripts.all():
+            if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                try:
+                    script._terminar_combate()
+                except Exception as err:
+                    log_err(f"abandonar vivienda: error terminando combate: {err}")
+
         barrio = _buscar_barrio()
         destino_objetos = barrio if barrio else jugador.location
 

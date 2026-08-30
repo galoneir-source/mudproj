@@ -12,6 +12,7 @@ from evennia.scripts.models import ScriptDB
 from evennia.utils import create
 from evennia.utils.test_resources import EvenniaTest
 
+from features.combat.handler import CombatHandler
 from features.housing.commands import CmdCasa, CmdDecorar, CmdVisitar, CmdVivienda
 from features.housing.housing_script import obtener_gestor_script
 from systems.housing.housing import PRECIO_VIVIENDA
@@ -191,3 +192,46 @@ class TestAbandonar(ViviendaTestBase):
         self.assertEqual(self.char1.db.monedas, monedas_antes - PRECIO_VIVIENDA)
         gestor = obtener_gestor_script()
         self.assertTrue(gestor.tiene_vivienda(self.char1))
+
+
+class TestAbandonarConCombateActivo(ViviendaTestBase):
+    """
+    Regresión: el PvP es libre en cualquier sala, incluida la vivienda de
+    un jugador (no existe ningún concepto de "zona segura" en el motor de
+    combate) -- así que dos personajes pueden acabar peleando dentro de
+    una vivienda (el propietario y un invitado que la visita). Si el
+    propietario la abandona en ese momento, GestorViviendasScript.abandonar()
+    movía a los participantes fuera y borraba la sala directamente, sin
+    pasar nunca por CombatHandler._terminar_combate(). El script de
+    combate es hijo de la sala, así que se borraba en cascada junto con
+    ella -- a diferencia de un servidor caído (donde
+    _limpiar_actividad_huerfana() encuentra el script "zombie" al
+    reiniciar y lo limpia), aquí el script desaparece del todo, así que
+    ni siquiera un reinicio del servidor puede arreglarlo después: ambos
+    combatientes se quedaban con db.en_combate=True para siempre, bloqueados
+    de 'casa', 'visitar', duelos, torneos, viaje rápido y grupos.
+    """
+
+    def setUp(self):
+        super().setUp()
+        _make_cmd(CmdVivienda, self.char1, "comprar").func()
+        self.gestor = obtener_gestor_script()
+        self.sala = self.gestor.obtener_sala(self.char1)
+        self.char1.move_to(self.sala, quiet=True)
+        self.char2.move_to(self.sala, quiet=True)
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.char1, self.char2])
+
+    def test_abandonar_termina_el_combate_activo_de_la_sala(self):
+        _make_cmd(CmdVivienda, self.char1, "abandonar").func()
+        _make_cmd(CmdVivienda, self.char1, "abandonar").func()
+
+        self.assertFalse(
+            getattr(self.char1.db, "en_combate", False),
+            "El propietario debía salir del combate al abandonar la vivienda.",
+        )
+        self.assertFalse(
+            getattr(self.char2.db, "en_combate", False),
+            "El invitado en combate debía salir del combate, no quedarse "
+            "bloqueado para siempre por la sala borrada.",
+        )
