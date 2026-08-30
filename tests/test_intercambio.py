@@ -164,6 +164,47 @@ class TestFlujoCompleto(TradeTestBase):
         self.assertEqual(self.espada.location, self.char1)
         self.assertEqual(self.char1.db.fuerza, fuerza_antes)
 
+    def test_equipar_el_objeto_ofrecido_despues_de_confirmar_no_lo_duplica(self):
+        """
+        Regresión: ofrecer_objeto() sí excluye un objeto YA equipado en el
+        momento de ofrecerlo, pero _ejecutar() -- disparado por la
+        confirmación del OTRO jugador, que puede tardar cualquier tiempo
+        en llegar -- solo revalida que el objeto siga existiendo y siga en
+        el inventario (obj.location == jugador), no que siga
+        DESEQUIPADO. Si el oferente ofrece el objeto, confirma, y LUEGO
+        se lo equipa antes de que el otro confirme, el intercambio se
+        ejecutaba igualmente: el objeto pasaba de verdad al receptor
+        mientras el equipamiento y los bonuses de stats del oferente
+        original seguían intactos -- el mismo bug de duplicación que ya
+        se corrige al ofrecer, pero sin cubrir esta ventana entre ofrecer
+        y ejecutar.
+        """
+        self.espada.db.bonuses = {"fuerza": 5}
+        fuerza_antes = self.char1.db.fuerza
+
+        _make_cmd(CmdIntercambiar, self.char1, self.char2.key).func()
+        _make_cmd(CmdIntercambiar, self.char2, "aceptar").func()
+        _make_cmd(CmdOfrecer, self.char1, "espada de prueba").func()
+        _make_cmd(CmdConfirmarIntercambio, self.char1).func()
+
+        # El oferente se equipa el objeto ya ofrecido antes de que el
+        # receptor confirme (el fuerza+5 queda aplicado a sus stats, como
+        # haría el comando 'equipar' real).
+        self.char1.db.equipamiento = {
+            "arma": self.espada, "armadura": None, "accesorio": None,
+        }
+        self.char1.db.fuerza = fuerza_antes + 5
+
+        _make_cmd(CmdConfirmarIntercambio, self.char2).func()
+
+        # El intercambio debe cancelarse al detectar en la ejecución que
+        # el objeto ofrecido se ha equipado mientras tanto -- el arma se
+        # queda donde estaba, equipada y con su bonus intacto para su
+        # único dueño real, igual que si se hubiera intentado ofrecer ya
+        # equipada desde el principio.
+        self.assertEqual(self.espada.location, self.char1)
+        self.assertEqual(self.char1.db.fuerza, fuerza_antes + 5)
+
 
 class TestRechazoYCancelacion(TradeTestBase):
     def test_receptor_puede_declinar_una_propuesta_pendiente(self):

@@ -228,20 +228,21 @@ class TradeSession(DefaultScript):
             self.delete()
             return
 
-        # Validar que los objetos siguen en el inventario
+        # Validar que los objetos siguen disponibles (en el inventario y
+        # sin equipar -- ver _buscar_obj)
         for entrada in lado_a["objetos"]:
             obj = self._buscar_obj(entrada["id"], a)
             if obj is None:
-                a.msg(f"|rEl objeto '{entrada['nombre']}' ya no está en tu inventario. Intercambio cancelado.|n")
-                b.msg(f"|r{a.name} ya no tiene '{entrada['nombre']}'. Intercambio cancelado.|n")
+                a.msg(f"|r'{entrada['nombre']}' ya no está disponible para intercambiar. Intercambio cancelado.|n")
+                b.msg(f"|r{a.name} ya no puede entregar '{entrada['nombre']}'. Intercambio cancelado.|n")
                 self._limpiar_refs()
                 self.delete()
                 return
         for entrada in lado_b["objetos"]:
             obj = self._buscar_obj(entrada["id"], b)
             if obj is None:
-                b.msg(f"|rEl objeto '{entrada['nombre']}' ya no está en tu inventario. Intercambio cancelado.|n")
-                a.msg(f"|r{b.name} ya no tiene '{entrada['nombre']}'. Intercambio cancelado.|n")
+                b.msg(f"|r'{entrada['nombre']}' ya no está disponible para intercambiar. Intercambio cancelado.|n")
+                a.msg(f"|r{b.name} ya no puede entregar '{entrada['nombre']}'. Intercambio cancelado.|n")
                 self._limpiar_refs()
                 self.delete()
                 return
@@ -343,9 +344,23 @@ class TradeSession(DefaultScript):
     def _buscar_obj(self, dbref: str, jugador):
         from evennia import search_object
         resultados = search_object(dbref)
-        if resultados and resultados[0].location == jugador:
-            return resultados[0]
-        return None
+        if not resultados or resultados[0].location != jugador:
+            return None
+        obj = resultados[0]
+        # Un objeto ofrecido puede haberse equipado DESPUÉS de ofrecerlo y
+        # ANTES de que el otro jugador confirme -- la ejecución la
+        # dispara la segunda confirmación, que puede tardar cualquier
+        # tiempo en llegar. ofrecer_objeto() ya excluye un objeto YA
+        # equipado en el momento de ofrecerlo, pero sin esta misma
+        # comprobación aquí el intercambio se ejecutaba igual: el objeto
+        # pasaba de verdad al otro jugador mientras el equipamiento y los
+        # bonuses de stats del oferente original seguían intactos --
+        # mismo bug de duplicación, solo que en la ventana entre ofrecer
+        # y ejecutar.
+        from features.equipment.commands import _get_equipamiento
+        if obj in _get_equipamiento(jugador).values():
+            return None
+        return obj
 
     def _limpiar_refs(self):
         a, b = self._chars()
