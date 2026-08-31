@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.42] — 2026-09-01
+
+### Corregido
+- `_intentar_captura()` (`features/combat/handler.py`) construía el "ataque" base de una mascota recién capturada con `getattr(enemigo.db, "ataque", 5)`, pero "ataque" no es un atributo real de ningún NPC — `NPC.at_object_creation()` (`typeclasses/npc.py`) solo inicializa las claves de `STAT_DEFAULTS` (`fuerza`, `destreza`, `constitucion`, `inteligencia`, `defensa`, `hp`, `hp_max`, `nivel`, `experiencia`; `systems/combat/engine.py`), así que ese `getattr` devolvía siempre el valor por defecto 5, sin excepción. Toda mascota capturada en todo el juego nacía con exactamente el mismo daño base (5), sin importar qué criatura se hubiera capturado — capturar un Goblin de nivel 1 o un Ogro de fuerza 22 producía mascotas idénticas en combate, y esa diferencia (junto con el vínculo) es justamente la única variable de poder que el sistema promete al jugador ("cuida bien el vínculo para que sea más poderosa"). El stat real que determina el daño de un NPC en combate normal es `fuerza` (`calcular_dano_base()`, `systems/combat/engine.py`), así que es el que debía alimentar el ataque base de la mascota. Encontrado auditando mascotas/bestiario al comprobar qué atributos existen realmente en un NPC recién creado. Fix: se usa `fuerza` del NPC capturado en vez de la clave inexistente `ataque`. 1 test de regresión nuevo en `tests/test_handler.py`.
+
 ## [0.71.41] — 2026-09-01
 
 ### Corregido
