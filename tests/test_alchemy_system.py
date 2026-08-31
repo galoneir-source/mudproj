@@ -210,6 +210,18 @@ class TestBuscarReceta:
     def test_antidoto(self):
         assert buscar_receta("antidoto") == "antidoto_reforzado"
 
+    def test_nombre_completo_exacto_prioriza_sobre_receta_mas_larga(self):
+        # Regresión: "poción de sigilo" es el nombre EXACTO de una receta,
+        # pero también es prefijo de "poción de sigilo menor" -- sin
+        # priorizar la coincidencia exacta de nombre, ambas entraban como
+        # candidatas por startswith y la receta se trataba como ambigua
+        # (None) pese a que el jugador escribió un nombre exacto y sin
+        # ambigüedad real. Mismo patrón "poción de vida" / "poción de vida
+        # mayor" ya corregido en CmdComprar (tienda).
+        assert buscar_receta("poción de sigilo") == "pocion_sigilo"
+        assert buscar_receta("Poción de Sigilo") == "pocion_sigilo"
+        assert buscar_receta("poción de sigilo menor") == "pocion_sigilo_menor"
+
 
 # --------------------------------------------------------------------------- #
 #  Efectos de resultado

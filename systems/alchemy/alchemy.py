@@ -259,6 +259,17 @@ def buscar_receta(texto: str) -> str | None:
     if texto in RECETAS:
         return texto
     texto_lower = texto.lower()
+
+    # Coincidencia exacta por nombre (insensible a mayúsculas) antes de
+    # cualquier búsqueda parcial -- sin esto, un nombre completo y exacto
+    # como "poción de sigilo" se trataba como ambiguo solo por ser también
+    # prefijo de otra receta ("poción de sigilo menor"), el mismo patrón
+    # "poción de vida" / "poción de vida mayor" ya corregido en
+    # CmdComprar (features/shop/commands.py).
+    exactas = [rid for rid, rec in RECETAS.items() if rec["nombre"].lower() == texto_lower]
+    if len(exactas) == 1:
+        return exactas[0]
+
     candidatos = [
         rid for rid, rec in RECETAS.items()
         if rec["nombre"].lower().startswith(texto_lower) or texto_lower in rid
