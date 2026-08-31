@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.48] — 2026-09-01
+
+### Corregido
+- `buscar_receta()` (`systems/alchemy/alchemy.py`) no comprobaba coincidencia exacta por nombre antes de la búsqueda parcial — solo el ID interno (`"pocion_sigilo"`) se trataba como exacto, nunca el nombre mostrado al jugador (`"Poción de Sigilo"`). Como ese nombre es también prefijo de otra receta ("Poción de Sigilo Menor"), escribir el nombre completo y exacto de la receta más corta la hacía entrar en la lista de candidatas por `startswith()` junto con la más larga, y el resultado se trataba como ambiguo (`None`) — "Receta no encontrada" para un jugador que había escrito, literalmente, el nombre exacto que `alquimia lista` le mostraba en pantalla. Mismo patrón "poción de vida" / "poción de vida mayor" ya corregido en `CmdComprar` (`features/shop/commands.py`), nunca aplicado aquí. Encontrado auditando alquimia. Fix: se comprueba primero una coincidencia exacta de nombre (insensible a mayúsculas) antes de la búsqueda parcial, igual que en tienda. 1 test de regresión nuevo en `tests/test_alchemy_system.py`.
+
 ## [0.71.47] — 2026-09-01
 
 ### Corregido
