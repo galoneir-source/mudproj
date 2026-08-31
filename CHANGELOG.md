@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.47] — 2026-09-01
+
+### Corregido
+- `tests/test_recipes_system.py::TestBuscarReceta::test_parcial_startswith` llevaba tiempo fallando en silencio: esperaba que `buscar_receta("antí")` resolviera a `"antídoto"`, pero el catálogo (`systems/crafting/recipes.py`) creció después con `"antídoto de araña"` y `"antídoto silvestre"` — las tres recetas comparten el prefijo `"antí"`, así que `buscar_receta()` ahora trata correctamente ese caso como ambiguo (`(None, None)`), el mismo criterio ya establecido y cubierto por `test_ambiguo_devuelve_none` para `"vida"`. El código de producción se comporta como debe; el test simplemente no se actualizó cuando se añadieron las recetas nuevas, y nadie lo notó porque no forma parte de ninguna suite ejecutada regularmente fuera de una pasada completa de `pytest tests/`. Encontrado auditando crafteo al ejecutar su suite de tests puros. Fix: `test_parcial_startswith` usa ahora `"hacha"` (única coincidencia: `"hacha tallada"`) como ejemplo de startswith no ambiguo, y se añade `test_familia_antidoto_es_ambigua` para fijar explícitamente el comportamiento correcto de la familia `"antídoto"` como regresión.
+
 ## [0.71.46] — 2026-09-01
 
 ### Cambiado
