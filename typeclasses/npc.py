@@ -127,7 +127,9 @@ class NPC(DefaultCharacter):
         """Inicia combate contra el objetivo."""
         if self.db.en_combate:
             return
-        from features.combat.commands import _get_combat_handler, _iniciar_combate
+        from features.combat.commands import (
+            _get_combat_handler, _iniciar_combate, _añadir_partido_a_lista,
+        )
         handler = _get_combat_handler(self.location)
         if handler:
             if not handler.agregar_participante(self):
@@ -135,6 +137,16 @@ class NPC(DefaultCharacter):
                 # arrastrar a un tercero ajeno (ver agregar_participante()).
                 return
             handler.agregar_participante(objetivo)
+            # _iniciar_combate() sí llama a _añadir_partido_a_lista() al
+            # arrancar un combate nuevo, pero esta rama (agredir mientras
+            # YA hay un combate activo en la sala -- una segunda amenaza, o
+            # alguien que entra en una sala con pelea en curso) reimplementa
+            # el mismo "añadir participante" sin ese paso, así que el grupo
+            # del objetivo, presente en la misma sala, nunca se unía pese a
+            # que el propio sistema promete que se une "cuando uno de ellos
+            # ... es agredido por un NPC en la misma sala", sin excepción
+            # para cuando ya hay otra pelea en marcha.
+            _añadir_partido_a_lista(objetivo, self.location, handler.db.participantes)
             self.location.msg_contents(f"|r{self.key} se une al combate!|n")
         else:
             self.location.msg_contents(f"|r{self.key} te ataca!|n")

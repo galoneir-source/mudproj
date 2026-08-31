@@ -34,6 +34,15 @@ def _añadir_partido_a_lista(personaje, sala, participantes: list):
     for miembro in get_miembros(personaje):
         if miembro != personaje and miembro.location == sala and miembro not in participantes:
             participantes.append(miembro)
+            # CombatHandler.iniciar() es quien normalmente pone en_combate=True
+            # para toda la lista inicial, pero cuando esta función se llama
+            # con handler.db.participantes de un combate YA activo (agredir
+            # durante una pelea en marcha) iniciar() no vuelve a ejecutarse
+            # -- sin esto, el compañero aparecía en participantes pero podía
+            # seguir usando comandos bloqueados por "estás en combate"
+            # (abandonar grupo, comerciar, viajar...) como si no lo estuviera.
+            if hasattr(miembro, "db"):
+                miembro.db.en_combate = True
             sala.msg_contents(f"|y{miembro.key} se une al combate con su grupo!|n")
 
 

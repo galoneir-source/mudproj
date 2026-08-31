@@ -964,6 +964,63 @@ class TestIaNpcCobardeHuida(EvenniaTest):
         mock_registrar.assert_called_once_with(self.npc, "huir")
 
 
+class TestAgredirDuranteCombateActivoUnePartido(EvenniaTest):
+    """
+    Regresión: NPC._agredir() (typeclasses/npc.py) reimplementaba "añadir al
+    combate ya activo" sin pasar por _añadir_partido_a_lista(), a diferencia
+    de _iniciar_combate() (features/combat/commands.py), que sí la llama al
+    arrancar un combate nuevo. El propio sistema promete que "los miembros
+    del grupo se unen automáticamente al combate cuando uno de ellos ataca o
+    es agredido por un NPC en la misma sala" (CHANGELOG v0.8.0), sin
+    excepción para cuando la agresión ocurre mientras YA hay otro combate en
+    marcha en esa sala (una segunda amenaza, o el grupo entrando en una sala
+    con pelea en curso) -- justo el caso que esta rama nunca cubrió.
+    """
+
+    def setUp(self):
+        super().setUp()
+        from features.party.commands import _crear_partido, _añadir_miembro
+
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+
+        self.jugador_a = self.char1
+        self.jugador_a.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador_a, hp=100, hp_max=100, nivel=1)
+
+        self.companero = create_object(Character, key="Compañera")
+        self.companero.move_to(self.sala, quiet=True)
+        _set_stats(self.companero, hp=100, hp_max=100, nivel=1)
+
+        _crear_partido(self.jugador_a)
+        _añadir_miembro(self.jugador_a, self.companero)
+
+        # Combate ya activo en la sala, ajeno por completo a jugador_a.
+        self.otro_jugador = create_object(Character, key="Otro")
+        self.otro_jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.otro_jugador, hp=100, hp_max=100, nivel=1)
+
+        self.npc_en_pelea = create_object("typeclasses.npc.NPC", key="Bandido")
+        self.npc_en_pelea.move_to(self.sala, quiet=True)
+        _set_stats(self.npc_en_pelea, hp=30, hp_max=30, nivel=1)
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.otro_jugador, self.npc_en_pelea])
+
+        self.agresor = create_object("typeclasses.npc.NPC", key="Goblin agresivo")
+        self.agresor.move_to(self.sala, quiet=True)
+        _set_stats(self.agresor, hp=20, hp_max=20, nivel=1)
+
+    def test_companero_se_une_al_combate_ya_activo(self):
+        self.agresor._agredir(self.jugador_a)
+
+        self.assertIn(
+            self.companero, self.handler.db.participantes,
+            "El compañero de grupo, presente en la misma sala, debía "
+            "unirse automáticamente al combate ya activo.",
+        )
+        self.assertTrue(self.companero.db.en_combate)
+
+
 class TestEventniaCompat(EvenniaTest):
     """
     Tests de compatibilidad con el sistema interno de Evennia.
