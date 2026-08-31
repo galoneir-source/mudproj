@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.44] — 2026-09-01
+
+### Corregido
+- `CmdRecolectar` (`features/professions/commands.py`) otorgaba la XP de profesión (`db.profesiones[prof_id]["xp"]`, la que sube el nivel de recolección) directamente desde `elegir_material()`, sin pasar por `_xp_con_buff()`. El buff de XP de taberna (`buff_xp`, p. ej. Estofado Vigorizante, "+15% XP durante 30 minutos" sin ninguna excepción de alcance en su descripción) ya se retomó en v0.71.39 para los 8 sitios que otorgan `db.experiencia` (nivel de personaje), pero ese barrido no cubrió la XP de profesión porque vive en un contador completamente distinto (`db.profesiones`, no `db.experiencia`) — es una forma de XP igual de real, ganada por una actividad (recolectar) tan ajena al combate como quests o contratos, que sí quedaron cubiertos. Encontrado revisitando profesiones tras los hallazgos de integración de buffs de esta sesión. Fix: `xp_ganada` pasa ahora por `_xp_con_buff()` antes de otorgarse. 1 test de regresión nuevo en `tests/test_profesiones.py`.
+
 ## [0.71.43] — 2026-09-01
 
 ### Corregido
