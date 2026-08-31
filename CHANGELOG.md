@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.43] — 2026-09-01
+
+### Corregido
+- `NPC._agredir()` (`typeclasses/npc.py`) reimplementaba "unirse a un combate ya activo en la sala" (añadir al agresor y al objetivo con `handler.agregar_participante()`) sin pasar por `_añadir_partido_a_lista()` — a diferencia de `_iniciar_combate()` (`features/combat/commands.py`), que sí la llama al arrancar un combate nuevo. El propio sistema documenta que "los miembros del grupo se unen automáticamente al combate cuando uno de ellos ataca o es agredido por un NPC en la misma sala", sin excepción para cuando la agresión ocurre mientras ya hay otra pelea en marcha en esa sala (una segunda amenaza, o el grupo entrando junto a una sala con combate en curso) — justo el caso que esta rama nunca cubrió: el compañero de grupo, presente en la misma sala, se quedaba fuera del combate y de todo su reparto de XP. Al corregirlo apareció un segundo fallo relacionado en la propia `_añadir_partido_a_lista()`: solo añadía al miembro a la lista de participantes sin marcar `en_combate=True` en él, confiando en que `CombatHandler.iniciar()` lo hiciera después — lo cual es cierto cuando el combate es nuevo (se llama justo antes de `iniciar()`), pero no cuando se invoca sobre un combate ya activo, donde `iniciar()` no vuelve a ejecutarse: el compañero aparecía en `participantes` pero sin `en_combate=True`, dejándolo libre de usar comandos que ese flag debería bloquear (abandonar grupo, comerciar, viajar...) pese a estar oficialmente en el combate. Encontrado auditando grupos/amigos al revisar todos los puntos donde un jugador puede unirse a un combate. Fix: `_agredir()` llama ahora a `_añadir_partido_a_lista()` también en la rama de combate ya activo, y `_añadir_partido_a_lista()` marca `en_combate=True` en cada miembro que añade, sin depender de que `iniciar()` se ejecute después. 1 test de regresión nuevo en `tests/test_handler.py`.
+
 ## [0.71.42] — 2026-09-01
 
 ### Corregido
