@@ -728,6 +728,91 @@ class TestLifestealNoExcluyeGolpeLetal(EvenniaTest):
         )
 
 
+class TestDueloGolpeDecisivoAplicaEscudoYDrenaje(EvenniaTest):
+    """
+    Regresión: en modo_duelo, el chequeo "¿este golpe deja al rival al 10%
+    de HP o menos?" se hacía ANTES de la Runa de Escudo, la Runa de Drenaje
+    y la curación de habilidad del atacante, con un `return` inmediato que
+    saltaba ese bloque entero en cuanto el duelo terminaba. El golpe que
+    decide un duelo es exactamente el mismo caso que el golpe letal del
+    combate normal (ya arreglado más arriba para el escudo y el drenaje),
+    pero la rama de duelo quedó fuera de ese arreglo: la Runa de Escudo no
+    reducía nunca el golpe decisivo, y la Runa de Drenaje / curación de
+    habilidad nunca curaban al atacante que remataba el duelo.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=50, hp_max=100, nivel=1)
+
+        self.defensor = create_object("typeclasses.npc.NPC", key="Rival")
+        self.defensor.move_to(self.sala, quiet=True)
+        _set_stats(self.defensor, hp=100, hp_max=100, nivel=1)
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.db.modo_duelo = True
+        self.handler.iniciar([self.jugador, self.defensor])
+        self.handler.db.acciones[self.jugador.dbref] = {
+            "tipo": "atacar", "objetivo": self.defensor, "habilidad": None,
+        }
+
+    def test_escudo_reduce_el_golpe_que_decide_el_duelo(self):
+        # Umbral de duelo con hp_max=100: max(1, int(100*0.10)) = 10.
+        # Golpe crudo de 91 daño deja al defensor a 9 HP (<= 10): sin el
+        # arreglo, el duelo terminaba aquí mismo sin dejar intervenir al
+        # escudo. Con el escudo (reduccion_dano=2) el daño real baja a 89,
+        # dejando al defensor a 11 HP (> 10): el duelo NO debe terminar
+        # todavía en este golpe.
+        self.defensor.db.equipamiento = {"armadura": self.defensor}
+        self.defensor.db.runas_equipadas = {"armadura": "RUNA_ESCUDO"}
+        golpe = ResultadoAtaque(
+            exito=True, dano=91, critico=False,
+            mensaje_atacante="ataca", mensaje_defensor="te atacan",
+            mensaje_sala="pelean", hp_restante=9, muerto=False,
+        )
+        with patch("features.combat.handler.resolver_ataque", return_value=golpe):
+            self.handler._resolver_turno()
+
+        self.assertEqual(
+            self.defensor.db.hp, 11,
+            "La Runa de Escudo debía reducir el golpe que decide el duelo.",
+        )
+        self.assertTrue(
+            self.handler.db.activo,
+            "El duelo no debía terminar todavía: el escudo debía mantener "
+            "al defensor por encima del umbral del 10%.",
+        )
+
+    def test_drenaje_cura_al_atacante_en_el_golpe_que_decide_el_duelo(self):
+        # Umbral de duelo con hp_max=10: max(1, int(10*0.10)) = 1. Un golpe
+        # de 9 daño deja al defensor a 1 HP (<= 1): termina el duelo. La
+        # Runa de Drenaje del atacante debía curarlo igualmente en ese
+        # mismo golpe.
+        _set_stats(self.defensor, hp=10, hp_max=10, nivel=1)
+        self.jugador.db.equipamiento = {"arma": self.jugador}
+        self.jugador.db.runas_equipadas = {"arma": "RUNA_DRENAJE"}
+        golpe = ResultadoAtaque(
+            exito=True, dano=9, critico=False,
+            mensaje_atacante="ataca", mensaje_defensor="te atacan",
+            mensaje_sala="pelean", hp_restante=1, muerto=False,
+        )
+        with patch("features.combat.handler.resolver_ataque", return_value=golpe):
+            self.handler._resolver_turno()
+
+        self.assertFalse(
+            self.handler.db.activo,
+            "Este golpe sí debía terminar el duelo (defensor al umbral).",
+        )
+        self.assertGreater(
+            self.jugador.db.hp, 50,
+            "La Runa de Drenaje debía curar al atacante también en el "
+            "golpe que decide el duelo.",
+        )
+
+
 class TestDesafiosKillBestiaHook(EvenniaTest):
     """
     Regresión: el desafío diario "kill_bestias" (systems/daily/daily.py,

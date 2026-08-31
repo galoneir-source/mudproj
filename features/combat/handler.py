@@ -520,15 +520,6 @@ class CombatHandler(DefaultScript):
                         p.msg(resultado.mensaje_sala)
 
                 if resultado.exito:
-                    # Duelo: detener al 10 % de HP en lugar de procesar muerte
-                    if self.db.modo_duelo:
-                        from systems.duels.duels import calcular_hp_umbral
-                        hp_max = getattr(objetivo.db, "hp_max", 100) or 100
-                        umbral = calcular_hp_umbral(hp_max)
-                        if resultado.hp_restante <= umbral:
-                            objetivo.db.hp = umbral
-                            self._fin_duelo(ganador=actor, perdedor=objetivo)
-                            return
                     # Runa de Escudo: reducir daño recibido. Se aplica incluso
                     # en un golpe letal -- antes el bloque exigía "not
                     # resultado.muerto", así que el escudo nunca podía
@@ -628,6 +619,25 @@ class CombatHandler(DefaultScript):
                         nuevo_hp = min(hp_max, hp_act + cura)
                         actor.db.hp = nuevo_hp
                         actor.msg(f"|gTu fe restaura {cura} HP.|n (HP: {nuevo_hp}/{hp_max})")
+
+                # Duelo: detener al 10% de HP en lugar de procesar muerte. Se
+                # comprueba aquí -- después de la Runa de Escudo, la Runa de
+                # Drenaje y la curación de habilidad del atacante -- y no
+                # antes de esos bloques como hacía originalmente: el `return`
+                # inmediato del chequeo de duelo saltaba ese bloque entero,
+                # así que el golpe que decide el duelo (el único en el que de
+                # verdad importan) nunca aplicaba la reducción de daño del
+                # escudo ni el robo/curación de vida del atacante -- el mismo
+                # patrón que ya se corrigió arriba para el golpe letal del
+                # combate normal, pero sin llegar a cubrir esta rama de duelo.
+                if resultado.exito and self.db.modo_duelo and not resultado.muerto:
+                    from systems.duels.duels import calcular_hp_umbral
+                    hp_max = getattr(objetivo.db, "hp_max", 100) or 100
+                    umbral = calcular_hp_umbral(hp_max)
+                    if resultado.hp_restante <= umbral:
+                        objetivo.db.hp = umbral
+                        self._fin_duelo(ganador=actor, perdedor=objetivo)
+                        return
 
                 # Aplicar estado si la habilidad lo produce (solo en golpe exitoso y no letal)
                 if resultado.exito and not resultado.muerto and resultado.estado_aplicado:
