@@ -21,8 +21,19 @@ class TestBuscarReceta(unittest.TestCase):
         self.assertEqual(nombre, "poción de vida")
 
     def test_parcial_startswith(self):
+        nombre, receta = buscar_receta("hacha")
+        self.assertEqual(nombre, "hacha tallada")
+
+    def test_familia_antidoto_es_ambigua(self):
+        # Regresión: este test usaba "antí" como ejemplo de startswith no
+        # ambiguo resolviendo a "antídoto", pero el catálogo creció desde
+        # entonces con "antídoto de araña" y "antídoto silvestre" -- las
+        # tres recetas comparten el prefijo "antí", así que buscar_receta()
+        # debe tratarlo como ambiguo (igual que "vida"), no resolver en
+        # silencio a la primera por orden de inserción del dict.
         nombre, receta = buscar_receta("antí")
-        self.assertEqual(nombre, "antídoto")
+        self.assertIsNone(nombre)
+        self.assertIsNone(receta)
 
     def test_parcial_contains(self):
         nombre, receta = buscar_receta("restauración")
