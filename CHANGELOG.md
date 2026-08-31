@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.40] — 2026-08-31
+
+### Corregido
+- `comprobar_y_notificar()` (`features/achievements/commands.py`) solo llamaba a `verificar_subida_rango()` dentro del `if not nuevos: return` — es decir, solo cuando esa misma comprobación desbloqueaba un logro nuevo. Pero la puntuación de rango (`systems/ranks/ranks.py`) suma puntos por nivel, misiones, logros **y kills**, y los kills son la actividad más continua del juego, que casi nunca coincide con el instante exacto en que se desbloquea un logro (los logros son hitos puntuales y finitos; los kills se acumulan sin parar). Un jugador podía cruzar el umbral de un rango nuevo por pura acumulación de kills y no ver nunca el aviso "¡RANGO ALCANZADO!" —ni que se actualizara `caller.db.rango`— hasta que, por pura coincidencia, se desbloqueara algún logro no relacionado más tarde. El propio docstring de `verificar_subida_rango()` ya decía "Llama esta función después de cualquier evento que aumente la puntuación", no solo tras desbloquear un logro. Encontrado auditando logros al revisar todos los llamadores de `verificar_subida_rango()` y notar que era el único. Fix: la comprobación de rango se ejecuta ahora siempre que se llama a `comprobar_y_notificar()`, tenga o no logros nuevos esa vez — `verificar_subida_rango()` ya no hace nada si el rango no cambió, así que la llamada extra es barata. 1 test de regresión nuevo en `tests/test_logros.py`.
+
 ## [0.71.39] — 2026-08-31
 
 ### Corregido
