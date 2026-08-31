@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.46] — 2026-09-01
+
+### Cambiado
+- `ZONAS` (`systems/spawn/tables.py`) declaraba la clave `"plaza_ciudad"` dos veces: una en la sección "Mundo base: Ciudad" con solo `GUARDIA`, y otra al final del dict, añadida más tarde, con `GUARDIA`+`SACERDOTE`+`BANQUERO`. En un literal de diccionario de Python, la segunda entrada sobrescribe a la primera en silencio, así que la definición real en tiempo de ejecución siempre fue la segunda (un superconjunto exacto de la primera) — no había ninguna diferencia de comportamiento observable, y `repoblar_sala()`/`repoblar_mundo()` (que solo se invocan manualmente, vía `@repoblar`) siempre funcionaron correctamente. Pero la clave duplicada era una trampa de mantenimiento real: editar la primera entrada (p. ej. subir la cantidad de `GUARDIA`) no habría tenido ningún efecto, sin ningún aviso de Python ni de la suite de tests. Encontrado auditando spawn/respawn. Fusionadas ambas entradas en una sola, en su ubicación original; sin cambio de comportamiento (verificado: `ZONAS["plaza_ciudad"]` es idéntico antes y después). Sin test de regresión porque no hay ningún valor que cambie — `pytest tests/test_spawn_system.py` y `evennia test tests.test_spawn` verifican que nada se rompió.
+
 ## [0.71.45] — 2026-09-01
 
 ### Corregido
