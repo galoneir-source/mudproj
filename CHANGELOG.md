@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.45] — 2026-09-01
+
+### Corregido
+- `_dar_xp_mascota()` (`features/combat/handler.py`) otorgaba la XP de mascota (`systems/pets/pets.py`, contador propio en `mascota["xp"]` que la hace evolucionar) directamente, sin pasar por `_xp_con_buff()` — mismo hueco exacto que la XP de profesión corregida en v0.71.44: el buff de XP de taberna ("+15% XP" sin ninguna excepción de alcance en su descripción) ya se aplica a `db.experiencia` en el mismo instante (cada kill del dueño, vía `_procesar_muerte()`), pero nunca se retomó para la XP de mascota, un contador igual de real que vive aparte. Encontrado al barrer el mismo patrón recién descubierto en profesiones. Fix: `_dar_xp_mascota()` aplica ahora `_xp_con_buff()` a la XP recibida antes de pasarla a `calcular_evolucion()`. 1 test de regresión nuevo en `tests/test_handler.py`.
+
 ## [0.71.44] — 2026-09-01
 
 ### Corregido
