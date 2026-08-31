@@ -1021,6 +1021,40 @@ class TestAgredirDuranteCombateActivoUnePartido(EvenniaTest):
         self.assertTrue(self.companero.db.en_combate)
 
 
+class TestDarXpMascotaAplicaBuff(EvenniaTest):
+    """
+    Regresión: _dar_xp_mascota() otorgaba la XP de mascota
+    (systems/pets/pets.py, mascota["xp"], la que la hace evolucionar)
+    directamente, sin pasar por _xp_con_buff() -- mismo hueco que la XP de
+    profesión (v0.71.44): el buff de XP de taberna ("+15% XP" sin ninguna
+    excepción de alcance) ya se aplica a db.experiencia en el mismo
+    instante (cada kill del dueño), pero nunca se retomó para la XP de
+    mascota, un contador igual de real que vive aparte.
+    """
+
+    def setUp(self):
+        super().setUp()
+        import time
+        self.jugador = self.char1
+        self.jugador.db.mascota = {
+            "nombre": "Fang", "especie": "Lobo", "especie_base": "Lobo",
+            "nivel": 1, "xp": 0, "vinculo": 10,
+            "hp": 10, "hp_max": 10, "ataque": 5, "defensa": 2,
+        }
+        self.jugador.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+
+    def test_xp_de_mascota_aplica_buff(self):
+        from features.combat.handler import _dar_xp_mascota
+        _dar_xp_mascota(self.jugador, 10)
+        self.assertEqual(
+            self.jugador.db.mascota["xp"], 15,
+            "La XP de mascota debía multiplicarse por el buff de XP activo.",
+        )
+
+
 class TestEventniaCompat(EvenniaTest):
     """
     Tests de compatibilidad con el sistema interno de Evennia.

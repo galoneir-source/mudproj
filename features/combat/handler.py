@@ -161,6 +161,13 @@ def _dar_xp_mascota(char, xp: int):
     if not mascota:
         return
     from systems.pets.pets import calcular_evolucion, NIVEL_MAX_MASCOTA
+    # Mismo hueco que la XP de profesión (v0.71.44): el buff de XP de
+    # taberna promete "+15% XP" sin excepción de alcance, y la XP de
+    # mascota (systems/pets/pets.py, contador propio en mascota["xp"]) es
+    # una forma de XP igual de real que la de personaje, ganada en el
+    # mismo instante (cada kill del dueño) que ya aplica el buff a
+    # db.experiencia.
+    xp = _xp_con_buff(char, xp)
     nueva, evoluciono = calcular_evolucion(mascota, xp)
     char.db.mascota = nueva
     if evoluciono:
