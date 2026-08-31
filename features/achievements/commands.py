@@ -187,21 +187,32 @@ def comprobar_y_notificar(caller):
     ya = list(getattr(caller.db, "logros", []) or [])
     datos = _extraer_datos(caller)
     nuevos = nuevos_logros(datos, ya)
-    if not nuevos:
-        return
-    caller.db.logros = ya + nuevos
-    for lid in nuevos:
-        logro = LOGROS[lid]
-        lineas = [
-            f"\n|Y✦ ¡LOGRO DESBLOQUEADO!|n  |w{logro['nombre']}|n",
-            f"   {logro['descripcion']}",
-        ]
-        if logro.get("titulo"):
-            lineas.append(
-                f"   |cTítulo desbloqueado:|n |Y{logro['titulo']}|n"
-                f"  (usa: |wtitulo {logro['titulo']}|n)"
-            )
-        caller.msg("\n".join(lineas) + "\n")
+    if nuevos:
+        caller.db.logros = ya + nuevos
+        for lid in nuevos:
+            logro = LOGROS[lid]
+            lineas = [
+                f"\n|Y✦ ¡LOGRO DESBLOQUEADO!|n  |w{logro['nombre']}|n",
+                f"   {logro['descripcion']}",
+            ]
+            if logro.get("titulo"):
+                lineas.append(
+                    f"   |cTítulo desbloqueado:|n |Y{logro['titulo']}|n"
+                    f"  (usa: |wtitulo {logro['titulo']}|n)"
+                )
+            caller.msg("\n".join(lineas) + "\n")
+
+    # La puntuación de rango (systems/ranks/ranks.py) suma puntos por
+    # nivel, misiones, logros Y KILLS -- y los kills son la actividad más
+    # continua del juego, que casi nunca coincide con el instante exacto
+    # en que se desbloquea un logro (los logros son hitos puntuales,
+    # finitos). Comprobar el rango solo "if nuevos" dejaba a un jugador
+    # cruzar el umbral de un rango nuevo por pura acumulación de kills
+    # sin ver nunca el aviso "¡RANGO ALCANZADO!" ni actualizar
+    # caller.db.rango, hasta que coincidiera con el desbloqueo de algún
+    # logro no relacionado. Se comprueba siempre, tenga o no logros
+    # nuevos esta vez -- verificar_subida_rango() ya es barata y no hace
+    # nada si el rango no cambió.
     from features.ranks.commands import verificar_subida_rango
     verificar_subida_rango(caller)
 

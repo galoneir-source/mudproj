@@ -225,6 +225,43 @@ class TestComprobarYNotificar(EvenniaTest):
         comprobar_y_notificar(self.char1)
         self.assertIn("diplomatico", self.char1.db.logros)
 
+    def test_verifica_rango_aunque_no_haya_logro_nuevo(self):
+        """
+        Regresión: comprobar_y_notificar() solo llama a
+        verificar_subida_rango() DENTRO del "if not nuevos: return" -- es
+        decir, solo cuando esta misma comprobación desbloquea un logro
+        NUEVO. Pero la puntuación de rango (systems/ranks/ranks.py) suma
+        puntos por nivel, misiones, logros Y KILLS -- y los kills son la
+        actividad más continua del juego, que casi nunca coincide con el
+        instante exacto en que se desbloquea un logro (los logros son
+        hitos puntuales, finitos). Un jugador podía cruzar el umbral de un
+        rango nuevo por pura acumulación de kills y nunca ver el aviso
+        "¡RANGO ALCANZADO!" -ni que se actualizara caller.db.rango- hasta
+        que, por pura coincidencia, se desbloqueara algún logro no
+        relacionado más tarde. El propio docstring de
+        verificar_subida_rango() dice "Llama esta función después de
+        cualquier evento que aumente la puntuación", no solo tras
+        desbloquear un logro.
+        """
+        # nivel=4 (45 pts) + kills=5 (5 pts) = 50 pts exactos, el umbral
+        # de "novicio". Se preinscriben como "ya desbloqueados" todos los
+        # logros que este estado ya satisface (nivel_2 incluido), para
+        # aislar la comprobación de rango de la puerta de "logro nuevo".
+        self.char1.db.nivel = 4
+        self.char1.db.kills_totales = 5
+        self.char1.db.rango = "aprendiz"
+        datos = _extraer_datos(self.char1)
+        from systems.achievements.achievements import nuevos_logros
+        self.char1.db.logros = nuevos_logros(datos, [])
+
+        comprobar_y_notificar(self.char1)
+
+        self.assertEqual(
+            self.char1.db.rango, "novicio",
+            "El rango debía actualizarse aunque no se desbloqueara "
+            "ningún logro nuevo en esta misma comprobación.",
+        )
+
 
 # ─── CmdLogros ───────────────────────────────────────────────────────────────
 
