@@ -1122,11 +1122,20 @@ class CombatHandler(DefaultScript):
             self._siguiente_turno()
             return
 
+        # "ataque" no es un atributo real de ningún NPC -- NPC.at_object_creation()
+        # solo inicializa las claves de STAT_DEFAULTS (fuerza, destreza,
+        # constitucion, inteligencia, defensa, hp, hp_max, nivel, experiencia;
+        # ver systems/combat/engine.py), así que getattr(enemigo.db, "ataque", ...)
+        # devolvía siempre el valor por defecto: toda mascota capturada nacía
+        # con exactamente el mismo daño sin importar qué criatura se hubiera
+        # capturado. "fuerza" es el stat real que determina el daño de un NPC
+        # en combate (calcular_dano_base() en systems/combat/engine.py), así
+        # que es el que debe alimentar el "ataque base" de la mascota.
         actor.db.mascota = datos_mascota_desde_criatura(
             nombre=enemigo.key,
             especie=enemigo.key,
             hp_max=hp_max,
-            ataque=int(getattr(enemigo.db, "ataque", 5) or 5),
+            ataque=int(getattr(enemigo.db, "fuerza", 10) or 10),
             defensa=int(getattr(enemigo.db, "defensa", 2) or 2),
         )
 

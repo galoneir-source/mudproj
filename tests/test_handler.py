@@ -462,6 +462,46 @@ class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
         self.assertTrue(mock_delay.called)
 
 
+class TestCapturaMascotaUsaFuerzaDelEnemigo(EvenniaTest):
+    """
+    Regresión: _intentar_captura() construía el "ataque" de la mascota
+    capturada con `getattr(enemigo.db, "ataque", 5)`, pero "ataque" no es un
+    atributo real de ningún NPC -- NPC.at_object_creation() solo inicializa
+    las claves de STAT_DEFAULTS (fuerza, destreza, constitucion,
+    inteligencia, defensa, hp, hp_max, nivel, experiencia), así que ese
+    getattr devolvía siempre el valor por defecto 5. Toda mascota capturada
+    nacía con exactamente el mismo daño base sin importar qué criatura se
+    hubiera capturado -- capturar un Goblin débil o una criatura con mucha
+    fuerza producía mascotas idénticas en combate.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Arena")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+
+        self.npc = create_object("typeclasses.npc.NPC", key="Ogro Feroz")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=6, hp_max=30, nivel=3, fuerza=22, defensa=4)
+
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.jugador, self.npc])
+
+    def test_ataque_de_la_mascota_refleja_la_fuerza_del_capturado(self):
+        with patch("evennia.utils.delay"), \
+             patch("features.respawn.respawn.programar_respawn"):
+            self.handler._intentar_captura(self.jugador)
+
+        mascota = self.jugador.db.mascota
+        self.assertEqual(
+            mascota["ataque"], 22,
+            "El ataque base de la mascota debía tomarse de la fuerza real "
+            "del NPC capturado (22), no de un valor por defecto fijo.",
+        )
+
+
 class TestDarXpAGrupoComprobarLogros(EvenniaTest):
     """
     Regresión: _dar_xp_a_grupo() reparte XP (y aplica subida de nivel, vía
