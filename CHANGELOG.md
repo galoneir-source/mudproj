@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.41] — 2026-09-01
+
+### Corregido
+- En `CombatHandler._resolver_turno()` (`features/combat/handler.py`), el chequeo de fin de duelo ("¿este golpe deja al rival al 10% de HP o menos?") se ejecutaba ANTES de la Runa de Escudo (`reduccion_dano`), la Runa de Drenaje (`robo_vida`) y la curación de habilidad del atacante (`drenar_vida`/`drenar_esencia`/`golpe_sagrado`), con un `return` inmediato en cuanto el duelo terminaba que saltaba ese bloque entero. El golpe que decide un duelo es, para el sistema de duelos, exactamente el mismo caso que el golpe letal del combate normal contra NPCs (ya corregido en versiones anteriores tanto para el escudo como para el drenaje de vida, con comentarios explícitos documentando que ninguna de esas runas excluye los golpes decisivos en su descripción), pero la rama de duelo quedó fuera de esos dos arreglos porque su chequeo vive en un punto distinto y anterior del flujo. En la práctica: la Runa de Escudo nunca reducía el golpe que terminaba un duelo (podía forzar el fin del duelo un turno antes de lo que le correspondía si la reducción hubiera mantenido al portador por encima del umbral), y tanto la Runa de Drenaje como las habilidades de curación por daño dejaban al ganador de un duelo con menos HP del que debía tener al terminar, un efecto que persiste después del duelo (el HP no letal, a diferencia del HP forzado del perdedor, no se recalcula). Encontrado auditando el sistema de duelos y notando que el chequeo de umbral usaba `resultado.hp_restante` sin pasar primero por el bloque de la Runa de Escudo, que sí lo recalcula. Fix: el chequeo de fin de duelo se mueve a después de esos tres bloques, usando ya el HP final (con escudo y curación aplicados) para decidir si el duelo termina en este golpe — un golpe realmente letal (`resultado.muerto`) sigue resolviéndose por la vía normal (`_procesar_muerte()`), que ya gestionaba correctamente el caso de duelo. 2 tests de regresión nuevos en `tests/test_handler.py`.
+
 ## [0.71.40] — 2026-08-31
 
 ### Corregido
