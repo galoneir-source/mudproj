@@ -171,6 +171,15 @@ class CmdRecolectar(Command):
             char.msg("No encuentras nada útil que recolectar.")
             return
 
+        # El buff de XP de taberna (Estofado Vigorizante, "+15% XP" sin
+        # ninguna excepción de alcance) solo se aplicaba a db.experiencia
+        # (nivel de personaje) tras el barrido de v0.71.39 -- la XP de
+        # profesión (db.profesiones[prof_id]["xp"], que sube el nivel de
+        # recolección) es una forma de XP igual de real y nunca se retomó
+        # en ese barrido porque vive en un contador totalmente distinto.
+        from features.combat.handler import _xp_con_buff
+        xp_ganada = _xp_con_buff(char, xp_ganada)
+
         # Crear el objeto
         objs = spawner.spawn(proto_key)
         if not objs:

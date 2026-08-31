@@ -169,6 +169,27 @@ class TestCmdRecolectar(EvenniaTest):
         nombres = [o.key for o in self.char1.contents]
         self.assertTrue(any("Hierro" in n or "hierro" in n.lower() for n in nombres))
 
+    def test_recoleccion_aplica_buff_de_xp(self):
+        """
+        Regresión: el buff de XP de taberna (buff_xp, p. ej. Estofado
+        Vigorizante "+15% XP") solo se aplicaba a db.experiencia (nivel de
+        personaje) desde el barrido de v0.71.39 -- la XP de profesión
+        (db.profesiones[prof_id]["xp"]) es una forma de XP igual de real
+        que nunca se retomó en ese barrido.
+        """
+        import time
+        self.room1.db.zona = "boca_mina"
+        self.char1.db.profesiones = {"mineria": {"nivel": 1, "xp": 0}}
+        self.char1.db.buffs_activos = [{
+            "tipo": "buff_xp", "bonus": 0.5, "nombre": "Estofado Vigorizante",
+            "expira": time.time() + 1800,
+        }]
+        self._recolectar()
+        self.assertEqual(
+            self.char1.db.profesiones["mineria"]["xp"], int(5 * 1.5),
+            "La XP de recolección debía multiplicarse por el buff activo.",
+        )
+
     def test_recoleccion_activa_cooldown(self):
         self.room1.db.zona = "boca_mina"
         self.char1.db.profesiones = {"mineria": {"nivel": 1, "xp": 0}}
