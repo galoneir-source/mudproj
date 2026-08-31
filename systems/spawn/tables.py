@@ -16,7 +16,9 @@ ZONAS: dict[str, list[dict]] = {
     #  Mundo base: Ciudad
     # ----------------------------------------------------------------- #
     "plaza_ciudad": [
-        {"prototipo": "GUARDIA", "cantidad": 1},
+        {"prototipo": "GUARDIA",    "cantidad": 1},
+        {"prototipo": "SACERDOTE",  "cantidad": 1},
+        {"prototipo": "BANQUERO",   "cantidad": 1},
     ],
     "taberna": [
         {"prototipo": "MESONERO", "cantidad": 1},
@@ -116,14 +118,6 @@ ZONAS: dict[str, list[dict]] = {
     ],
     "altar_liche": [
         {"prototipo": "LICHE_INMORTAL", "cantidad": 1},
-    ],
-    # ----------------------------------------------------------------- #
-    #  Ciudad (sacerdote y banquero en plaza)
-    # ----------------------------------------------------------------- #
-    "plaza_ciudad": [
-        {"prototipo": "GUARDIA",    "cantidad": 1},
-        {"prototipo": "SACERDOTE",  "cantidad": 1},
-        {"prototipo": "BANQUERO",   "cantidad": 1},
     ],
 }
 
