@@ -527,6 +527,25 @@ class TestCmdGuerra(EvenniaTest):
         _make_cmd(CmdGuerra, self.char1, "").func()
         self.assertIn("Cuervos Negros", self.cap1.all())
 
+    def test_estado_muestra_reto_saliente_al_retador(self):
+        """
+        Regresión: script.db.retos está indexado por el gremio RETADO
+        (destino), no por el retador. _estado() solo miraba
+        retos.get(gremio.db.nombre) -- una búsqueda que nunca encuentra
+        nada para el gremio que acaba de declarar la guerra, porque su
+        propio nombre nunca es una clave de `retos`, solo aparece como
+        valor `gremio_retador` dentro de la entrada del objetivo. El líder
+        que acababa de usar 'guerra declarar' veía "Tu gremio no está en
+        guerra ni tiene retos pendientes" al consultar 'guerra' a secas,
+        como si el reto que él mismo acababa de enviar no existiera.
+        """
+        _make_cmd(CmdGuerra, self.char1, "declarar Cuervos Negros").func()
+        self.cap1.msgs.clear()
+        _make_cmd(CmdGuerra, self.char1, "").func()
+        salida = self.cap1.all().lower()
+        self.assertNotIn("no está en guerra ni tiene retos pendientes", salida)
+        self.assertIn("cuervos negros", salida)
+
 
 # --------------------------------------------------------------------------- #
 #  Gancho real en CombatHandler._procesar_muerte

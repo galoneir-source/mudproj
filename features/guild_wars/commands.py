@@ -80,13 +80,26 @@ class CmdGuerra(Command):
             caller.msg(formatear_estado(entry, time.time()))
             return
 
-        reto = dict(script.db.retos or {}).get(gremio.db.nombre)
+        retos = dict(script.db.retos or {})
+        reto = retos.get(gremio.db.nombre)
         if reto:
             caller.msg(
                 f"|y{reto['gremio_retador']}|n te ha declarado la guerra. "
                 "Usa |wguerra aceptar|n o |wguerra rechazar|n."
             )
             return
+
+        # `retos` está indexado por el gremio RETADO, así que el bucle
+        # anterior nunca encuentra el reto propio cuando este gremio es
+        # quien lo lanzó (retador) -- sin esto, el líder que acababa de
+        # declarar la guerra veía "no tiene retos pendientes" al consultar
+        # su propio estado, como si el reto nunca se hubiera enviado.
+        for objetivo, reto_saliente in retos.items():
+            if reto_saliente.get("gremio_retador") == gremio.db.nombre:
+                caller.msg(
+                    f"Has retado a |y{objetivo}|n. Esperando respuesta."
+                )
+                return
 
         caller.msg("Tu gremio no está en guerra ni tiene retos pendientes.")
 
