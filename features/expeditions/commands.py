@@ -147,6 +147,17 @@ class CmdExpedicion(Command):
             caller.msg(f"|r{msg}|n")
             return
 
+        # Verificar que ningún miembro esté en combate: al igual que
+        # retar/vivienda/torneos/mazmorras ya hacen, teletransportar a
+        # alguien fuera de un combate activo deja su CombatHandler huérfano
+        # en la sala antigua -- nadie lo saca de la lista de participantes,
+        # así que el combate queda trabado esperando el turno de quien ya
+        # no está, y en_combate=True para siempre en ese jugador.
+        for m in miembros:
+            if getattr(m.db, "en_combate", False):
+                caller.msg(f"|r{m.key} está en combate y no puede iniciar una expedición.|n")
+                return
+
         # Verificar que ningún miembro esté ya en expedición
         for m in miembros:
             if getattr(m.location.db if m.location else None, "es_expedicion", False):

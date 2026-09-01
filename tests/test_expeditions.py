@@ -130,6 +130,61 @@ class TestExpedicionInicioGrupo(EvenniaTest):
 
 
 # --------------------------------------------------------------------------- #
+#  Bloqueo de inicio con combate activo en curso
+# --------------------------------------------------------------------------- #
+
+class TestExpedicionBloqueaInicioEnCombate(EvenniaTest):
+    """
+    Regresión: retar/vivienda/torneos/mazmorras comprueban en_combate antes
+    de teletransportar a nadie, precisamente porque mover a alguien fuera de
+    su sala mientras un CombatHandler lo sigue teniendo como participante
+    deja ese combate huérfano -atascado esperando el turno de alguien que
+    ya no está- y en_combate=True para siempre en ese jugador. 'expedicion
+    iniciar' nunca hacía esta comprobación, ni para el líder ni para el
+    resto del grupo que arrastra consigo.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        _init_char(self.char2)
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+
+    def tearDown(self):
+        script = _obtener_script_expedicion(self.char1)
+        if script:
+            try:
+                script.delete()
+            except Exception:
+                pass
+        super().tearDown()
+
+    def test_miembro_en_combate_bloquea_el_inicio_de_todo_el_grupo(self):
+        self.char2.move_to(self.room2, quiet=True)
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.room2)
+        handler = self.room2.scripts.add(CombatHandler)
+        handler.iniciar([self.char2, npc])
+        self.assertTrue(self.char2.db.en_combate)
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+
+        self.assertFalse(getattr(self.char1.location.db, "es_expedicion", False))
+        self.assertEqual(self.char2.location, self.room2)
+        self.assertTrue(self.char2.db.en_combate)
+
+    def test_el_propio_lider_en_combate_no_puede_iniciar(self):
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test 2", location=self.char1.location)
+        handler = self.char1.location.scripts.add(CombatHandler)
+        handler.iniciar([self.char1, npc])
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+
+        self.assertFalse(getattr(self.char1.location.db, "es_expedicion", False))
+
+
+# --------------------------------------------------------------------------- #
 #  Recompensas al completar la expedición entera
 # --------------------------------------------------------------------------- #
 
