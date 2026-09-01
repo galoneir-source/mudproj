@@ -172,6 +172,19 @@ class CmdMazmorra(Command):
             if not miembros:
                 miembros = [caller]
 
+            # Verificar que ningún miembro esté en combate: al igual que
+            # duelos/vivienda/torneos ya hacen, teletransportar a alguien
+            # fuera de un combate activo deja su CombatHandler huérfano en
+            # la sala antigua -- nadie lo saca de la lista de participantes,
+            # así que el combate queda trabado esperando el turno de quien
+            # ya no está, y en_combate=True para siempre en ese jugador.
+            for m in miembros:
+                if getattr(m.db, "en_combate", False):
+                    caller.msg(
+                        f"|r{m.key} está en combate y no puede entrar a una mazmorra.|n"
+                    )
+                    return
+
             # Verificar que ningún miembro esté ya en una instancia
             for m in miembros:
                 if _instancia_del_jugador(m):

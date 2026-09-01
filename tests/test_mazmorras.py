@@ -9,7 +9,7 @@ creación del script (start_delay).
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_mazmorras
 """
-from evennia import create_script
+from evennia import create_object, create_script
 from evennia.utils.test_resources import EvenniaTest
 
 from features.combat.handler import CombatHandler
@@ -323,6 +323,51 @@ class TestMazmorraLimpiezaConCombateActivo(MazmorrasTestBase):
             "él dentro, no quedarse bloqueado para siempre por la sala "
             "borrada.",
         )
+
+
+# --------------------------------------------------------------------------- #
+#  CmdMazmorra: bloqueo de entrada con combate activo en curso
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraBloqueaEntradaEnCombate(MazmorrasTestBase):
+    """
+    Regresión: retar/vivienda/torneos comprueban en_combate antes de
+    teletransportar a nadie, precisamente porque mover a alguien fuera de
+    su sala mientras un CombatHandler lo sigue teniendo como participante
+    deja ese combate huérfano -atascado esperando el turno de alguien que
+    ya no está- y en_combate=True para siempre en ese jugador. 'mazmorra
+    entrar' nunca hacía esta comprobación, ni para el líder ni para el
+    resto del grupo que arrastra consigo.
+    """
+
+    def setUp(self):
+        super().setUp()
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+
+    def test_miembro_en_combate_bloquea_la_entrada_de_todo_el_grupo(self):
+        self.char2.move_to(self.room1, quiet=True)
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.room1)
+        handler = self.room1.scripts.add(CombatHandler)
+        handler.iniciar([self.char2, npc])
+        self.assertTrue(self.char2.db.en_combate)
+
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+        self.assertIsNone(_instancia_del_jugador(self.char2))
+        self.assertEqual(self.char2.location, self.room1)
+        self.assertTrue(self.char2.db.en_combate)
+
+    def test_el_propio_lider_en_combate_no_puede_entrar_solo(self):
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test 2", location=self.vestibulo)
+        handler = self.vestibulo.scripts.add(CombatHandler)
+        handler.iniciar([self.char1, npc])
+
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+        self.assertEqual(self.char1.location, self.vestibulo)
 
 
 # --------------------------------------------------------------------------- #
