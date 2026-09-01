@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.51] — 2026-09-02
+
+### Corregido
+- `CmdExpedicion._iniciar()` (`features/expeditions/commands.py`) tenía exactamente el mismo hueco que acaba de corregirse en mazmorras (v0.71.50): nunca comprobaba `en_combate` en ningún miembro del grupo antes de teletransportarlos a la sala temporal de la expedición. Un miembro en combate activo en otra sala (o el propio líder) era arrastrado igualmente a `expedicion iniciar`, dejando el `CombatHandler` de su sala anterior huérfano (atascado esperando el turno de alguien que ya no está) y a ese jugador con `en_combate=True` para siempre. Encontrado revisitando el patrón recién corregido en mazmorras. Fix: se comprueba `en_combate` en todos los miembros del grupo (incluido el líder) antes de crear el `ExpedicionScript`, igual que ahora hacen retar/vivienda/torneos/mazmorras. 2 tests de regresión nuevos en `tests/test_expeditions.py`.
+
 ## [0.71.50] — 2026-09-02
 
 ### Corregido
