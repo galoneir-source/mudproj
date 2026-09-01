@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.49] — 2026-09-01
+
+### Corregido
+- `NPC._reaccionar_a_presencia()` (`typeclasses/npc.py`), que decide si un NPC agrede a un jugador al entrar en su sala, nunca consultaba `PerceptionManager.puede_detectar()` — el mismo mecanismo de percepción que ya usan tanto el comando `percibir` como el listado de la sala (`Room.return_appearance()`) para ocultar entidades. Un jugador oculto (p. ej. tras beber una Poción de Sigilo o Poción de Sigilo Menor, cuya descripción promete explícitamente "te vuelve imperceptible para otros en la sala") era agredido igualmente por cualquier NPC agresivo, o por un guardián de facción rival, en el instante mismo de entrar en la sala — el sigilo no ofrecía ninguna protección real contra la reacción de un NPC, pese a ser justo el escenario que el propio efecto promete cubrir. Encontrado revisitando percepción/sigilo tras los patrones de esta sesión. Fix: `_reaccionar_a_presencia()` comprueba ahora `puede_detectar(self, jugador)` al principio y no reacciona en absoluto si el NPC no puede detectar al jugador oculto — ni por temperamento agresivo/guardián ni por reputación enemiga. 2 tests de regresión nuevos en `tests/test_perception.py`.
+
 ## [0.71.48] — 2026-09-01
 
 ### Corregido
