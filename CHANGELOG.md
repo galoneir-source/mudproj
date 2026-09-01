@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.50] — 2026-09-02
+
+### Corregido
+- `CmdMazmorra` (`features/dungeons/commands.py`), subcomando `entrar`, nunca comprobaba `en_combate` en ningún miembro del grupo antes de teletransportarlos a la instancia — a diferencia de retar (`features/duels/commands.py`), vivienda (`features/housing/commands.py`) y torneos (`features/arena/tournament_script.py`), que sí lo hacen precisamente porque mover a alguien fuera de su sala mientras un `CombatHandler` lo sigue teniendo como participante deja ese combate huérfano (atascado esperando el turno de alguien que ya no está en la sala) y con `en_combate=True` para siempre en ese jugador, sin forma normal de liberarse. Un miembro del grupo que estuviera en combate en otra sala era arrastrado igualmente a la mazmorra en cuanto el líder usaba `mazmorra entrar`, y lo mismo si era el propio líder quien estaba en combate. Encontrado auditando mazmorras. Fix: se comprueba `en_combate` en todos los miembros del grupo (incluido el líder) antes de crear la instancia, con el mismo mensaje de bloqueo que ya usan retar/vivienda. 2 tests de regresión nuevos en `tests/test_mazmorras.py`.
+
 ## [0.71.49] — 2026-09-01
 
 ### Corregido
