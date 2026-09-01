@@ -99,6 +99,18 @@ class NPC(DefaultCharacter):
         """
         Decide si agredir al jugador según el temperamento y la reputación.
         """
+        # Un jugador oculto (p. ej. tras beber una Poción de Sigilo, que
+        # promete "te vuelve imperceptible para otros en la sala") no debe
+        # activar ninguna reacción de un NPC que no pueda detectarlo. El
+        # propio sistema de percepción (PerceptionManager.puede_detectar)
+        # ya existe justo para esto y lo usan tanto "percibir" como el
+        # listado de la sala -- pero nunca se consultaba aquí, así que el
+        # sigilo no protegía en absoluto contra el primer golpe de un NPC
+        # agresivo o guardián al entrar en su sala.
+        from systems.perception.perception_manager import PerceptionManager
+        if not PerceptionManager().puede_detectar(self, jugador):
+            return
+
         temperamento = self.db.temperamento or "neutral"
 
         # Reputación: NPCs con faccion agred en si el jugador es Enemigo (rep < -3000),

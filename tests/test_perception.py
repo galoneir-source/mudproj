@@ -14,6 +14,8 @@ directamente, saltándose el comando real por completo.
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_perception
 """
+from unittest.mock import patch
+
 from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
@@ -132,6 +134,41 @@ class TestCmdPercibirEntidadesOcultas(EvenniaTest):
         self.char1.location = None
         self._percibir()
         self.assertIn("ningún lugar", self.cap.all().lower())
+
+
+class TestNPCNoAgredeAJugadorOculto(EvenniaTest):
+    """
+    Regresión: NPC._reaccionar_a_presencia() (typeclasses/npc.py) decidía
+    si agredir según temperamento y reputación, pero nunca consultaba
+    PerceptionManager.puede_detectar() -- el mismo mecanismo que ya usan
+    "percibir" y el listado de la sala para ocultar entidades. Un jugador
+    oculto (p. ej. tras beber una Poción de Sigilo, cuya descripción
+    promete "te vuelve imperceptible para otros en la sala") era agredido
+    igualmente por cualquier NPC agresivo o guardián de facción rival en
+    el instante mismo de entrar en la sala, sin ninguna protección real.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.npc = create_object("typeclasses.npc.NPC", key="Bandido")
+        self.npc.move_to(self.room1, quiet=True)
+        self.npc.db.temperamento = "agresivo"
+        self.npc.db.inteligencia = 10
+        self.npc.db.nivel = 1  # percepción del NPC: 10 + 1//2 = 10
+
+        self.char1.db.oculto = True
+        self.char1.db.nivel_sigilo = 25  # como pone Consumible.aplicar() al beber sigilo
+
+    def test_no_agrede_si_el_jugador_esta_oculto_y_supera_su_percepcion(self):
+        with patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_not_called()
+
+    def test_si_agrede_si_la_percepcion_del_npc_alcanza_el_sigilo(self):
+        self.char1.db.nivel_sigilo = 5  # por debajo de la percepción del NPC (10)
+        with patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_called_once_with(self.char1)
 
 
 if __name__ == "__main__":
