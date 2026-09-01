@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.52] — 2026-09-02
+
+### Corregido
+- `CmdGuerra._estado()` (`features/guild_wars/commands.py`), invocado por `guerra` sin argumentos, solo comprobaba `script.db.retos.get(gremio.db.nombre)` — pero `db.retos` está indexado por el gremio **retado** (destino), no por el retador. El gremio que acababa de declarar la guerra nunca aparece como clave de ese dict, solo como el valor `gremio_retador` dentro de la entrada del objetivo, así que su propio líder consultando `guerra` a secas veía "Tu gremio no está en guerra ni tiene retos pendientes" — como si el reto que él mismo acababa de enviar con `guerra declarar` no existiera, mientras el gremio retado sí veía correctamente el aviso entrante. Encontrado auditando guerras de gremios. Fix: `_estado()` también recorre `retos` buscando una entrada cuyo `gremio_retador` sea el propio gremio, y en ese caso informa a quién ha retado y que está esperando respuesta. 1 test de regresión nuevo en `tests/test_guild_wars.py`.
+
 ## [0.71.51] — 2026-09-02
 
 ### Corregido
