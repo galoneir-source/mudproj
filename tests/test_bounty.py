@@ -20,7 +20,7 @@ from typeclasses.characters import Character
 from typeclasses.rooms import Room
 
 
-class JugadorDePrueba(Character):
+class JugadorDePruebaBounty(Character):
     """has_account real requiere sesión conectada; para simular un jugador
     presente sin montar una sesión real, se sobreescribe la propiedad --
     mismo truco usado en test_arena.py / test_guild_wars.py. Solo se usa
@@ -68,7 +68,7 @@ class TestCazaRecompensaCancelacion(EvenniaTest):
         # llama a ningún comando, así que no necesita account real.
         self.emisor = self.char1
         self.cazador = self.char2
-        self.objetivo = create.create_object(JugadorDePrueba, key="Objetivo", location=self.sala)
+        self.objetivo = create.create_object(JugadorDePruebaBounty, key="Objetivo", location=self.sala)
 
         for char in (self.emisor, self.cazador, self.objetivo):
             char.db.monedas = 1000
