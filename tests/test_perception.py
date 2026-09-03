@@ -171,6 +171,64 @@ class TestNPCNoAgredeAJugadorOculto(EvenniaTest):
             mock_agredir.assert_called_once_with(self.char1)
 
 
+class TestNPCAplicaPenalizacionHoraClimaAlDetectarSigilo(EvenniaTest):
+    """
+    Regresión: NPC._reaccionar_a_presencia() consultaba
+    PerceptionManager.puede_detectar() (desde v0.71.49) pero SIN pasar
+    hora ni clima -- era el único consumidor de puede_detectar() que
+    ignoraba las penalizaciones de percepción nocturna (-3) y climática
+    (-4 con niebla), que "percibir" (commands/general_commands.py) y el
+    listado de la sala (Room.return_appearance) sí aplican, siempre
+    guardadas por room.db.exterior. Efecto: en una sala exterior de noche
+    o con niebla, un jugador con sigilo que de día quedaría justo al
+    alcance del NPC era detectado y agredido igualmente -- la noche/niebla
+    no daban ninguna protección contra el primer golpe.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.npc = create_object("typeclasses.npc.NPC", key="Bandido")
+        self.npc.move_to(self.room1, quiet=True)
+        self.npc.db.temperamento = "agresivo"
+        self.npc.db.inteligencia = 14
+        self.npc.db.nivel = 2  # percepción base del NPC: 14 + 2//2 = 15
+
+        self.char1.db.oculto = True
+        # 13: por debajo de la percepción diurna del NPC (15), pero por
+        # encima de 15-3 (noche) y de 15-4 (niebla).
+        self.char1.db.nivel_sigilo = 13
+
+    def test_interior_sin_penalizacion_el_npc_detecta_y_agrede(self):
+        self.room1.db.exterior = False
+        with patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_called_once_with(self.char1)
+
+    def test_exterior_de_noche_el_sigilo_protege_del_npc(self):
+        self.room1.db.exterior = True
+        with patch("features.time.clock_script.hora_actual", return_value=2), \
+             patch("features.weather.weather_script.clima_actual", return_value="despejado"), \
+             patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_not_called()
+
+    def test_exterior_con_niebla_el_sigilo_protege_del_npc(self):
+        self.room1.db.exterior = True
+        with patch("features.time.clock_script.hora_actual", return_value=12), \
+             patch("features.weather.weather_script.clima_actual", return_value="niebla"), \
+             patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_not_called()
+
+    def test_exterior_de_dia_y_despejado_el_npc_sigue_detectando(self):
+        self.room1.db.exterior = True
+        with patch("features.time.clock_script.hora_actual", return_value=12), \
+             patch("features.weather.weather_script.clima_actual", return_value="despejado"), \
+             patch.object(self.npc, "_agredir") as mock_agredir:
+            self.npc._reaccionar_a_presencia(self.char1)
+            mock_agredir.assert_called_once_with(self.char1)
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

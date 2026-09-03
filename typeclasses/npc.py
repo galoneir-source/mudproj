@@ -107,8 +107,34 @@ class NPC(DefaultCharacter):
         # listado de la sala -- pero nunca se consultaba aquí, así que el
         # sigilo no protegía en absoluto contra el primer golpe de un NPC
         # agresivo o guardián al entrar en su sala.
+        #
+        # Además, las penalizaciones de percepción por hora y clima
+        # (-3 de noche, -4 con niebla, apilables) que "percibir"
+        # (commands/general_commands.py) y el listado de la sala
+        # (Room.return_appearance) sí pasan a puede_detectar() -- siempre
+        # guardadas por room.db.exterior -- también valen aquí: de noche o
+        # con niebla, un jugador con sigilo que de día quedaría justo al
+        # alcance del NPC debe seguir oculto. Este era el único consumidor
+        # de puede_detectar() que las ignoraba, así que la noche/niebla no
+        # ofrecían ninguna protección contra la agresión de un NPC.
         from systems.perception.perception_manager import PerceptionManager
-        if not PerceptionManager().puede_detectar(self, jugador):
+        sala = self.location
+        hora_juego = None
+        clima_juego = None
+        if sala and getattr(sala.db, "exterior", True):
+            try:
+                from features.time.clock_script import hora_actual
+                hora_juego = hora_actual()
+            except Exception:
+                pass
+            try:
+                from features.weather.weather_script import clima_actual
+                clima_juego = clima_actual()
+            except Exception:
+                pass
+        if not PerceptionManager().puede_detectar(
+            self, jugador, hora=hora_juego, clima=clima_juego
+        ):
             return
 
         temperamento = self.db.temperamento or "neutral"
