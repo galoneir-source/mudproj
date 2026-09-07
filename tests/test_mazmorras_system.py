@@ -77,20 +77,47 @@ class TestBuscarMazmorra:
         mid, datos = buscar_mazmorra("FORJA")
         assert mid == "forja_maldita"
 
+    def test_por_nombre_completo_exacto(self):
+        mid, datos = buscar_mazmorra("Cripta de Ceniza")
+        assert mid == "cripta_ceniza"
+        assert datos is MAZMORRAS["cripta_ceniza"]
+
     def test_no_encontrado(self):
         mid, datos = buscar_mazmorra("xyzzy_no_existe")
         assert mid is None
         assert datos is None
 
-    def test_ambiguedad_startswith_devuelve_none(self):
-        # "maz" no es substring de ningún nombre, pero ningún ID empieza por "maz_" solo
-        # Usamos un prefijo que no coincide con nada
-        mid, datos = buscar_mazmorra("xyzzy_no_match_ninguna")
-        assert mid is None
-
     def test_busca_abismo(self):
         mid, _ = buscar_mazmorra("abismo")
         assert mid == "abismo_sin_fondo"
+
+    def test_nombre_exacto_prioriza_sobre_mazmorra_mas_larga(self, monkeypatch):
+        # Regresión del patrón de buscar_receta() (systems/alchemy/alchemy.py):
+        # si el nombre exacto de una mazmorra es también subcadena del nombre
+        # de otra, escribir el nombre corto y exacto debe resolver a esa
+        # mazmorra, no tratarse como ambiguo. El catálogo real no tiene este
+        # solapamiento, así que se inyecta uno.
+        monkeypatch.setitem(MAZMORRAS, "cripta_helada", {"nombre": "Cripta Helada"})
+        monkeypatch.setitem(MAZMORRAS, "cripta_helada_profunda", {"nombre": "Cripta Helada Profunda"})
+        mid, _ = buscar_mazmorra("cripta helada")
+        assert mid == "cripta_helada"
+        mid, _ = buscar_mazmorra("Cripta Helada Profunda")
+        assert mid == "cripta_helada_profunda"
+
+    def test_parcial_ambiguo_devuelve_none(self, monkeypatch):
+        # Con dos candidatos por subcadena y sin coincidencia exacta de
+        # nombre, se devuelve (None, None) en vez de elegir el primero en
+        # orden de dict.
+        monkeypatch.setitem(MAZMORRAS, "cripta_helada", {"nombre": "Cripta Helada"})
+        monkeypatch.setitem(MAZMORRAS, "cripta_ardiente", {"nombre": "Cripta Ardiente"})
+        mid, datos = buscar_mazmorra("cripta")
+        assert mid is None
+        assert datos is None
+
+    def test_prefijo_id_no_coincidente_devuelve_none(self):
+        mid, datos = buscar_mazmorra("xyzzy_no_match_ninguna")
+        assert mid is None
+        assert datos is None
 
 
 # --------------------------------------------------------------------------- #

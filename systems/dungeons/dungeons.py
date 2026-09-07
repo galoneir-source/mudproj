@@ -154,18 +154,31 @@ SALA_PORTAL = "Vestíbulo del Portal"
 
 def buscar_mazmorra(nombre: str) -> tuple[str | None, dict | None]:
     """
-    Busca mazmorra por ID exacto, luego por nombre parcial, luego por startswith.
-    Devuelve (id, datos) o (None, None).
+    Busca mazmorra por ID exacto, luego por nombre exacto, luego por parcial.
+    Devuelve (id, datos) o (None, None) si no hay ninguna o es ambiguo.
     """
     lower = nombre.lower().strip()
     if lower in MAZMORRAS:
         return lower, MAZMORRAS[lower]
-    for mid, datos in MAZMORRAS.items():
-        if lower in datos["nombre"].lower():
-            return mid, datos
-    matches = [(k, v) for k, v in MAZMORRAS.items() if k.startswith(lower)]
-    if len(matches) == 1:
-        return matches[0]
+
+    # Coincidencia exacta por nombre (insensible a mayúsculas) antes de
+    # cualquier búsqueda parcial -- sin esto, un nombre completo y exacto
+    # se trataría como ambiguo solo por ser también prefijo/subcadena de
+    # otra mazmorra, el mismo patrón ya corregido en buscar_receta()
+    # (systems/alchemy/alchemy.py) y CmdComprar (features/shop/commands.py).
+    exactas = [mid for mid, d in MAZMORRAS.items() if d["nombre"].lower() == lower]
+    if len(exactas) == 1:
+        return exactas[0], MAZMORRAS[exactas[0]]
+
+    # Parcial: subcadena del nombre o del ID. Solo resuelve si hay un único
+    # candidato; con dos o más se devuelve (None, None) en vez de elegir el
+    # primero en orden de dict.
+    candidatos = [
+        mid for mid, d in MAZMORRAS.items()
+        if lower in d["nombre"].lower() or lower in mid
+    ]
+    if len(candidatos) == 1:
+        return candidatos[0], MAZMORRAS[candidatos[0]]
     return None, None
 
 
