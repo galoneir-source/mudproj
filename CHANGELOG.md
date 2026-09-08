@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.54] — 2026-09-08
+
 ### Corregido
 - `tests/test_expeditions.py::TestExpedicionRecompensaTotal::test_completar_expedicion_no_duplica_la_recompensa_de_la_ultima_oleada` era un test frágil que dependía de la fecha real. `ExpedicionScript._completar()` dispara `notificar_progreso(m, "expedicion")` como efecto secundario (desafíos diarios); `generar_desafios_del_dia()` (`systems/daily/daily.py`) elige sus 5 desafíos del día con una semilla determinista derivada de la fecha UTC, y "expedicion" (objetivo=1, +500 XP) es uno de los 12 candidatos del pool. Este test no parcheaba `notificar_progreso`, a diferencia de su test hermano `test_completar_bonus_aplica_buff_de_xp` cuyo propio docstring ya advertía del riesgo. El resultado: en cualquier fecha cuya semilla seleccionara "expedicion" (~5/12 de los días; confirmado para 2026-09-08, ejecutado durante una revisión del proyecto con la suite de integración completa) el test fallaba por +500 XP de más, sin relación alguna con el bug de duplicación de recompensa que pretende cubrir. Sin cambios de comportamiento en producción. Fix: se parchea `features.daily.daily_script.notificar_progreso` alrededor de `_jugar_expedicion_completa()`, igual que ya hace el test hermano.
 
