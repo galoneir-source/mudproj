@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- **`NPC.at_msg_receive()` (`typeclasses/npc.py`) lanzaba `TypeError` en cada mensaje real recibido por un NPC**, incluido "decir" de un jugador en la misma sala (Evennia reparte el `say` a toda la sala vía `msg_contents()` → `.msg()` en cada objeto). El parámetro se llamaba `msg` y sin valor por defecto, pero `DefaultObject.msg()` (`evennia/objects/objects.py`) siempre invoca este hook por keyword — `at_msg_receive(text=text, from_obj=from_obj, **kwargs)` —, nunca posicional; como el nombre no coincidía con `text=`, Python nunca lo rellenaba: `TypeError: at_msg_receive() missing 1 required positional argument: 'msg'`. Efecto: `_reaccionar_a_dialogo()` (el sistema de diálogo por palabra clave, `db.dialogo`) nunca llegaba a ejecutarse — ningún NPC respondía jamás a nada que se le dijera. Ningún test anterior llamaba a `.msg()` sobre un NPC con la firma real de Evennia (`tests/test_cadenas.py` solo comprueba el dict `db.dialogo`, saltándose este hook por completo), así que pasó desapercibido hasta verse en los logs del servidor real (repetido en cada mensaje a un NPC) tras el primer despliegue a producción del código de este repo (2026-09-08). Fix: el parámetro se renombra a `text=None`, igual que la firma base. 3 tests de regresión nuevos en `tests/test_npc.py` (nuevo archivo).
+
 ## [0.71.54] — 2026-09-08
 
 ### Corregido

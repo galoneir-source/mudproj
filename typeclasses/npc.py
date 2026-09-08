@@ -82,13 +82,24 @@ class NPC(DefaultCharacter):
             return
         self._reaccionar_a_presencia(moved_obj)
 
-    def at_msg_receive(self, msg, from_obj=None, **kwargs):
-        """Responder a mensajes de 'decir'."""
-        result = super().at_msg_receive(msg, from_obj=from_obj, **kwargs)
+    def at_msg_receive(self, text=None, from_obj=None, **kwargs):
+        """
+        Responder a mensajes de 'decir'.
+
+        La base de Evennia (DefaultObject.msg(), objects.py) siempre llama a
+        este hook por keyword -- self.at_msg_receive(text=text, from_obj=...)
+        -- nunca posicional. El parámetro se llamaba antes "msg" y sin valor
+        por defecto: como el nombre no coincidía con el keyword "text=" que
+        usa el llamador real, Python nunca lo rellenaba y cualquier .msg() a
+        un NPC (p. ej. el comando "decir" de un jugador en la misma sala)
+        lanzaba TypeError: at_msg_receive() missing 1 required positional
+        argument: 'msg', sin llegar nunca a _reaccionar_a_dialogo().
+        """
+        result = super().at_msg_receive(text, from_obj=from_obj, **kwargs)
         # Solo reaccionar a mensajes de jugadores reales para evitar
         # que spam de combate active palabras clave del diálogo
-        if from_obj and isinstance(msg, str) and getattr(from_obj, "has_account", False):
-            self._reaccionar_a_dialogo(msg, from_obj)
+        if from_obj and isinstance(text, str) and getattr(from_obj, "has_account", False):
+            self._reaccionar_a_dialogo(text, from_obj)
         return result
 
     # ------------------------------------------------------------------ #
