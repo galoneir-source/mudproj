@@ -315,10 +315,23 @@ class TestExpedicionRecompensaTotal(EvenniaTest):
         resultado era que la recompensa de cada oleada (incluida la del
         jefe) se pagaba dos veces: una vez oleada a oleada y otra vez de
         golpe al completar, en todas las expediciones, siempre.
+
+        _completar() también dispara notificar_progreso(m, "expedicion")
+        como efecto secundario (desafíos diarios) -- igual que ya advertía
+        test_completar_bonus_aplica_buff_de_xp, hay que parchearlo aquí
+        también: generar_desafios_del_dia() elige sus 5 desafíos con una
+        semilla determinista basada en la fecha UTC real (systems/daily/
+        daily.py), y "expedicion" (objetivo=1, +500 XP) es uno de los 12
+        candidatos del pool. En cualquier fecha en que la semilla del día
+        lo seleccione -aprox. 5/12 de los días-, completar una expedición
+        agregaba de forma no determinista +500 XP extra a la aserción de
+        este test (comprobado para 2026-09-08, que sí lo selecciona).
         """
+        from unittest.mock import patch
         from systems.expeditions.expeditions import calcular_recompensa_total
 
-        self._jugar_expedicion_completa()
+        with patch("features.daily.daily_script.notificar_progreso"):
+            self._jugar_expedicion_completa()
 
         esperado = calcular_recompensa_total("bosque_profundo", 2)
         self.assertEqual(self.char1.db.experiencia, esperado["xp"])
