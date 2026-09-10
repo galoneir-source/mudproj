@@ -7,6 +7,8 @@ Los desafíos se generan de forma determinista desde la fecha UTC actual,
 de modo que todos los jugadores comparten las mismas 5 tareas cada día.
 Las recompensas escalan con la racha de días consecutivos completados.
 """
+from __future__ import annotations
+
 import random
 from datetime import date, timedelta
 
