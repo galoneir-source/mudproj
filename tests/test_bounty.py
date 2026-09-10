@@ -9,12 +9,14 @@ llamado desde CombatHandler._fin_duelo().
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_bounty
 """
+from evennia import create_object
 from evennia.utils import create
 from evennia.utils.create import create_script
 from evennia.utils.test_resources import EvenniaTest
 
 from features.bounty.commands import CmdRecompensa, CmdCazar
 from features.bounty.bounty_script import RecompensasScript, obtener_recompensas_script
+from features.combat.handler import CombatHandler
 from systems.bounty.bounty import MIN_RECOMPENSA
 from typeclasses.characters import Character
 from typeclasses.rooms import Room
@@ -128,3 +130,73 @@ class TestCazaRecompensaCancelacion(EvenniaTest):
 
         _make_cmd(CmdRecompensa, self.emisor, "cancelar Objetivo").func()
         self.assertEqual(self.emisor.db.monedas, 1000)
+
+
+class TestCazaRecompensaEnCombate(EvenniaTest):
+    """
+    Regresión: cazar() nunca comprobaba en_combate en el cazador ni en el
+    objetivo antes de crear un CombatHandler nuevo con ambos como
+    participantes -- mismo hueco ya cerrado en retar/vivienda/torneos/
+    mazmorras/expedicion. Si cualquiera de los dos ya estaba en otro
+    combate activo (en otra sala), ese CombatHandler se quedaba huérfano
+    -atascado esperando el turno de alguien que ahora participa a la vez
+    en un segundo combate- y el jugador quedaba registrado en dos
+    combates simultáneos.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        self.script = create_script(RecompensasScript, key="recompensas_script", persistent=True)
+        self.sala = create.create_object(Room, key="Plaza de prueba")
+        self.otra_sala = create.create_object(Room, key="Otra sala")
+
+        self.emisor = self.char1
+        self.cazador = self.char2
+        self.objetivo = create.create_object(JugadorDePruebaBounty, key="Objetivo", location=self.sala)
+
+        for char in (self.emisor, self.cazador, self.objetivo):
+            char.db.monedas = 1000
+            char.msg = lambda text=None, **kw: None
+            char.move_to(self.sala, quiet=True)
+
+        _make_cmd(CmdRecompensa, self.emisor, f"poner Objetivo {MIN_RECOMPENSA}").func()
+
+    def tearDown(self):
+        try:
+            self.script.delete()
+        except Exception:
+            pass
+        super().tearDown()
+
+    def _handlers_en(self, sala):
+        return [s for s in sala.scripts.all() if s.key == "combat_handler"]
+
+    def test_cazador_en_combate_bloquea_la_caza(self):
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.otra_sala)
+        otro_handler = self.otra_sala.scripts.add(CombatHandler)
+        otro_handler.iniciar([self.cazador, npc])
+        self.cazador.move_to(self.sala, quiet=True)
+        self.assertTrue(self.cazador.db.en_combate)
+
+        cap = _MsgCapture(self.cazador)
+        _make_cmd(CmdCazar, self.cazador, "Objetivo").func()
+
+        self.assertIn("en combate", cap.all().lower())
+        self.assertEqual(self._handlers_en(self.sala), [])
+        # El combate original sigue intacto, sin tocar.
+        self.assertTrue(self.cazador.db.en_combate)
+        self.assertIn(otro_handler, self.otra_sala.scripts.all())
+
+    def test_objetivo_en_combate_bloquea_la_caza(self):
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test 2", location=self.otra_sala)
+        otro_handler = self.otra_sala.scripts.add(CombatHandler)
+        otro_handler.iniciar([self.objetivo, npc])
+        self.objetivo.move_to(self.sala, quiet=True)
+        self.assertTrue(self.objetivo.db.en_combate)
+
+        _make_cmd(CmdCazar, self.cazador, "Objetivo").func()
+
+        self.assertEqual(self._handlers_en(self.sala), [])
+        self.assertTrue(self.objetivo.db.en_combate)
+        self.assertIn(otro_handler, self.otra_sala.scripts.all())

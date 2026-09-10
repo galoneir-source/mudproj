@@ -234,6 +234,22 @@ class CmdCazar(Command):
             caller.msg("|rSolo puedes cazar jugadores.|n")
             return
 
+        # Mismo hueco que ya se cerró en retar/vivienda/torneos/mazmorras/
+        # expedicion: cazar crea un CombatHandler nuevo con caller y
+        # objetivo como participantes sin comprobar si alguno de los dos
+        # ya está en otro combate activo (en otra sala, o incluso en esta
+        # misma antes de que existiera handler aquí). Sin esta
+        # comprobación, ese otro CombatHandler se queda huérfano -atascado
+        # esperando el turno de alguien que ahora pertenece a un segundo
+        # combate a la vez- y el jugador queda registrado como
+        # participante de dos combates simultáneos.
+        if getattr(caller.db, "en_combate", False):
+            caller.msg("No puedes cazar mientras estás en combate.")
+            return
+        if getattr(objetivo.db, "en_combate", False):
+            caller.msg(f"|w{objetivo.key}|n ya está en combate.")
+            return
+
         script = obtener_recompensas_script()
         bounties = list(script.db.bounties or [])
 

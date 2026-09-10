@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `CmdCazar` (`features/bounty/commands.py`) nunca comprobaba `en_combate` en el cazador ni en el objetivo antes de crear un `CombatHandler` nuevo con ambos como participantes — mismo hueco ya cerrado en retar (`features/duels/commands.py`), vivienda, torneos, mazmorras (v0.71.50) y expedición (v0.71.51), todos los cuales sí comprueban `en_combate` antes de mover o enfrentar a alguien porque dejarlo fuera deja el `CombatHandler` anterior huérfano — atascado esperando el turno de alguien que ahora participa a la vez en un segundo combate — y a ese jugador con `en_combate=True` para siempre en el primero. `cazar` exige que cazador y objetivo estén en la misma sala, pero nada en el motor de movimiento bloquea salir de una sala mientras `en_combate=True` (ninguna Exit lo comprueba), así que un jugador podía alejarse de un combate activo en otra sala, cruzarse con alguien que tuviera recompensa (o tener él mismo una recompensa encima) y quedar registrado en dos `CombatHandler` simultáneos. Encontrado auditando el sistema de cazarrecompensas, el único sistema de PvP del repo que nunca había aparecido en este CHANGELOG. Fix: `CmdCazar` comprueba ahora `en_combate` en cazador y objetivo antes de crear el handler, con el mismo criterio que `retar`. 2 tests de regresión nuevos en `tests/test_bounty.py`.
+
 ## [0.71.55] — 2026-09-08
 
 ### Corregido
