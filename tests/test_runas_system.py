@@ -77,6 +77,17 @@ class TestBuscarRuna:
     def test_busqueda_case_insensitive(self):
         assert buscar_runa("VIGOR") == "RUNA_VIGOR"
 
+    def test_fragmento_ambiguo_que_casa_con_todas_devuelve_none(self):
+        # "runa" es subcadena del ID y del nombre de las 8 runas del catálogo.
+        # Antes del fix se devolvía en silencio la primera del dict
+        # (RUNA_VIGOR) en vez de tratarlo como ambiguo.
+        assert buscar_runa("runa") is None
+
+    def test_fragmento_ambiguo_por_nombre_devuelve_none(self):
+        # "de" aparece en el nombre de 7 de las 8 runas ("Runa de Vigor",
+        # "Runa de Filo", etc.), pero en ningún ID.
+        assert buscar_runa("de") is None
+
 
 # --------------------------------------------------------------------------- #
 #  puede_grabar

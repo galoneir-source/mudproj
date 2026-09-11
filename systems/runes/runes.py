@@ -106,14 +106,21 @@ SLOTS_VALIDOS = ("arma", "armadura", "accesorio")
 
 
 def buscar_runa(nombre: str) -> str | None:
-    """Busca una runa por ID exacto o nombre parcial. Devuelve el ID o None."""
+    """
+    Busca una runa por ID exacto o nombre parcial. Devuelve el ID o None.
+    Si la coincidencia parcial es ambigua (varias runas la contienen),
+    se trata como no encontrada en vez de elegir cualquiera en silencio.
+    """
     nombre_l = nombre.strip().lower()
     for rid, runa in RUNAS.items():
         if rid.lower() == nombre_l or runa["nombre"].lower() == nombre_l:
             return rid
-    for rid, runa in RUNAS.items():
-        if nombre_l in rid.lower() or nombre_l in runa["nombre"].lower():
-            return rid
+    matches = [
+        rid for rid, runa in RUNAS.items()
+        if nombre_l in rid.lower() or nombre_l in runa["nombre"].lower()
+    ]
+    if len(matches) == 1:
+        return matches[0]
     return None
 
 

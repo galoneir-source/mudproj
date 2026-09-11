@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `buscar_runa()` (`systems/runes/runes.py`) era la única función de búsqueda por nombre del proyecto (junto a `buscar_receta` en alquimia y crafting, `buscar_mazmorra`, `buscar_destino`, `buscar_quest`, `buscar_habilidad`) cuyo paso de coincidencia parcial no comprobaba ambigüedad — recorría `RUNAS` y devolvía la **primera** runa cuyo ID o nombre contuviera el texto escrito, sin comprobar si había más de una candidata. Efecto reproducible con las 8 runas actuales: escribir solo `"runa"` (subcadena del ID y del nombre de las 8) o `"de"` (subcadena del nombre de 7 de las 8, p. ej. "Runa de Vigor") desde `runas info`, `runas grabar` o el tercer subcomando que usa `buscar_runa` resolvía siempre en silencio a `RUNA_VIGOR`, la primera del dict, en vez de avisar de que el texto era ambiguo. Mismo patrón ya cerrado en `buscar_receta` (alquimia, v0.71.48) y `buscar_mazmorra` (v0.71.50). Encontrado auditando las funciones `buscar_*` del proyecto durante una revisión completa (tests puros + suite de integración completa, 2349 + 2748 tests, ambas en verde). Fix: la coincidencia parcial ahora solo resuelve si hay exactamente una candidata, igual que el criterio ya usado por `buscar_habilidad`. 2 tests de regresión nuevos en `tests/test_runas_system.py`.
+
 ## [0.71.56] — 2026-09-10
 
 ### Corregido
