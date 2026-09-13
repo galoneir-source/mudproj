@@ -112,9 +112,11 @@ def buscar_habilidad(nombre: str) -> tuple[Optional[str], Optional[dict]]:
     if nombre_lower in HABILIDADES:
         return nombre_lower, HABILIDADES[nombre_lower]
 
-    for hid, info in HABILIDADES.items():
-        if nombre_lower == info["nombre"].lower():
-            return hid, info
+    exactas = [(hid, info) for hid, info in HABILIDADES.items() if nombre_lower == info["nombre"].lower()]
+    if len(exactas) == 1:
+        return exactas[0]
+    if len(exactas) > 1:
+        return None, None
 
     matches = [
         (hid, info) for hid, info in HABILIDADES.items()

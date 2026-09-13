@@ -5,6 +5,7 @@ Tests unitarios puros para systems/skills/trees.py y systems/skills/engine.py.
 No dependen de Evennia ni Django.
 """
 import unittest
+from unittest.mock import patch
 
 from systems.skills.trees import HABILIDADES, RAMAS, HABILIDADES_INICIALES
 from systems.skills.engine import (
@@ -230,6 +231,20 @@ class TestBuscarHabilidad(unittest.TestCase):
     def test_busca_escudo_fe(self):
         hid, info = buscar_habilidad("escudo de fe")
         self.assertEqual(hid, "escudo_fe")
+
+    def test_nombre_exacto_ambiguo_devuelve_none(self):
+        # Dos habilidades distintas con el mismo nombre de display: la
+        # coincidencia exacta por nombre debe comprobar ambigüedad igual
+        # que la parcial, en vez de devolver en silencio la primera en
+        # orden de dict.
+        habs_falsas = {
+            "hab_a": {**HABILIDADES["embestida"], "nombre": "Nombre Duplicado"},
+            "hab_b": {**HABILIDADES["golpe_fuerte"], "nombre": "Nombre Duplicado"},
+        }
+        with patch.dict(HABILIDADES, habs_falsas, clear=True):
+            hid, info = buscar_habilidad("Nombre Duplicado")
+        self.assertIsNone(hid)
+        self.assertIsNone(info)
 
 
 # --------------------------------------------------------------------------- #
