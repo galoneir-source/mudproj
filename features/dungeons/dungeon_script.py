@@ -150,6 +150,7 @@ class MazmorraScript(DefaultScript):
 
     def salir(self, jugador):
         """Expulsa a un jugador de la mazmorra sin recompensa."""
+        self._salir_de_combate_si_procede(jugador)
         destino = self._sala_salida()
         if destino:
             jugador.move_to(destino, quiet=True)
@@ -188,6 +189,27 @@ class MazmorraScript(DefaultScript):
     # ---------------------------------------------------------------------- #
     #  Helpers privados
     # ---------------------------------------------------------------------- #
+
+    def _salir_de_combate_si_procede(self, jugador):
+        """
+        Si el jugador sigue en el CombatHandler activo de su sala actual, lo
+        saca de forma limpia -igual que hace la propia acción 'huir' dentro
+        del combate (CombatHandler._intentar_huida)- antes de moverlo. Las
+        salas temporales de mazmorra no tienen Exits reales, así que 'huir'
+        nunca funciona dentro de una instancia ("no hay salida por donde
+        escapar"): 'salir' es la única forma de abandonar a mitad de un
+        combate, y antes lo hacía con un move_to() directo que dejaba el
+        handler huérfano -atascado esperando su turno- y al jugador con
+        db.en_combate=True para siempre (salvo que fuera el último miembro
+        dentro, caso ya cubierto por _limpiar()).
+        """
+        sala = jugador.location
+        if not sala:
+            return
+        for script in sala.scripts.all():
+            if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                script._limpiar_estado_combate(jugador)
+                script.eliminar_participante(jugador)
 
     def _spawnear_sala(self, idx: int):
         salas = self.db.salas or []

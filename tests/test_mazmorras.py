@@ -371,6 +371,48 @@ class TestMazmorraBloqueaEntradaEnCombate(MazmorrasTestBase):
 
 
 # --------------------------------------------------------------------------- #
+#  CmdMazmorra: "salir" con combate activo en curso
+# --------------------------------------------------------------------------- #
+
+class TestMazmorraSalirEnCombate(MazmorrasTestBase):
+    """
+    Regresión: MazmorraScript.salir() movía al jugador con un move_to()
+    directo sin comprobar nunca si seguía en el CombatHandler activo de su
+    sala. Como las salas temporales de mazmorra no tienen Exits reales,
+    'huir' nunca funciona dentro de una instancia ("no hay salida por donde
+    escapar"), así que 'mazmorra salir' es la única forma de abandonar a
+    mitad de un combate -y dejaba el handler huérfano (atascado esperando
+    el turno de alguien que ya no está) y al jugador con
+    db.en_combate=True para siempre. El caso en que es el último miembro
+    dentro de la instancia ya lo cubría _limpiar(); el hueco real es
+    cuando queda algún compañero dentro y _limpiar() no se dispara.
+    """
+
+    def setUp(self):
+        super().setUp()
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+
+    def test_miembro_en_combate_sale_limpio_dejando_al_resto_del_grupo(self):
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+        sala = instancia.db.salas[instancia.db.sala_actual]
+
+        npc = next(o for o in sala.contents if type(o).__name__ == "NPC")
+        handler = sala.scripts.add(CombatHandler)
+        handler.iniciar([self.char2, npc])
+        self.assertTrue(self.char2.db.en_combate)
+
+        _make_cmd(CmdMazmorra, self.char2, "salir").func()
+
+        self.assertEqual(self.char2.location, self.vestibulo)
+        self.assertFalse(self.char2.db.en_combate)
+        self.assertIsNone(_instancia_del_jugador(self.char2))
+        # El líder sigue dentro: _limpiar() no debía dispararse.
+        self.assertIsNotNone(_instancia_del_jugador(self.char1))
+
+
+# --------------------------------------------------------------------------- #
 #  DungeonCmdSet: sin colisiones con otros comandos
 # --------------------------------------------------------------------------- #
 
