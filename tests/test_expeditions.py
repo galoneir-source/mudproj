@@ -185,6 +185,59 @@ class TestExpedicionBloqueaInicioEnCombate(EvenniaTest):
 
 
 # --------------------------------------------------------------------------- #
+#  "abandonar" con combate activo en curso
+# --------------------------------------------------------------------------- #
+
+class TestExpedicionAbandonarEnCombate(EvenniaTest):
+    """
+    Regresión: ExpedicionScript.abandonar() llamaba a _teleportar_a_origen()
+    con un move_to() directo sin comprobar nunca si el jugador que abandona
+    seguía en el CombatHandler activo de la sala de expedición. La sala de
+    expedición no tiene Exits reales, así que 'huir' nunca funciona ahí
+    dentro ("no hay salida por donde escapar"): 'expedicion abandonar' es
+    la única forma de salir a mitad de un combate -y dejaba el handler
+    huérfano (atascado esperando el turno de alguien que ya no está) y al
+    jugador con db.en_combate=True para siempre. El caso en que abandona el
+    último miembro ya lo cubría _limpiar(); el hueco real es cuando queda
+    algún compañero dentro y _limpiar() no se dispara.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        _init_char(self.char1)
+        _init_char(self.char2)
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+
+    def tearDown(self):
+        script = _obtener_script_expedicion(self.char1)
+        if script:
+            try:
+                script.delete()
+            except Exception:
+                pass
+        super().tearDown()
+
+    def test_miembro_en_combate_abandona_limpio_dejando_al_resto_del_grupo(self):
+        sala = self.char1.location
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test 3", location=sala)
+        handler = sala.scripts.add(CombatHandler)
+        handler.iniciar([self.char2, npc])
+        self.assertTrue(self.char2.db.en_combate)
+
+        _make_cmd(CmdExpedicion, self.char2, "abandonar").func()
+
+        self.assertNotEqual(self.char2.location, sala)
+        self.assertFalse(self.char2.db.en_combate)
+        self.assertFalse(getattr(self.char2.location.db, "es_expedicion", False))
+        # El líder sigue dentro: _limpiar() no debía dispararse.
+        self.assertTrue(getattr(sala.db, "es_expedicion", False))
+        self.assertEqual(self.char1.location, sala)
+
+
+# --------------------------------------------------------------------------- #
 #  Recompensas al completar la expedición entera
 # --------------------------------------------------------------------------- #
 

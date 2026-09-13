@@ -101,6 +101,7 @@ class ExpedicionScript(DefaultScript):
             sala.msg_contents(
                 f"|r{jugador.key} abandona la expedición.|n"
             )
+        self._salir_de_combate_si_procede(jugador)
         self._teleportar_a_origen(jugador)
 
         dbrefs = list(self.db.miembros_dbrefs or [])
@@ -342,6 +343,28 @@ class ExpedicionScript(DefaultScript):
             self.delete()
         except Exception:
             pass
+
+    def _salir_de_combate_si_procede(self, jugador):
+        """
+        Si el jugador sigue en el CombatHandler activo de la sala de
+        expedición, lo saca de forma limpia -igual que hace la propia
+        acción 'huir' dentro del combate (CombatHandler._intentar_huida)-
+        antes de moverlo. La sala de expedición no tiene Exits reales, así
+        que 'huir' nunca funciona ahí dentro ("no hay salida por donde
+        escapar"): 'abandonar' es la única forma de salir a mitad de un
+        combate, y antes lo hacía con un move_to() directo (vía
+        _teleportar_a_origen) que dejaba el handler huérfano -atascado
+        esperando su turno- y al jugador con db.en_combate=True para
+        siempre (salvo que fuera el último miembro dentro, caso ya cubierto
+        por _limpiar()).
+        """
+        sala = self._sala()
+        if not sala:
+            return
+        for script in sala.scripts.all():
+            if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                script._limpiar_estado_combate(jugador)
+                script.eliminar_participante(jugador)
 
     def _teleportar_a_origen(self, jugador):
         from evennia import search_object
