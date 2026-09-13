@@ -77,6 +77,17 @@ def test_buscar_destino_vacio():
     assert buscar_destino("", destinos) is None
 
 
+def test_buscar_destino_exacto_ambiguo_devuelve_none():
+    # Dos zonas distintas con el mismo nombre de sala: la coincidencia
+    # exacta debe comprobar ambigüedad igual que la parcial, en vez de
+    # devolver en silencio la primera en orden de lista.
+    destinos = [
+        ("cripta_a", "Cripta Helada", "Norte"),
+        ("cripta_b", "Cripta Helada", "Sur"),
+    ]
+    assert buscar_destino("Cripta Helada", destinos) is None
+
+
 # --------------------------------------------------------------------------- #
 #  puede_pagar
 # --------------------------------------------------------------------------- #

@@ -50,9 +50,11 @@ def buscar_destino(
     if not consulta:
         return None
 
-    for destino in destinos:
-        if destino[1].lower() == consulta:
-            return destino
+    exactas = [d for d in destinos if d[1].lower() == consulta]
+    if len(exactas) == 1:
+        return exactas[0]
+    if len(exactas) > 1:
+        return None
 
     coincidencias = [d for d in destinos if consulta in d[1].lower()]
     if len(coincidencias) == 1:
