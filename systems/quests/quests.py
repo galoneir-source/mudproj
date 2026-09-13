@@ -489,9 +489,11 @@ def buscar_quest(nombre: str) -> tuple[Optional[str], Optional[dict]]:
         return nombre_lower, QUESTS[nombre_lower]
     if nombre_norm in QUESTS:
         return nombre_norm, QUESTS[nombre_norm]
-    for qid, q in QUESTS.items():
-        if nombre_lower == q["titulo"].lower():
-            return qid, q
+    exactas = [(qid, q) for qid, q in QUESTS.items() if nombre_lower == q["titulo"].lower()]
+    if len(exactas) == 1:
+        return exactas[0]
+    if len(exactas) > 1:
+        return None, None
     matches = [(qid, q) for qid, q in QUESTS.items() if nombre_lower in q["titulo"].lower()]
     if len(matches) == 1:
         return matches[0]

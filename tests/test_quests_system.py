@@ -5,6 +5,7 @@ Tests unitarios para systems/quests/quests.py.
 No dependen de Evennia ni Django.
 """
 import unittest
+from unittest.mock import patch
 
 from systems.quests.quests import (
     QUESTS,
@@ -56,6 +57,19 @@ class TestBuscarQuest(unittest.TestCase):
         for qid in QUESTS:
             found, _ = buscar_quest(qid)
             self.assertEqual(found, qid)
+
+    def test_titulo_exacto_ambiguo_devuelve_none(self):
+        # Dos quests distintas con el mismo título: la coincidencia exacta
+        # por título debe comprobar ambigüedad igual que la parcial, en vez
+        # de devolver en silencio la primera en orden de dict.
+        quests_falsas = {
+            "quest_a": {**QUESTS["problema_goblins"], "titulo": "Título Duplicado"},
+            "quest_b": {**QUESTS["amenaza_catacumbas"], "titulo": "Título Duplicado"},
+        }
+        with patch.dict(QUESTS, quests_falsas, clear=True):
+            qid, q = buscar_quest("Título Duplicado")
+        self.assertIsNone(qid)
+        self.assertIsNone(q)
 
 
 class TestQuestDisponible(unittest.TestCase):
