@@ -88,6 +88,15 @@ class TestBuscarRuna:
         # "Runa de Filo", etc.), pero en ningún ID.
         assert buscar_runa("de") is None
 
+    def test_nombre_exacto_ambiguo_devuelve_none(self, monkeypatch):
+        # Dos runas distintas con el mismo nombre de display: la
+        # coincidencia exacta debe comprobar ambigüedad igual que la
+        # parcial, en vez de devolver en silencio la primera en orden
+        # de dict.
+        monkeypatch.setitem(RUNAS, "RUNA_FALSA_A", {**RUNAS["RUNA_VIGOR"], "nombre": "Runa Duplicada"})
+        monkeypatch.setitem(RUNAS, "RUNA_FALSA_B", {**RUNAS["RUNA_EVASION"], "nombre": "Runa Duplicada"})
+        assert buscar_runa("Runa Duplicada") is None
+
 
 # --------------------------------------------------------------------------- #
 #  puede_grabar

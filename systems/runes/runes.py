@@ -112,9 +112,14 @@ def buscar_runa(nombre: str) -> str | None:
     se trata como no encontrada en vez de elegir cualquiera en silencio.
     """
     nombre_l = nombre.strip().lower()
-    for rid, runa in RUNAS.items():
-        if rid.lower() == nombre_l or runa["nombre"].lower() == nombre_l:
-            return rid
+    exactas = [
+        rid for rid, runa in RUNAS.items()
+        if rid.lower() == nombre_l or runa["nombre"].lower() == nombre_l
+    ]
+    if len(exactas) == 1:
+        return exactas[0]
+    if len(exactas) > 1:
+        return None
     matches = [
         rid for rid, runa in RUNAS.items()
         if nombre_l in rid.lower() or nombre_l in runa["nombre"].lower()
