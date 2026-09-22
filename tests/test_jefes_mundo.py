@@ -44,6 +44,22 @@ class TestBuscarSalaZona(EvenniaTest):
             script.delete()
 
 
+class TestStartDelay(EvenniaTest):
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar
+        TICK_INTERVALO, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        script = create.create_script(
+            WorldBossScript, key="wb_test_start_delay", persistent=True, autostart=False
+        )
+        try:
+            self.assertTrue(script.start_delay)
+        finally:
+            script.delete()
+
+
 class JugadorDePrueba(Character):
     """
     has_account en Evennia cuenta sesiones conectadas (self.sessions.count()),

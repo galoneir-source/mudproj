@@ -42,6 +42,7 @@ class DesafiosDiariosScript(DefaultScript):
         self.desc = "Desafíos diarios — gestor global"
         self.persistent = True
         self.interval = 3600
+        self.start_delay = True
         self.db.fecha_actual = _hoy()
 
     def at_repeat(self):

@@ -37,6 +37,7 @@ class RespawnScript(DefaultScript):
         self.key = "respawn_script"
         self.desc = "Respawn de NPC pendiente"
         self.interval = RESPAWN_TICK
+        self.start_delay = True
         self.persistent = True
         self.db.npc_prototipo = None
         self.db.respawn_at = time.time() + RESPAWN_DEFAULT  # timestamp absoluto

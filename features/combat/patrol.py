@@ -18,6 +18,7 @@ class PatrolScript(DefaultScript):
         self.key = "patrol_script"
         self.desc = "Script de patrulla de NPC"
         self.interval = 30       # segundos entre movimientos
+        self.start_delay = True
         self.persistent = True
         self.db.patrol_index = 0
 

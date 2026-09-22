@@ -21,6 +21,7 @@ class GuildWarScript(DefaultScript):
         self.desc = "Gestor de guerras entre gremios"
         self.persistent = True
         self.interval = TICK_INTERVALO
+        self.start_delay = True
         self.db.retos = {}     # {gremio_retado: {gremio_retador, timestamp}}
         self.db.guerras = {}   # {war_id: entry}
         self.db.next_id = 1

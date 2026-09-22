@@ -91,6 +91,14 @@ class TestGuildWarScriptDeclarar(EvenniaTest):
                 pass
         super().tearDown()
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar
+        TICK_INTERVALO, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        self.assertTrue(self.script.start_delay)
+
     def test_declarar_exitoso(self):
         ok, _ = self.script.declarar("Los Lobos", "Cuervos Negros")
         self.assertTrue(ok)

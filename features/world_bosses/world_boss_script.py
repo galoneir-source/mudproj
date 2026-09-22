@@ -34,6 +34,7 @@ class WorldBossScript(DefaultScript):
         self.key = "world_boss_script"
         self.desc = "Gestor de jefes de mundo"
         self.interval = TICK_INTERVALO
+        self.start_delay = True
         self.persistent = True
         # {boss_id: timestamp_ultimo_muerte | None}
         self.db.ultimo_muerte = {bid: None for bid in JEFES_MUNDO}

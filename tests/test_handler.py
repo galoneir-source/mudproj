@@ -185,6 +185,18 @@ class TestCombatHandler(EvenniaTest):
         handler = self._crear_handler()
         self.assertEqual(handler.db.turno_actual, 0)
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de forma inmediata al crear el script en vez de esperar
+        INTERVALO_TURNO, adelantando turno_tiempo de 0 a 1 en el instante
+        mismo de creación -- 1s menos de los TURNO_TIMEOUT (15s) prometidos
+        para el primer turno de cada combate.
+        """
+        handler = self.sala.scripts.add(CombatHandler)
+        self.assertTrue(handler.start_delay)
+        self.assertEqual(handler.db.turno_tiempo, 0)
+
     def test_iniciar_rompe_sigilo_y_cancela_la_tarea_pendiente(self):
         """
         Regresión: iniciar() ya ponía oculto=False al entrar en combate, pero

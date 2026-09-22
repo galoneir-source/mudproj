@@ -70,6 +70,14 @@ class TestAuctionScriptPublicar(EvenniaTest):
             pass
         super().tearDown()
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar
+        TICK_INTERVALO, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        self.assertTrue(self.script.start_delay)
+
     def test_publicar_devuelve_true_y_aid(self):
         item = _crear_item(self.char1)
         ok, aid = self.script.publicar(self.char1, item, 100)

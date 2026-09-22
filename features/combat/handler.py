@@ -267,6 +267,7 @@ class CombatHandler(DefaultScript):
         self.key = "combat_handler"
         self.desc = "Gestor de combate activo"
         self.interval = INTERVALO_TURNO
+        self.start_delay = True
         self.persistent = False
         self.db.participantes = []      # lista de objetos (orden de turno)
         self.db.turno_actual = 0        # índice en participantes

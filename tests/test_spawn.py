@@ -18,6 +18,7 @@ from features.spawn.manager import (
 )
 from features.spawn.commands import CmdSpawn, CmdRepoblar
 from features.respawn.respawn import RespawnScript, programar_respawn
+from features.combat.patrol import PatrolScript
 from systems.spawn.tables import ZONAS
 
 
@@ -310,6 +311,12 @@ class TestRespawnScript(SpawnTestBase):
                   if getattr(o.db, "npc_prototipo", None) == "GOBLIN"]
         self.assertEqual(len(nuevos), 0)
 
+    def test_start_delay_activado(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        programar_respawn(self.sala, npc)
+        scripts = [s for s in self.sala.scripts.all() if s.key == "respawn_script"]
+        self.assertTrue(scripts[0].start_delay)
+
     def test_respawn_elimina_script_tras_ejecutarse(self):
         npc = spawn_npc("GOBLIN", self.sala)
         programar_respawn(self.sala, npc)
@@ -386,3 +393,32 @@ class TestRespawnScript(SpawnTestBase):
         nuevos = [o for o in self.sala.contents
                   if getattr(o.db, "npc_prototipo", None) == "GOBLIN"]
         self.assertEqual(len(nuevos), 0)
+
+
+# --------------------------------------------------------------------------- #
+#  PatrolScript: no debe mover al NPC al crearse (start_delay)
+# --------------------------------------------------------------------------- #
+
+class TestPatrolScriptStartDelay(SpawnTestBase):
+    """
+    Regresión: sin start_delay=True, Evennia dispara el primer at_repeat()
+    de forma inmediata al añadir el script en vez de esperar 30s, haciendo
+    que un NPC recién spawneado/respawneado con patrol_rooms se teletransporte
+    de inmediato en vez de esperar su primer tick. Esto ocurre en cada
+    spawn/respawn del NPC, no solo una vez -- a diferencia de los scripts
+    globales (reloj mundial, clima), un NPC de patrulla puede morir y
+    respawnear muchas veces durante la vida de la partida.
+    """
+
+    def test_start_delay_activado(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        npc.db.patrol_rooms = [self.sala.dbref, self.room2.dbref]
+        npc.scripts.add(PatrolScript)
+        script = [s for s in npc.scripts.all() if s.key == "patrol_script"][0]
+        self.assertTrue(script.start_delay)
+
+    def test_npc_no_se_mueve_al_crear_el_script(self):
+        npc = spawn_npc("GOBLIN", self.sala)
+        npc.db.patrol_rooms = [self.room2.dbref, self.sala.dbref]
+        npc.scripts.add(PatrolScript)
+        self.assertEqual(npc.location, self.sala)

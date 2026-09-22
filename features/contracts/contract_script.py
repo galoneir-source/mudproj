@@ -16,6 +16,7 @@ class ContractScript(DefaultScript):
         self.desc = "Tablón de contratos global"
         self.persistent = True
         self.interval = 3600
+        self.start_delay = True
         self.db.contratos = []
         self.db.ultima_seed = -1
 

@@ -22,6 +22,7 @@ class RecordsScript(DefaultScript):
         self.key = "records_global"
         self.persistent = True
         self.interval = 300   # 5 minutos entre actualizaciones
+        self.start_delay = True
         self.db.cache = {}    # {cat_id: [(nombre, valor), ...]}
         self.db.ultimo_actualizado = 0.0
 

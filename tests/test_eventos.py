@@ -90,6 +90,15 @@ class TestEventoScriptInit(EvenniaTest):
         s2 = obtener_evento_script()
         self.assertEqual(s1.id, s2.id)
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar el
+        intervalo de 60s, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        script = self._get_or_create_script()
+        self.assertTrue(script.start_delay)
+
 
 # ---------------------------------------------------------------------------
 # tiempo_restante_evento

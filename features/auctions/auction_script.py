@@ -24,6 +24,7 @@ class AuctionScript(DefaultScript):
         self.desc = "Casa de subastas global de jugadores"
         self.persistent = True
         self.interval = TICK_INTERVALO
+        self.start_delay = True
         self.db.subastas = {}
         self.db.next_id = 1
 

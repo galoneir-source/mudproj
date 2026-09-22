@@ -97,6 +97,14 @@ class TestContractScript(EvenniaTest):
             pass
         super().tearDown()
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar el
+        intervalo de 3600s, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        self.assertTrue(self.script.start_delay)
+
     def test_renovar_genera_contratos(self):
         self.script.renovar()
         contratos = self.script.obtener_contratos()

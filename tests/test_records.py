@@ -75,6 +75,16 @@ class TestRecordsScript(EvenniaTest):
     def test_script_se_crea_con_clave(self):
         self.assertEqual(self.script.key, "records_global")
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar el
+        intervalo de 300s -- redundante con at_start(), que ya llama a
+        actualizar() explícitamente. Mismo patrón ya corregido en reloj
+        mundial/clima.
+        """
+        self.assertTrue(self.script.start_delay)
+
     def test_cache_se_inicializa_como_dict(self):
         cache = dict(self.script.db.cache or {})
         self.assertIsInstance(cache, dict)

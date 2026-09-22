@@ -129,6 +129,15 @@ class TestObtenerDesafiosScript(EvenniaTest):
         s2 = obtener_desafios_script()
         self.assertEqual(s1.id, s2.id)
 
+    def test_start_delay_activado(self):
+        """
+        Regresión: sin start_delay=True, Evennia dispara el primer
+        at_repeat() de inmediato al crear el script en vez de esperar el
+        intervalo de 3600s, mismo patrón ya corregido en reloj mundial/clima.
+        """
+        script = obtener_desafios_script()
+        self.assertTrue(script.start_delay)
+
 
 class TestFechaUsaUTCNoLocal(EvenniaTest):
     """

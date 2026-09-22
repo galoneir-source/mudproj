@@ -24,6 +24,7 @@ class EventoMundialScript(DefaultScript):
         self.desc = "Script global de eventos mundiales"
         self.persistent = True
         self.interval = 60             # tick cada minuto
+        self.start_delay = True
         self.db.evento_activo = None   # event_id activo o None
         self.db.evento_inicio = 0.0    # timestamp Unix de inicio
         self.db.ultimo_por_evento = {} # {event_id: timestamp_fin}
