@@ -140,6 +140,22 @@ class TestCmdAceptar(QuestTestBase):
         cmd.func()
         self.assertIn("¡Misión aceptada!", self._todos_msgs())
 
+    def test_jugador_con_nombre_subcadena_del_dador_no_cuenta_como_npc(self):
+        # Regresión: un jugador llamado "Guardia" (subcadena de
+        # "guardia de la ciudad") hacía de dador portátil de la misión.
+        self.char2.key = "Guardia"
+        self.char2.move_to(self.sala, quiet=True)
+        cmd = _make_cmd(CmdAceptar, self.jugador, args="problema goblins")
+        cmd.func()
+        self.assertNotIn("problema_goblins", self.jugador.db.quests or {})
+        self.assertIn("Necesitas hablar", self._todos_msgs())
+
+    def test_objeto_no_npc_con_nombre_subcadena_no_cuenta(self):
+        create_object("typeclasses.objects.Object", key="ciudad", location=self.sala)
+        cmd = _make_cmd(CmdAceptar, self.jugador, args="problema goblins")
+        cmd.func()
+        self.assertNotIn("problema_goblins", self.jugador.db.quests or {})
+
     def test_ya_activa_da_error(self):
         self.jugador.db.quests = {"problema_goblins": {"estado": "activa", "progreso": {}}}
         self._crear_npc("guardia de la ciudad")

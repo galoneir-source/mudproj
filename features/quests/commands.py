@@ -11,15 +11,24 @@ from evennia import Command, CmdSet
 # --------------------------------------------------------------------------- #
 
 def _buscar_npc_en_sala(caller, npc_key_buscado: str):
-    """Busca un NPC por key en la sala (coincidencia parcial, case-insensitive)."""
+    """
+    Busca un NPC por key en la sala (case-insensitive).
+
+    Solo considera NPCs reales (typeclass NPC, sin cuenta), y solo en la
+    dirección "el key del NPC contiene el nombre buscado". Antes también
+    aceptaba la inversa (key contenida en el nombre buscado) sobre cualquier
+    objeto de la sala, así que un jugador llamado p. ej. "Mira" o "Gareth"
+    servía como dador/receptor portátil de las misiones de ese NPC.
+    """
     if not caller.location:
         return None
     buscado = npc_key_buscado.lower()
     for obj in caller.location.contents:
-        if obj == caller:
+        if obj == caller or getattr(obj, "has_account", False):
             continue
-        key_lower = obj.key.lower()
-        if buscado in key_lower or key_lower in buscado:
+        if not obj.is_typeclass("typeclasses.npc.NPC", exact=False):
+            continue
+        if buscado in obj.key.lower():
             return obj
     return None
 
