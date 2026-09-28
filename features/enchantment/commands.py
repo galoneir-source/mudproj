@@ -25,10 +25,24 @@ def _base_key(key: str) -> str:
     return re.sub(r"\s*\+\d+$", "", key)
 
 
+def _ids_equipados(caller) -> set:
+    """
+    IDs de los objetos equipados. Equipar no cambia la location, así que
+    siguen en caller.contents: si un material se llamara igual que un ítem
+    equipado, consumirlo lo borraría con sus bonuses aún aplicados al
+    personaje (mismo criterio que crafteo, alquimia y runas).
+    """
+    from features.equipment.commands import _get_equipamiento
+    return {item.id for item in _get_equipamiento(caller).values() if item}
+
+
 def _inventario_conteo(caller) -> dict[str, int]:
-    """Devuelve {nombre_lower: cantidad} de todos los objetos en el inventario."""
+    """Devuelve {nombre_lower: cantidad} de los objetos del inventario, sin equipados."""
+    equipados = _ids_equipados(caller)
     conteo: dict[str, int] = {}
     for obj in caller.contents:
+        if obj.id in equipados:
+            continue
         nombre = obj.key.lower()
         conteo[nombre] = conteo.get(nombre, 0) + 1
     return conteo
@@ -137,11 +151,14 @@ class CmdEncantar(Command):
 
         # Consumir ingredientes
         coste = coste_encantamiento(slot, nivel_nuevo)
+        equipados = _ids_equipados(caller)
         for ingr_key, cant in coste.items():
             restante = cant
             for obj in list(caller.contents):
                 if restante <= 0:
                     break
+                if obj.id in equipados:
+                    continue
                 if obj.key.lower() == ingr_key.lower():
                     obj.delete()
                     restante -= 1

@@ -6,6 +6,17 @@ Comandos del tablón de contratos (v0.27.0).
 from evennia import Command, CmdSet
 
 
+def _ids_equipados(caller) -> set:
+    """
+    IDs de los objetos equipados. Equipar no cambia la location, así que
+    siguen en caller.contents: si un material se llamara igual que un ítem
+    equipado, consumirlo lo borraría con sus bonuses aún aplicados al
+    personaje (mismo criterio que crafteo, alquimia y runas).
+    """
+    from features.equipment.commands import _get_equipamiento
+    return {item.id for item in _get_equipamiento(caller).values() if item}
+
+
 class CmdTablon(Command):
     """
     Consulta y gestiona el tablón de contratos.
@@ -197,20 +208,24 @@ class CmdTablon(Command):
     # ------------------------------------------------------------------ #
 
     def _contar_material(self, caller, nombre_objetivo: str) -> int:
-        """Cuenta cuántos objetos con ese nombre hay en el inventario."""
+        """Cuenta cuántos objetos con ese nombre hay en el inventario, sin equipados."""
         nombre_lower = nombre_objetivo.lower()
+        equipados = _ids_equipados(caller)
         return sum(
             1 for obj in caller.contents
-            if obj.key.lower() == nombre_lower
+            if obj.id not in equipados and obj.key.lower() == nombre_lower
         )
 
     def _consumir_material(self, caller, nombre_objetivo: str, cantidad: int):
         """Elimina hasta `cantidad` objetos con ese nombre del inventario."""
         nombre_lower = nombre_objetivo.lower()
+        equipados = _ids_equipados(caller)
         eliminados = 0
         for obj in list(caller.contents):
             if eliminados >= cantidad:
                 break
+            if obj.id in equipados:
+                continue
             if obj.key.lower() == nombre_lower:
                 obj.delete()
                 eliminados += 1

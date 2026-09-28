@@ -525,6 +525,21 @@ class TestCmdTablonEntregarMateriales(EvenniaTest):
         )
         self.assertEqual(restantes, 0)
 
+    def test_entrega_no_cuenta_ni_consume_un_item_equipado(self):
+        # Regresión: contaba y consumía por nombre sin saltarse los ítems
+        # equipados; uno con el mismo nombre que el material se borraba con
+        # sus bonuses aún aplicados al personaje.
+        self.char1.db.contrato_activo = _contrato_entrega(3, "mineral de hierro")
+        equipado = create_object("typeclasses.objects.Equipo",
+                                 key="mineral de hierro", location=self.char1)
+        self.char1.db.equipamiento = {"arma": equipado, "armadura": None, "accesorio": None}
+        self._crear_materiales("mineral de hierro", 2)
+        cmd = _make_cmd(CmdTablon, self.char1, "entregar")
+        cmd.func()
+        self.assertIn("necesitas", self.cap.all().lower())
+        self.assertIsNotNone(self.char1.db.contrato_activo)
+        self.assertTrue(equipado.pk)
+
     def test_entrega_exitosa_consume_solo_necesarios(self):
         self.char1.db.contrato_activo = _contrato_entrega(2, "mineral de hierro")
         self._crear_materiales("mineral de hierro", 4)

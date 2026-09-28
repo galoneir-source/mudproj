@@ -321,3 +321,33 @@ class TestEncantarListado(EncantamientoTestBase):
         _equipo("espada de hierro", "arma", {"fuerza": 3}, self.jugador)
         self._encantar("")
         self.assertIn("mineral de hierro", self._todos_msgs())
+
+
+class TestEncantarNoConsumeEquipados(EncantamientoTestBase):
+    """
+    Regresión: encantar contaba y consumía los materiales por nombre sin
+    saltarse los ítems equipados (que siguen en caller.contents). Un ítem
+    equipado con el mismo nombre que un material se borraba con sus
+    bonuses aún aplicados al personaje.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Accesorio equipado que se llama como el material de accesorio +1
+        self.gema_equipada = _equipo("gema en bruto", "accesorio", {"destreza": 2}, self.jugador)
+        self.jugador.db.equipamiento = {"arma": None, "armadura": None,
+                                        "accesorio": self.gema_equipada}
+        self.anillo = _equipo("anillo de cobre", "accesorio", {"fuerza": 1}, self.jugador)
+
+    def test_equipado_no_cuenta_como_material(self):
+        self._encantar("anillo de cobre")
+        self.assertIn("Necesitas más materiales", self._todos_msgs())
+        self.assertEqual(self.anillo.db.encantamiento or 0, 0)
+        self.assertTrue(self.gema_equipada.pk)
+
+    def test_consume_el_material_suelto_y_no_el_equipado(self):
+        suelta = _item("gema en bruto", self.jugador)
+        self._encantar("anillo de cobre")
+        self.assertEqual(self.anillo.db.encantamiento, 1)
+        self.assertTrue(self.gema_equipada.pk)
+        self.assertFalse(suelta.pk)

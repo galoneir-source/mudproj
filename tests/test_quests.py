@@ -285,6 +285,24 @@ class TestCmdEntregar(QuestTestBase):
         self.assertEqual(self.jugador.db.quests["veneno_del_pantano"]["estado"], "activa")
 
 
+    def test_fetch_no_cuenta_ni_consume_un_item_equipado(self):
+        # Regresión: entregar contaba y consumía por nombre sin saltarse los
+        # ítems equipados; uno con el mismo nombre que el objetivo se
+        # borraba con sus bonuses aún aplicados al personaje.
+        self.jugador.db.quests = {"veneno_del_pantano": {"estado": "activa", "progreso": {}}}
+        self._crear_npc("Mira la mercader")
+        equipado = create_object("typeclasses.objects.Equipo",
+                                 key="veneno de pantano", location=self.jugador)
+        self.jugador.db.equipamiento = {"arma": None, "armadura": None, "accesorio": equipado}
+        create_object("evennia.objects.objects.DefaultObject",
+                      key="veneno de pantano", location=self.jugador)
+        cmd = _make_cmd(CmdEntregar, self.jugador, args="veneno del pantano")
+        cmd.func()
+        self.assertIn("faltan", self._todos_msgs())
+        self.assertEqual(self.jugador.db.quests["veneno_del_pantano"]["estado"], "activa")
+        self.assertTrue(equipado.pk)
+
+
 # --------------------------------------------------------------------------- #
 #  Hook on_npc_muerte
 # --------------------------------------------------------------------------- #

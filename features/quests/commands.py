@@ -33,10 +33,24 @@ def _buscar_npc_en_sala(caller, npc_key_buscado: str):
     return None
 
 
+def _ids_equipados(caller) -> set:
+    """
+    IDs de los objetos equipados. Equipar no cambia la location, así que
+    siguen en caller.contents: si un material se llamara igual que un ítem
+    equipado, consumirlo lo borraría con sus bonuses aún aplicados al
+    personaje (mismo criterio que crafteo, alquimia y runas).
+    """
+    from features.equipment.commands import _get_equipamiento
+    return {item.id for item in _get_equipamiento(caller).values() if item}
+
+
 def _inventario_dict(caller) -> dict:
-    """Devuelve {nombre_lower: cantidad} del inventario del caller."""
+    """Devuelve {nombre_lower: cantidad} del inventario del caller, sin equipados."""
+    equipados = _ids_equipados(caller)
     inv: dict = {}
     for obj in caller.contents:
+        if obj.id in equipados:
+            continue
         k = obj.key.lower()
         inv[k] = inv.get(k, 0) + 1
     return inv
@@ -339,10 +353,13 @@ class CmdEntregar(Command):
         if quest["tipo"] == "fetch":
             target = quest["objetivo"]["target"].lower()
             requerido = quest["objetivo"]["cantidad"]
+            equipados = _ids_equipados(caller)
             consumidos = 0
             for obj in list(caller.contents):
                 if consumidos >= requerido:
                     break
+                if obj.id in equipados:
+                    continue
                 if obj.key.lower() == target:
                     obj.delete()
                     consumidos += 1
