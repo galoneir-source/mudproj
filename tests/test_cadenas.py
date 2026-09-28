@@ -8,10 +8,22 @@ entregar quests en cadena desbloquea la siguiente.
 Ejecutar con:
   cd /opt/evennia/mudproj/mygame && ../venv/bin/evennia test tests.test_cadenas
 """
+from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
 from features.quests.commands import CmdAceptar, CmdEntregar, CmdMisiones
 from systems.quests.quests import QUESTS, quest_disponible
+
+
+def _crear_aldric(sala, dialogo=None):
+    """
+    NPC real para dador/receptor: _buscar_npc_en_sala() ignora a propósito
+    los personajes con cuenta (p. ej. self.char2) desde el fix de 2bc7dc9.
+    """
+    npc = create_object("typeclasses.npc.NPC", key="Hermano Aldric el sacerdote",
+                        location=sala)
+    npc.db.dialogo = dialogo or {}
+    return npc
 
 
 def _make_cmd(CmdClass, caller, args=""):
@@ -83,11 +95,7 @@ class TestAceptarCadenadas(EvenniaTest):
 
     def test_ecos_disponible_con_prereq(self):
         self.char1.db.quests = {"caballero_sombras": {"estado": "entregada"}}
-        # Necesitamos un NPC dador en la sala
-        npc = self.char2
-        npc.key = "Hermano Aldric el sacerdote"
-        npc.db.dialogo = {}
-        npc.move_to(self.room1, quiet=True)
+        _crear_aldric(self.room1)
         self._aceptar("Los Ecos del Barón")
         quests = dict(self.char1.db.quests or {})
         self.assertIn("ecos_del_baron", quests)
@@ -161,11 +169,7 @@ class TestHablarNpcMisionesProximas(EvenniaTest):
         super().setUp()
         _init_char(self.char1)
         self.char1.move_to(self.room1, quiet=True)
-        # Crear NPC falso tipo Aldric
-        self.npc_aldric = self.char2
-        self.npc_aldric.key = "Hermano Aldric el sacerdote"
-        self.npc_aldric.db.dialogo = {"hola": "Que los dioses te guíen."}
-        self.npc_aldric.move_to(self.room1, quiet=True)
+        self.npc_aldric = _crear_aldric(self.room1, {"hola": "Que los dioses te guíen."})
         self.cap = _MsgCapture(self.char1)
 
     def _mostrar_misiones(self):
@@ -246,11 +250,7 @@ class TestProgresoEnCadena(EvenniaTest):
             "caballero_sombras": {"estado": "entregada"},
             "ecos_del_baron": {"estado": "activa", "progreso": {}},
         }
-        # Crear NPC receptor en sala
-        npc = self.char2
-        npc.key = "Hermano Aldric el sacerdote"
-        npc.db.dialogo = {}
-        npc.move_to(self.room1, quiet=True)
+        _crear_aldric(self.room1)
         # Añadir items al inventario
         import evennia
         for _ in range(2):
