@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- `huir` atravesaba puertas cerradas o bloqueadas y salidas con lock `traverse` (`CombatHandler._intentar_huida()`, `features/combat/handler.py`). Elegía al azar cualquier objeto de la sala con `destination` y movía al personaje con `move_to()`, que no pasa por `at_traverse()`: la comprobación de `DoorExit` (abierta/bloqueada) y los locks `traverse` de la salida no se aplicaban. Con una puerta bloqueada, huir de un combate era la forma de cruzarla sin llave. No afecta hoy a producción: el mundo no tiene ninguna `DoorExit` ni salida con lock `traverse` (comprobado en la base de datos de producción, 60 salidas); las puertas solo las crean los builders con `@door`. Encontrado auditando `features/doors/`, uno de los sistemas que nunca había aparecido en este CHANGELOG, durante una revisión completa. Fix: `huir` solo considera salidas que el personaje podría cruzar andando: `access(actor, "traverse")` y, si es puerta, abierta y sin bloquear. 4 tests nuevos en `tests/test_handler.py` (`TestHuidaRespetaSalidasCerradas`); 3 de ellos fallan sin el fix.
+
 ## [0.71.59] — 2026-09-28
 
 ### Corregido

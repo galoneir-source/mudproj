@@ -1014,8 +1014,19 @@ class CombatHandler(DefaultScript):
         import random
         sala = self.obj
         if random.random() < 0.50:
-            # Buscar salida antes de eliminar del combate
-            salidas = [o for o in sala.contents if hasattr(o, "destination") and o.destination]
+            # Buscar salida antes de eliminar del combate. Solo las que el
+            # actor podría cruzar andando: move_to() no pasa por
+            # at_traverse(), así que sin este filtro se huía a través de
+            # puertas cerradas/bloqueadas y de salidas con lock "traverse".
+            salidas = [
+                o for o in sala.contents
+                if getattr(o, "destination", None)
+                and o.access(actor, "traverse")
+                and not (
+                    getattr(o.db, "door", False)
+                    and (o.db.is_locked or not o.db.is_open)
+                )
+            ]
             if not salidas:
                 actor.msg("|yIntentas huir pero no hay salida por donde escapar.|n")
                 self._siguiente_turno()

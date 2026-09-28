@@ -474,6 +474,62 @@ class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
         self.assertTrue(mock_delay.called)
 
 
+class TestHuidaRespetaSalidasCerradas(EvenniaTest):
+    """
+    Regresión: _intentar_huida() elegía cualquier salida con destination y
+    hacía move_to() directo, sin pasar por at_traverse(): se huía a través
+    de puertas cerradas o bloqueadas y de salidas con lock "traverse".
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Sótano")
+        self.jugador = self.char1
+        self.jugador.move_to(self.sala, quiet=True)
+        _set_stats(self.jugador, hp=100, hp_max=100, nivel=1)
+        self.npc = create_object("typeclasses.npc.NPC", key="Goblin")
+        self.npc.move_to(self.sala, quiet=True)
+        _set_stats(self.npc, hp=30, hp_max=30, nivel=1)
+        self.handler = self.sala.scripts.add(CombatHandler)
+        self.handler.iniciar([self.jugador, self.npc])
+        self.handler.db.turno_actual = 0
+
+    def _huir(self):
+        with patch("random.random", return_value=0.01), \
+             patch("evennia.utils.delay"):
+            self.handler._intentar_huida(self.jugador)
+
+    def _puerta(self, **estado):
+        from features.doors.typeclasses import DoorExit
+        puerta = create_object(DoorExit, key="norte", location=self.sala,
+                               destination=self.room2)
+        for k, v in estado.items():
+            setattr(puerta.db, k, v)
+        return puerta
+
+    def test_no_huye_por_puerta_bloqueada(self):
+        self._puerta(is_open=False, is_locked=True)
+        self._huir()
+        self.assertEqual(self.jugador.location, self.sala)
+
+    def test_no_huye_por_puerta_cerrada(self):
+        self._puerta(is_open=False, is_locked=False)
+        self._huir()
+        self.assertEqual(self.jugador.location, self.sala)
+
+    def test_no_huye_por_salida_con_lock_traverse(self):
+        salida = create_object("typeclasses.exits.Exit", key="norte",
+                               location=self.sala, destination=self.room2)
+        salida.locks.add("traverse:false()")
+        self._huir()
+        self.assertEqual(self.jugador.location, self.sala)
+
+    def test_huye_por_puerta_abierta(self):
+        self._puerta(is_open=True, is_locked=False)
+        self._huir()
+        self.assertEqual(self.jugador.location, self.room2)
+
+
 class TestCapturaMascotaUsaFuerzaDelEnemigo(EvenniaTest):
     """
     Regresión: _intentar_captura() construía el "ataque" de la mascota
