@@ -7,6 +7,7 @@ import time
 
 from systems.bulletin.bulletin import (
     MAX_ANUNCIOS,
+    MAX_ANUNCIOS_POR_AUTOR,
     MAX_LONGITUD_TEXTO,
     DURACION_SEGUNDOS,
     crear_anuncio,
@@ -130,3 +131,16 @@ def test_formatear_cartelera_ordena_mas_reciente_primero():
     nuevo = crear_anuncio("Aldric", "#10", "Nuevo", "2")
     texto = formatear_cartelera([viejo, nuevo])
     assert texto.index("Nuevo") < texto.index("Viejo")
+
+
+def test_puede_publicar_limite_por_autor():
+    propios = [{"timestamp": time.time(), "autor_dbref": "#1"} for _ in range(MAX_ANUNCIOS_POR_AUTOR)]
+    ok, msg = puede_publicar(propios, "Otro más", "#1")
+    assert not ok
+    assert "vigentes" in msg.lower()
+
+
+def test_puede_publicar_limite_por_autor_no_cuenta_ajenos():
+    ajenos = [{"timestamp": time.time(), "autor_dbref": "#2"} for _ in range(MAX_ANUNCIOS_POR_AUTOR)]
+    ok, _ = puede_publicar(ajenos, "Otro más", "#1")
+    assert ok

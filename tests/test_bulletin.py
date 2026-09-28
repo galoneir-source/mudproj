@@ -12,7 +12,9 @@ from evennia.utils.test_resources import EvenniaTest
 
 from features.bulletin.commands import CmdCartelera
 from features.bulletin.bulletin_script import BulletinScript
-from systems.bulletin.bulletin import MAX_ANUNCIOS, MAX_LONGITUD_TEXTO
+from systems.bulletin.bulletin import (
+    MAX_ANUNCIOS, MAX_ANUNCIOS_POR_AUTOR, MAX_LONGITUD_TEXTO, crear_anuncio,
+)
 
 
 def _make_cmd(CmdClass, caller, args=""):
@@ -86,11 +88,27 @@ class TestBulletinScriptPublicar(EvenniaTest):
         self.assertIn("largo", msg.lower())
 
     def test_tablon_lleno_bloquea_publicacion(self):
-        for i in range(MAX_ANUNCIOS):
-            self.script.publicar(self.char1, f"Anuncio {i}")
+        # Cada anuncio de un autor distinto: el límite por autor saltaría antes.
+        self.script.db.anuncios = [
+            crear_anuncio(f"Autor{i}", f"#{9000 + i}", f"Anuncio {i}", str(i))
+            for i in range(MAX_ANUNCIOS)
+        ]
         ok, msg = self.script.publicar(self.char1, "Uno de más")
         self.assertFalse(ok)
         self.assertIn("llena", msg.lower())
+
+    def test_limite_de_anuncios_por_autor(self):
+        # Regresión: un solo jugador podía ocupar los MAX_ANUNCIOS huecos
+        # durante los 3 días de vigencia, y nadie más podía retirarlos.
+        for i in range(MAX_ANUNCIOS_POR_AUTOR):
+            ok, _ = self.script.publicar(self.char1, f"Anuncio {i}")
+            self.assertTrue(ok)
+        ok, msg = self.script.publicar(self.char1, "Uno de más")
+        self.assertFalse(ok)
+        self.assertIn("vigentes", msg.lower())
+        # Otro jugador sí puede publicar
+        ok, _ = self.script.publicar(self.char2, "Mi anuncio")
+        self.assertTrue(ok)
 
 
 # --------------------------------------------------------------------------- #
@@ -122,6 +140,12 @@ class TestBulletinScriptRetirar(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("autor", msg.lower())
         self.assertEqual(len(self.script.obtener_anuncios()), 1)
+
+    def test_staff_puede_retirar_anuncio_ajeno(self):
+        self.char2.permissions.add("Builder")
+        ok, _ = self.script.retirar(self.anuncio_id, self.char2)
+        self.assertTrue(ok)
+        self.assertEqual(self.script.obtener_anuncios(), [])
 
     def test_id_inexistente_falla(self):
         ok, msg = self.script.retirar("id_que_no_existe", self.char1)

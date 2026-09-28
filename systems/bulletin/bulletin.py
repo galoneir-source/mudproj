@@ -22,6 +22,7 @@ import time
 
 MAX_ANUNCIOS = 15                  # capacidad total del tablón
 MAX_LONGITUD_TEXTO = 200           # caracteres por anuncio
+MAX_ANUNCIOS_POR_AUTOR = 3        # anuncios vigentes por jugador
 DURACION_SEGUNDOS = 3 * 24 * 3600  # 3 días de vigencia
 
 
@@ -71,13 +72,27 @@ def anuncios_vigentes(anuncios: list, ahora: float | None = None) -> list:
 #  Validaciones
 # --------------------------------------------------------------------------- #
 
-def puede_publicar(anuncios_vigentes_actuales: list, texto: str) -> tuple[bool, str]:
-    """Valida capacidad del tablón y longitud del texto."""
+def puede_publicar(
+    anuncios_vigentes_actuales: list, texto: str, autor_dbref: str | None = None,
+) -> tuple[bool, str]:
+    """
+    Valida capacidad del tablón, longitud del texto y, si se da
+    autor_dbref, el límite de anuncios vigentes por autor. Sin ese límite
+    un solo jugador llenaba los MAX_ANUNCIOS huecos globales durante los 3
+    días de vigencia, y solo él podía retirarlos.
+    """
     texto = (texto or "").strip()
     if not texto:
         return False, "El anuncio no puede estar vacío."
     if len(texto) > MAX_LONGITUD_TEXTO:
         return False, f"El anuncio es demasiado largo (máximo {MAX_LONGITUD_TEXTO} caracteres)."
+    if autor_dbref is not None:
+        propios = sum(1 for a in anuncios_vigentes_actuales if a.get("autor_dbref") == autor_dbref)
+        if propios >= MAX_ANUNCIOS_POR_AUTOR:
+            return False, (
+                f"Ya tienes {MAX_ANUNCIOS_POR_AUTOR} anuncios vigentes en la cartelera. "
+                "Retira alguno con |wcartelera retirar <#>|n antes de publicar otro."
+            )
     if len(anuncios_vigentes_actuales) >= MAX_ANUNCIOS:
         return False, (
             f"La cartelera está llena (máximo {MAX_ANUNCIOS} anuncios vigentes). "

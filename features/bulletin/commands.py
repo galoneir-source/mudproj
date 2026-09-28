@@ -22,7 +22,8 @@ class CmdCartelera(Command):
       cartelera publicar <texto>   - publicar un anuncio
       cartelera retirar <#>        - retirar tu propio anuncio
 
-    Los anuncios expiran a los 3 días. Solo el autor puede retirar el suyo.
+    Los anuncios expiran a los 3 días. Máximo 3 anuncios vigentes por
+    jugador. Solo el autor (o el staff) puede retirar un anuncio.
     """
     key = "cartelera"
     aliases = ["mural"]

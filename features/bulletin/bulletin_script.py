@@ -28,7 +28,7 @@ class BulletinScript(DefaultScript):
         )
         vigentes = anuncios_vigentes(list(self.db.anuncios or []))
 
-        ok, msg = puede_publicar(vigentes, texto)
+        ok, msg = puede_publicar(vigentes, texto, autor.dbref)
         if not ok:
             return False, msg
 
@@ -41,7 +41,8 @@ class BulletinScript(DefaultScript):
 
     def retirar(self, anuncio_id: str, solicitante) -> tuple[bool, str]:
         """
-        Retira un anuncio. Solo su autor puede hacerlo.
+        Retira un anuncio. Puede hacerlo su autor o el staff (Builder o
+        superior), para poder quitar anuncios abusivos.
         Devuelve (True, "") o (False, msg_error).
         """
         from systems.bulletin.bulletin import anuncios_vigentes
@@ -52,7 +53,8 @@ class BulletinScript(DefaultScript):
             self.db.anuncios = vigentes
             return False, "No existe ese anuncio."
 
-        if anuncio["autor_dbref"] != solicitante.dbref:
+        es_staff = solicitante.check_permstring("Builder")
+        if anuncio["autor_dbref"] != solicitante.dbref and not es_staff:
             return False, "No eres el autor de ese anuncio."
 
         self.db.anuncios = [a for a in vigentes if a["id"] != anuncio_id]

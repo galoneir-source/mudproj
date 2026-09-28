@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- Un solo jugador podía llenar la cartelera de anuncios para todos durante 3 días, y nadie más podía vaciarla (`features/bulletin/`, `systems/bulletin/bulletin.py`). La cartelera es global con `MAX_ANUNCIOS` (15) huecos y `puede_publicar()` solo comprobaba el total, no cuántos eran de cada autor: 15 `cartelera publicar` seguidos la bloqueaban durante toda la vigencia de los anuncios, y `retirar()` solo dejaba actuar al autor, ni siquiera al staff. Encontrado durante una revisión completa, al auditar `features/bulletin/`, uno de los sistemas con una sola mención en este CHANGELOG. Fix: máximo `MAX_ANUNCIOS_POR_AUTOR` (3) anuncios vigentes por jugador, y el staff (Builder o superior) puede retirar cualquier anuncio. `test_tablon_lleno_bloquea_publicacion` llena ahora la cartelera con autores distintos. 4 tests nuevos en `tests/test_bulletin.py` y `tests/test_bulletin_system.py`; los 4 fallan sin el fix.
+
 ## [0.71.61] — 2026-09-28
 
 ### Corregido
