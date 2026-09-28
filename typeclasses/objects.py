@@ -234,6 +234,27 @@ class Equipo(DefaultObject):
         self.db.bonuses = {}
         self.db.rareza = "comun"
 
+    def _equipado_por(self, char) -> bool:
+        from collections.abc import Mapping
+        eq = getattr(char.db, "equipamiento", None)
+        return isinstance(eq, Mapping) and any(v == self for v in eq.values())
+
+    # Equipar no cambia la location del ítem, así que "soltar"/"dar" (los
+    # CmdDrop/CmdGive de Evennia) lo movían sin desequiparlo: sus bonuses
+    # seguían aplicados al dueño anterior y el nuevo podía equiparlo otra
+    # vez, duplicando los stats en cada traspaso.
+    def at_pre_drop(self, dropper, **kwargs):
+        if self._equipado_por(dropper):
+            dropper.msg(f"Tienes |w{self.key}|n equipado. Usa |wdesequipar {self.key}|n antes.")
+            return False
+        return super().at_pre_drop(dropper, **kwargs)
+
+    def at_pre_give(self, giver, getter, **kwargs):
+        if self._equipado_por(giver):
+            giver.msg(f"Tienes |w{self.key}|n equipado. Usa |wdesequipar {self.key}|n antes.")
+            return False
+        return super().at_pre_give(giver, getter, **kwargs)
+
     def return_appearance(self, looker, **kwargs):
         desc = self.db.desc or "Un objeto sin descripción especial."
         slot = self.db.slot or "accesorio"

@@ -320,3 +320,50 @@ class TestCmdEquipo(EvenniaTest):
         cmd = _make_cmd(CmdEquipo, self.char)
         cmd.func()
         self.assertIn("vacío", "\n".join(self.msgs))
+
+
+# --------------------------------------------------------------------------- #
+#  soltar / dar un ítem equipado
+# --------------------------------------------------------------------------- #
+
+class TestSoltarDarEquipado(EvenniaTest):
+    """
+    Regresión: soltar/dar (CmdDrop/CmdGive de Evennia) movían un ítem
+    equipado sin desequiparlo. El dueño anterior conservaba sus bonuses y
+    el nuevo podía equiparlo otra vez, duplicando los stats.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.char2.move_to(self.char1.location, quiet=True)
+        self.char1.db.fuerza = 10
+        self.char2.db.fuerza = 10
+        self.espada = create_object(
+            "typeclasses.objects.Equipo", key="espada", location=self.char1
+        )
+        self.espada.db.slot = "arma"
+        self.espada.db.bonuses = {"fuerza": 5}
+
+    def _run(self, CmdClass, caller, args):
+        cmd = _make_cmd(CmdClass, caller, args)
+        cmd.args = " " + args
+        cmd.parse()
+        cmd.func()
+
+    def test_no_se_puede_soltar_equipado(self):
+        from commands.general_commands import CmdSoltar
+        self._run(CmdEquipar, self.char1, "espada")
+        self._run(CmdSoltar, self.char1, "espada")
+        self.assertEqual(self.espada.location, self.char1)
+
+    def test_no_se_puede_dar_equipado(self):
+        from evennia.commands.default.general import CmdGive
+        self._run(CmdEquipar, self.char1, "espada")
+        self._run(CmdGive, self.char1, "espada = Char2")
+        self.assertEqual(self.espada.location, self.char1)
+        self.assertEqual(self.char2.db.fuerza, 10)
+
+    def test_sin_equipar_se_puede_soltar(self):
+        from commands.general_commands import CmdSoltar
+        self._run(CmdSoltar, self.char1, "espada")
+        self.assertEqual(self.espada.location, self.char1.location)
