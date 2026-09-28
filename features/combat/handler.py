@@ -1096,9 +1096,14 @@ class CombatHandler(DefaultScript):
             self._siguiente_turno()
             return
 
+        # Los jefes de mundo no son capturables: capturarlos los borraba sin
+        # pasar por _procesar_muerte(), así que nadie recibía las recompensas
+        # del jefe, WorldBossScript no registraba la muerte (reaparecía sin
+        # cooldown) y el jugador se quedaba una mascota de 2000-5000 HP.
         npcs = [
             p for p in (self.db.participantes or [])
             if p != actor and not bool(getattr(p, "account", None))
+            and not getattr(p.db, "es_jefe_mundo", False)
         ]
         if not npcs:
             actor.msg("No hay ningún enemigo que puedas capturar.")

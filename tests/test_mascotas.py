@@ -435,6 +435,15 @@ class TestIntentarCaptura(EvenniaTest):
         mascota = dict(self.char1.db.mascota or {})
         self.assertEqual(mascota["nombre"], "Fang")
 
+    def test_jefe_de_mundo_no_puede_capturarse(self):
+        # Regresión: capturar un jefe de mundo lo borraba sin registrar su
+        # muerte ni repartir recompensas, y daba una mascota de miles de HP.
+        self.npc.db.es_jefe_mundo = True
+        self.handler._intentar_captura(self.char1)
+        self.assertIsNone(self.char1.db.mascota)
+        self.assertTrue(self.npc.pk)  # sigue existiendo
+        self.assertIn(self.npc, self.handler.db.participantes)
+
 
 # --------------------------------------------------------------------------- #
 #  CombatHandler — intentar captura con más de un NPC en el combate
