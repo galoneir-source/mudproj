@@ -108,11 +108,30 @@ class CmdAtacar(Command):
             caller.msg("No puedes atacarte a ti mismo.")
             return
 
+        # Solo personajes y NPCs pueden combatir. Antes cualquier objeto de
+        # la sala -incluidas las salidas- entraba como participante y, al
+        # "morir", _procesar_muerte() lo borraba sin respawn: "atacar norte"
+        # destruía la salida para todo el mundo.
+        if not objetivo.is_typeclass(
+            "evennia.objects.objects.DefaultCharacter", exact=False
+        ):
+            caller.msg(f"No puedes atacar a |w{objetivo.key}|n.")
+            return
+
         handler = _get_combat_handler(caller.location)
         if handler:
             handler.registrar_accion(caller, "atacar", objetivo=objetivo)
         else:
-            # Iniciar combate
+            # Sin combate en esta sala, en_combate=True significa que el
+            # atacante o el objetivo siguen en un combate de otra sala (nada
+            # impide salir andando de él): crear otro aquí los dejaría en dos
+            # CombatHandler a la vez. Mismo criterio que retar y cazar.
+            if getattr(caller.db, "en_combate", False):
+                caller.msg("No puedes iniciar otro combate mientras sigues en uno.")
+                return
+            if getattr(objetivo.db, "en_combate", False):
+                caller.msg(f"|w{objetivo.key}|n ya está en combate.")
+                return
             _iniciar_combate(caller, objetivo)
 
 
