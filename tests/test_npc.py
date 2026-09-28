@@ -50,3 +50,42 @@ class TestNPCAtMsgReceive(EvenniaTest):
         # from_obj=None (p. ej. mensajes de sistema) no debe intentar
         # acceder a from_obj.has_account ni lanzar excepción.
         self.npc.at_msg_receive(text="algo", from_obj=None)
+
+
+class TestNPCAgredirJugadorEnOtroCombate(EvenniaTest):
+    """
+    Regresión: NPC._agredir() no comprobaba si el jugador seguía en un
+    combate de otra sala. Salir andando de un combate (nada lo impide) y
+    entrar en la sala de un NPC agresivo creaba un segundo CombatHandler
+    con el mismo jugador, dejándolo en dos combates a la vez.
+    """
+
+    def _handlers(self, sala):
+        return [s for s in sala.scripts.all() if s.key == "combat_handler"]
+
+    def tearDown(self):
+        for sala in (self.room1, self.room2):
+            for h in self._handlers(sala):
+                h.delete()
+        super().tearDown()
+
+    def test_no_agrede_a_quien_sigue_en_combate_en_otra_sala(self):
+        from features.combat.commands import _iniciar_combate
+        lobo = create.create_object(NPC, key="lobo", location=self.room2)
+        self.char1.move_to(self.room2, quiet=True)
+        _iniciar_combate(self.char1, lobo)
+        self.assertTrue(self.char1.db.en_combate)
+
+        self.char1.move_to(self.room1, quiet=True)
+        agresor = create.create_object(NPC, key="orco", location=self.room1)
+        agresor._agredir(self.char1)
+        self.assertEqual(self._handlers(self.room1), [])
+
+    def test_agrede_con_normalidad_a_quien_no_esta_en_combate(self):
+        self.char1.move_to(self.room1, quiet=True)
+        self.char1.db.en_combate = False
+        agresor = create.create_object(NPC, key="orco", location=self.room1)
+        agresor._agredir(self.char1)
+        handlers = self._handlers(self.room1)
+        self.assertEqual(len(handlers), 1)
+        self.assertIn(self.char1, handlers[0].db.participantes)

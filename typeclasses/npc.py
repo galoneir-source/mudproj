@@ -180,6 +180,14 @@ class NPC(DefaultCharacter):
             _get_combat_handler, _iniciar_combate, _añadir_partido_a_lista,
         )
         handler = _get_combat_handler(self.location)
+        # Un jugador que sigue en_combate sin ser participante del combate
+        # de esta sala viene de otro combate del que ha salido andando:
+        # agredirlo aquí lo dejaría en dos CombatHandler a la vez (mismo
+        # criterio que atacar, retar y cazar).
+        if getattr(objetivo.db, "en_combate", False) and not (
+            handler and objetivo in (handler.db.participantes or [])
+        ):
+            return
         if handler:
             if not handler.agregar_participante(self):
                 # Combate en curso es un duelo PvP privado: no se le puede
