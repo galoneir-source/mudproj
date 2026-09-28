@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- **Equipar y desequipar un ítem con `hp_max` curaba sin límite, también en combate** (`_aplicar_bonuses()`, `features/equipment/commands.py`). Equipar sumaba el bonus de `hp_max` también a `hp`, pero desequipar solo recortaba `hp` al nuevo máximo, sin restar lo sumado. Cada ciclo `equipar`/`desequipar` curaba el valor del bonus: 40 HP por ciclo con la armadura de `hp_max` +40, sin coste de turno y sin nada que lo impidiera en mitad de un combate. En la misma función, el grimorio del nigromante (`hp_max` -10, objeto único en las Catacumbas) restaba 10 a `hp` al equiparlo y podía dejar a un personaje con `hp` <= 0 fuera de combate. El test existente solo comprobaba cada dirección por separado, nunca el ciclo. Encontrado durante una revisión completa, al auditar `features/equipment/`. Fix: simétrico. Un bonus positivo suma a `hp` al equipar y lo resta al desequipar (sin bajar de 1); uno negativo solo recorta `hp` al nuevo máximo y no devuelve nada al quitarlo. Así ningún ciclo puede dar HP. El `+5 hp_max` de encantar una armadura equipada también se resta ahora al desequiparla. 5 tests nuevos en `tests/test_equipment.py`; 4 de ellos fallan sin el fix.
+
 ## [0.71.60] — 2026-09-28
 
 ### Corregido

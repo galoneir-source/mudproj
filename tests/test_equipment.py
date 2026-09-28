@@ -100,6 +100,44 @@ class TestAplicarBonuses(EvenniaTest):
         self.assertEqual(self.char.db.hp_max, 50)
         self.assertEqual(self.char.db.hp, 50)
 
+    def test_ciclo_equipar_desequipar_no_cura(self):
+        # Regresión: equipar sumaba hp_max también a hp, pero desequipar
+        # solo recortaba hp al nuevo máximo; cada ciclo curaba gratis
+        # (hasta 40 HP con la armadura de hp_max +40, también en combate).
+        self.char.db.hp = 10
+        for _ in range(5):
+            _aplicar_bonuses(self.char, {"hp_max": 40}, signo=1)
+            _aplicar_bonuses(self.char, {"hp_max": 40}, signo=-1)
+        self.assertEqual(self.char.db.hp_max, 50)
+        self.assertEqual(self.char.db.hp, 10)
+
+    def test_desequipar_no_mata(self):
+        # Daño recibido con el ítem puesto: al quitarlo, hp no baja de 1.
+        _aplicar_bonuses(self.char, {"hp_max": 40}, signo=1)
+        self.char.db.hp = 20
+        _aplicar_bonuses(self.char, {"hp_max": 40}, signo=-1)
+        self.assertEqual(self.char.db.hp, 1)
+
+    def test_hp_max_negativo_no_deja_hp_negativo(self):
+        # Regresión: el grimorio del nigromante (hp_max -10) restaba 10 a
+        # hp al equiparlo, dejando hp <= 0 fuera de combate.
+        self.char.db.hp = 8
+        _aplicar_bonuses(self.char, {"hp_max": -10}, signo=1)
+        self.assertEqual(self.char.db.hp_max, 40)
+        self.assertEqual(self.char.db.hp, 8)
+
+    def test_hp_max_negativo_recorta_al_nuevo_maximo(self):
+        _aplicar_bonuses(self.char, {"hp_max": -10}, signo=1)
+        self.assertEqual(self.char.db.hp, 40)
+
+    def test_ciclo_hp_max_negativo_no_cura(self):
+        self.char.db.hp = 20
+        for _ in range(5):
+            _aplicar_bonuses(self.char, {"hp_max": -10}, signo=1)
+            _aplicar_bonuses(self.char, {"hp_max": -10}, signo=-1)
+        self.assertEqual(self.char.db.hp_max, 50)
+        self.assertEqual(self.char.db.hp, 20)
+
     def test_stat_inexistente_no_falla(self):
         _aplicar_bonuses(self.char, {"mana": 10}, signo=1)
         # stat sin inicializar (None) se ignora silenciosamente

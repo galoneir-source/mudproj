@@ -39,9 +39,17 @@ def _aplicar_bonuses(char, bonuses: dict, signo: int = 1):
             nuevo = actual + signo * valor
             setattr(char.db, stat, nuevo)
             if stat == "hp_max":
+                # Simétrico: lo que equipar suma a hp, desequipar lo resta.
+                # Antes desequipar solo recortaba hp al nuevo máximo, así que
+                # cada ciclo equipar/desequipar curaba valor HP gratis (sin
+                # coste de turno, también en combate). Un hp_max negativo
+                # solo recorta hp -- restarlo lo dejaba <= 0 fuera de
+                # combate, y devolverlo al desequipar reabriría el bucle.
                 hp = getattr(char.db, "hp", 0) or 0
-                if signo == 1:
+                if signo == 1 and valor > 0:
                     char.db.hp = hp + valor
+                elif signo == -1 and valor > 0:
+                    char.db.hp = max(1, min(hp - valor, nuevo))
                 else:
                     char.db.hp = min(hp, nuevo)
 
