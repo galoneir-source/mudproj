@@ -214,6 +214,21 @@ class GestorViviendasScript(DefaultScript):
 
         invitados.remove(objetivo.dbref)
         sala.db.invitados = invitados
+
+        # Quitar el acceso a quien ya está dentro no lo sacaba: se quedaba en
+        # la vivienda y podía seguir llevándose lo que el dueño guarda en
+        # ella. Se le lleva al Barrio Residencial, saliendo antes limpiamente
+        # de un combate en curso en la sala (mismo patrón que 'salir' en
+        # mazmorras) para no dejar el handler huérfano.
+        if objetivo.location == sala:
+            for script in sala.scripts.all():
+                if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                    script._limpiar_estado_combate(objetivo)
+                    script.eliminar_participante(objetivo)
+            destino = _buscar_barrio() or objetivo.home
+            if destino:
+                objetivo.move_to(destino, quiet=True, move_type="teleport")
+                objetivo.msg("Has sido acompañado fuera de la vivienda.")
         return True, f"|w{objetivo.key}|n ya no tiene acceso a tu vivienda."
 
     # ------------------------------------------------------------------ #

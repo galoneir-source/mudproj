@@ -159,6 +159,16 @@ class TestAccesoYVisitas(ViviendaTestBase):
         gestor = obtener_gestor_script()
         self.assertNotEqual(self.char2.location, gestor.obtener_sala(self.char1))
 
+    def test_quitar_acceso_saca_al_invitado_que_esta_dentro(self):
+        # Regresión: quitar el acceso no sacaba a quien ya estaba dentro, que
+        # podía seguir llevándose lo que el dueño guarda en la vivienda.
+        _make_cmd(CmdVivienda, self.char1, f"acceso dar {self.char2.key}").func()
+        _make_cmd(CmdVisitar, self.char2, self.char1.key).func()
+        gestor = obtener_gestor_script()
+        self.assertEqual(self.char2.location, gestor.obtener_sala(self.char1))
+        _make_cmd(CmdVivienda, self.char1, f"acceso quitar {self.char2.key}").func()
+        self.assertEqual(self.char2.location, self.barrio)
+
     def test_visitar_bloqueado_en_combate(self):
         _make_cmd(CmdVivienda, self.char1, f"acceso dar {self.char2.key}").func()
         self.char2.db.en_combate = True
