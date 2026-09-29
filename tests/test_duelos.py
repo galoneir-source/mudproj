@@ -494,10 +494,14 @@ class TestFinDuelo(EvenniaTest):
 
 class TestApuestaTrasHuidaDeDuelo(EvenniaTest):
     """
-    _terminar_combate() solo limpia apuesta_duelo de quien queda en
-    self.db.participantes — quien huyó ya no está en esa lista y antes se
-    quedaba con la apuesta activa, que se cobraba de verdad en su próximo
-    duelo sin apuesta explícita (caza de recompensa, torneo de arena).
+    Huir de un duelo cuenta como rendirse (igual que 'rendirse'): gana el
+    rival y se paga la apuesta. Antes solo se sacaba al que huía y el duelo
+    se cerraba sin ganador, así que quien iba perdiendo podía intentar huir
+    cada turno (50%) para no pagar nunca.
+
+    Además, la apuesta no debe quedar "fantasma" en quien huyó: antes se
+    cobraba de verdad en su próximo duelo sin apuesta explícita (caza de
+    recompensa, torneo de arena).
     """
 
     def setUp(self):
@@ -515,29 +519,52 @@ class TestApuestaTrasHuidaDeDuelo(EvenniaTest):
         self.char1.db.apuesta_duelo = 40
         self.char2.db.apuesta_duelo = 40
 
-    def test_huir_de_duelo_limpia_la_apuesta_del_que_huye(self):
+    def _huir(self, exito=True):
         from unittest.mock import patch
-        with patch("random.random", return_value=0.1), \
-             patch("random.choice", side_effect=lambda seq: seq[0]):
+        with patch("random.random", return_value=0.1 if exito else 0.9), \
+             patch("random.choice", side_effect=lambda seq: seq[0]), \
+             patch("evennia.utils.delay"):
             self.handler._intentar_huida(self.char1)
+
+    def test_huir_de_duelo_paga_la_apuesta_al_rival(self):
+        self._huir()
+        self.assertEqual(self.char1.db.monedas, 60)
+        self.assertEqual(self.char2.db.monedas, 140)
+
+    def test_huir_de_duelo_cuenta_como_derrota(self):
+        self._huir()
+        self.assertEqual(self.char1.db.duelos_perdidos, 1)
+        self.assertEqual(self.char2.db.duelos_ganados, 1)
+        self.assertFalse(self.char1.db.en_combate)
+        self.assertFalse(self.char2.db.en_combate)
+        # Huye de verdad: sale de la sala por la salida
+        self.assertEqual(self.char1.location, self.room2)
+
+    def test_huida_fallida_no_paga(self):
+        self._huir(exito=False)
+        self.assertEqual(self.char1.db.monedas, 100)
+        self.assertEqual(self.char2.db.monedas, 100)
+        self.assertTrue(self.char1.db.en_combate)
+
+    def test_huir_de_duelo_limpia_la_apuesta_del_que_huye(self):
+        self._huir()
         self.assertEqual(self.char1.db.apuesta_duelo, 0)
 
     def test_apuesta_fantasma_no_se_cobra_en_caza_de_recompensa_posterior(self):
-        from unittest.mock import patch
-        with patch("random.random", return_value=0.1), \
-             patch("random.choice", side_effect=lambda seq: seq[0]):
-            self.handler._intentar_huida(self.char1)
+        self._huir()
+        monedas_1, monedas_2 = self.char1.db.monedas, self.char2.db.monedas
 
         # Simula una caza de recompensa posterior: nueva duelo sin apuesta
         # explícita (como hace CmdCazar, que nunca toca apuesta_duelo).
+        self.char1.move_to(self.room1, quiet=True)
         from features.combat.handler import CombatHandler
         handler2 = self.room1.scripts.add(CombatHandler)
         handler2.db.modo_duelo = True
         handler2.iniciar([self.char1, self.char2])
         handler2._fin_duelo(ganador=self.char1, perdedor=self.char2)
 
-        self.assertEqual(self.char1.db.monedas, 100)
-        self.assertEqual(self.char2.db.monedas, 100)
+        self.assertEqual(self.char1.db.monedas, monedas_1)
+        self.assertEqual(self.char2.db.monedas, monedas_2)
 
 
 # ---------------------------------------------------------------------------

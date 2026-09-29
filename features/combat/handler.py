@@ -438,6 +438,7 @@ class CombatHandler(DefaultScript):
                     f"  |watacar <objetivo>|n  — ataque básico\n"
                     f"  |whabilidad <nombre> <objetivo>|n  — habilidad especial\n"
                     f"  |wrendirse|n  — conceder la victoria\n"
+                    f"  |whuir|n  — escapar (50%); cuenta como rendirse\n"
                     f"  |wpasar|n  — pasar turno\n"
                     f"  Rival: {nombres_enemigos}"
                 )
@@ -1044,10 +1045,25 @@ class CombatHandler(DefaultScript):
                 actor.msg("|yIntentas huir pero no hay salida por donde escapar.|n")
                 self._siguiente_turno()
                 return
+            destino = random.choice(salidas).destination
+            # En un duelo, huir cuenta como rendirse: gana el rival y se
+            # paga la apuesta (y avisa al torneo/caza de recompensa), igual
+            # que 'rendirse'. Antes solo se sacaba al que huía y el duelo se
+            # cerraba sin ganador, así que quien iba perdiendo podía intentar
+            # huir cada turno (50%) para no pagar nunca la apuesta.
+            if getattr(self.db, "modo_duelo", False):
+                rivales = [p for p in (self.db.participantes or []) if p != actor]
+                if rivales:
+                    sala.msg_contents(
+                        f"{actor.key} |yhuye del duelo y se rinde ante|n {rivales[0].key}."
+                    )
+                    self._fin_duelo(ganador=rivales[0], perdedor=actor)
+                    actor.move_to(destino, quiet=False)
+                    actor.msg("|yHas huido del duelo: cuenta como rendición.|n")
+                    return
             sala.msg_contents(f"{actor.key} |yhuyó del combate!|n")
             self._limpiar_estado_combate(actor)
             self.eliminar_participante(actor)
-            destino = random.choice(salidas).destination
             actor.move_to(destino, quiet=False)
             actor.msg("|yHas escapado del combate.|n")
             self._avanzar_turno_tras_baja(actor, actor)

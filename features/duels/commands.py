@@ -314,7 +314,8 @@ class CmdRendirse(Command):
     Uso:
       rendirse
 
-    Transfiere la apuesta al ganador si la había.
+    Transfiere la apuesta al ganador si la había. Huir de un duelo con
+    éxito (|whuir|n) cuenta también como rendirse.
     Solo funciona en duelos (no en combates normales contra NPCs).
     Para abandonar un combate normal usa |whuir|n.
     """
