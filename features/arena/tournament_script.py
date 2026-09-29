@@ -339,7 +339,9 @@ class TorneoScript(DefaultScript):
         nombres = dict(self.db.nombres or {})
         pot = int(self.db.pot or 0)
 
-        champ_obj = _resolver_jugador(champ_ref) if champ_ref else None
+        # _buscar_personaje y no _resolver_jugador: el premio se paga aunque
+        # el campeón se haya desconectado (antes el bote desaparecía).
+        champ_obj = _buscar_personaje(champ_ref) if champ_ref else None
 
         if champ_obj:
             champ_obj.db.monedas = (getattr(champ_obj.db, "monedas", 0) or 0) + pot
@@ -373,7 +375,11 @@ class TorneoScript(DefaultScript):
         inscritos = list(self.db.inscritos or [])
         from systems.arena.arena import INSCRIPCION_FEE
         for dbref in inscritos:
-            obj = _resolver_jugador(dbref)
+            # _buscar_personaje y no _resolver_jugador: la cuota se devuelve
+            # también a quien se haya desconectado mientras esperaba (antes
+            # la perdía, justo en las cancelaciones por inactividad o al
+            # reiniciar el servidor).
+            obj = _buscar_personaje(dbref)
             if obj:
                 obj.db.monedas = (getattr(obj.db, "monedas", 0) or 0) + INSCRIPCION_FEE
 
@@ -420,6 +426,22 @@ def _resolver_jugador(dbref: str):
     except Exception:
         pass
     return None
+
+
+def _buscar_personaje(dbref: str):
+    """
+    Devuelve el personaje del dbref esté o no conectado, o None si ya no
+    existe. Para pagos y devoluciones; _resolver_jugador() (exige sesión
+    activa) es para decidir quién puede pelear.
+    """
+    if not dbref:
+        return None
+    try:
+        import evennia
+        results = evennia.search_object(dbref)
+        return results[0] if results else None
+    except Exception:
+        return None
 
 
 def _anunciar_global(mensaje: str):

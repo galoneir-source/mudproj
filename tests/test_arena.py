@@ -376,3 +376,61 @@ class TestFlujoDeTorneo(EvenniaTest):
 
         bracket = dict(torneo.db.bracket or {})
         self.assertEqual(get_campeon(bracket), disponible.dbref)
+
+
+class TestDineroDelTorneoConJugadoresDesconectados(EvenniaTest):
+    """
+    Regresión: _cancelar() y _declarar_campeon() buscaban al jugador con
+    _resolver_jugador(), que exige una sesión conectada (has_account).
+    Quien se había desconectado perdía su cuota al cancelarse el torneo
+    (por inactividad o al reiniciar el servidor), y si el campeón estaba
+    desconectado al terminar, el bote desaparecía sin llegar a nadie.
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        self.arena_sala = create.create_object(Room, key="Arena de la Ciudad")
+
+    def tearDown(self):
+        torneo = obtener_torneo_activo()
+        if torneo:
+            try:
+                torneo.delete()
+            except Exception:
+                pass
+        super().tearDown()
+
+    def _desconectado(self, key, monedas=1000):
+        # Character normal, sin sesión: has_account == 0
+        j = create.create_object(Character, key=key)
+        j.db.monedas = monedas
+        j.msg = lambda text=None, **kw: None
+        return j
+
+    def test_cancelar_devuelve_la_cuota_a_un_inscrito_desconectado(self):
+        from systems.arena.arena import INSCRIPCION_FEE
+        torneo = create_script(TorneoScript, persistent=False, autostart=True)
+        j = self._desconectado("Ausente")
+        ok, _ = torneo.inscribir(j)
+        self.assertTrue(ok)
+        self.assertEqual(j.db.monedas, 1000 - INSCRIPCION_FEE)
+        torneo._cancelar("Tiempo de inscripción agotado.")
+        self.assertEqual(j.db.monedas, 1000)
+
+    def test_campeon_desconectado_recibe_el_bote(self):
+        torneo = create_script(TorneoScript, persistent=False, autostart=True)
+        jugadores = {}
+        for i in range(2):
+            j = self._desconectado(f"D{i}")
+            torneo.inscribir(j)
+            jugadores[j.dbref] = j
+        ok, msg = torneo.iniciar()
+        self.assertTrue(ok, msg)
+        pot = torneo.db.pot
+        p1_ref, p2_ref = siguiente_combate(dict(torneo.db.bracket))
+        torneo.registrar_resultado(jugadores[p1_ref], jugadores[p2_ref])
+        torneo._declarar_campeon(dict(torneo.db.bracket))
+        campeon_obj = jugadores[p1_ref]
+        self.assertEqual(campeon_obj.db.monedas, 1000 - pot // 2 + pot)
+        self.assertEqual(campeon_obj.db.torneos_ganados, 1)

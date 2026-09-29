@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- **Torneo de la arena: quien estaba desconectado perdía su cuota al cancelarse, y un campeón desconectado no cobraba el bote** (`TorneoScript._cancelar()` y `_declarar_campeon()`, `features/arena/tournament_script.py`). Ambos buscaban al jugador con `_resolver_jugador()`, que exige una sesión conectada (`has_account`) porque sirve para decidir quién puede pelear. Al cancelarse el torneo (por inactividad o en la limpieza al arrancar el servidor) solo se devolvían las 100 monedas de cuota a los inscritos conectados; a los demás se les perdían. Y si el campeón no estaba conectado al terminar, el bote entero desaparecía. Es el mismo patrón `has_account` que borraba personajes en `_procesar_muerte()` (v0.71.63). Encontrado durante una revisión completa, al auditar `features/arena/`. Fix: helper `_buscar_personaje()`, que devuelve el personaje esté o no conectado, para pagos y devoluciones; `_resolver_jugador()` sigue decidiendo las incomparecencias. 2 tests nuevos en `tests/test_arena.py`; los 2 fallan sin el fix.
+
 ## [0.71.64] — 2026-09-30
 
 ### Cambiado
