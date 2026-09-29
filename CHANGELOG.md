@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.64] — 2026-09-30
+
 ### Cambiado
 - **Huir de un duelo cuenta como rendirse y paga la apuesta** (`CombatHandler._intentar_huida()`, `features/combat/handler.py`). Antes, una huida con éxito en modo duelo solo sacaba al que huía y el duelo se cerraba sin ganador: no se pagaba la apuesta, no contaba como derrota y el torneo o la caza de recompensa no recibían resultado. Como huir sale bien el 50% de las veces, quien iba perdiendo un duelo con apuesta podía intentarlo cada turno hasta librarse de pagar. Encontrado durante la revisión completa de los sistemas grandes, al auditar las apuestas pendientes de resolución. Ahora una huida con éxito en un duelo hace lo mismo que `rendirse` (`_fin_duelo()` con el rival como ganador: apuesta, estadísticas de duelo, torneo y caza de recompensa) y después el personaje sale por la salida. Una huida fallida sigue igual. La ayuda de `rendirse` y las acciones de turno de duelo lo mencionan. `TestApuestaTrasHuidaDeDuelo` (`tests/test_duelos.py`) se adapta: `test_apuesta_fantasma_...` comprueba ahora que la apuesta pagada al huir no se cobra otra vez en el duelo siguiente. 3 tests nuevos; 2 de ellos fallan sin el cambio.
 
