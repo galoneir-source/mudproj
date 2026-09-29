@@ -827,6 +827,14 @@ class CombatHandler(DefaultScript):
         # reindexa turno_actual con un clamp que solo es correcto si `muerto`
         # estaba después de este participante en la lista (ver _avanzar_turno_tras_baja).
         actor_referencia = self._participante_actual()
+        # NPC o jugador se decide por typeclass, no por has_account: en
+        # Evennia has_account solo es True con una sesión conectada, así que
+        # un jugador desconectado a mitad de combate (sigue siendo
+        # participante y le siguen aplicando veneno/sangrado en su turno)
+        # caía en la rama de NPC: soltaba todo su inventario y acababa en
+        # muerto.delete(), borrando el personaje para siempre.
+        from typeclasses.npc import NPC
+        es_npc = isinstance(muerto, NPC)
         # Fallback: si un tick de estado (veneno/sangrado) mata a alguien
         # durante un duelo, _aplicar_ticks_estado() llama aquí sin `asesino`
         # (el daño no viene de un golpe con atacante). Sin resolver el rival
@@ -835,7 +843,7 @@ class CombatHandler(DefaultScript):
         # "jugador normal" (te manda a home con 1 HP) sin pasar por
         # _fin_duelo, perdiendo la apuesta, las stats de duelo, y sin avisar
         # al torneo/recompensa que dependían de ese resultado.
-        if getattr(self.db, "modo_duelo", False) and getattr(muerto, "has_account", False):
+        if getattr(self.db, "modo_duelo", False) and not es_npc:
             if not asesino:
                 rivales = [p for p in (self.db.participantes or []) if p != muerto]
                 asesino = rivales[0] if rivales else None
@@ -868,9 +876,14 @@ class CombatHandler(DefaultScript):
                 pass
             self._dar_xp_a_grupo(asesino, xp_base)
 
-        # Loot: objetos ya en el inventario del NPC
-        for obj in list(getattr(muerto, "contents", []) or []):
-            obj.move_to(sala, quiet=True)
+        # Loot: objetos ya en el inventario del NPC. Solo NPCs: antes también
+        # vaciaba el inventario de un jugador muerto en la sala, incluidos
+        # los ítems equipados (que siguen en contents), sin desequiparlos:
+        # sus bonuses se quedaban en el muerto y quien los recogía podía
+        # equiparlos otra vez, duplicando los stats.
+        if es_npc:
+            for obj in list(getattr(muerto, "contents", []) or []):
+                obj.move_to(sala, quiet=True)
 
         # Kill tracking, boss tracking, progreso de quests y comprobación de
         # logros — para TODO el grupo participante en el combate, no solo
@@ -963,7 +976,7 @@ class CombatHandler(DefaultScript):
                 )
 
         # Si es NPC → programar respawn y eliminarlo del mundo
-        if not muerto.has_account:
+        if es_npc:
             muerto.db.hp = 0
             self._limpiar_estado_combate(muerto)
 

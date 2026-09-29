@@ -1140,3 +1140,62 @@ class TestEventniaCompat(EvenniaTest):
         self.assertTrue(hasattr(entrada, "get"))
         self.assertEqual(entrada.get("key"), "moneda")
         self.assertEqual(entrada.get("chance"), 1.0)
+
+
+class TestMuerteDeJugadorNoEsComoNPC(EvenniaTest):
+    """
+    Regresión: _procesar_muerte() distinguía NPC de jugador con has_account,
+    que en Evennia solo es True con una sesión conectada.
+      - El bloque de loot vaciaba el inventario de CUALQUIER muerto en la
+        sala, también el de un jugador, incluidos sus ítems equipados (sin
+        desequipar: bonuses duplicados para quien los recogiera).
+      - Un jugador desconectado a mitad de combate (sigue siendo
+        participante; el veneno le sigue haciendo tick en su turno) caía en
+        la rama de NPC y acababa en muerto.delete(): personaje borrado.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Claro")
+        self.npc = create_object("typeclasses.npc.NPC", key="Araña", location=self.sala)
+        _set_stats(self.npc, hp=30, hp_max=30, nivel=1)
+
+    def _combate(self, jugador):
+        jugador.move_to(self.sala, quiet=True)
+        _set_stats(jugador, hp=10, hp_max=100, nivel=1)
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar([jugador, self.npc])
+        return handler
+
+    def test_jugador_muerto_no_suelta_inventario_ni_equipo(self):
+        espada = create_object("typeclasses.objects.Equipo", key="espada", location=self.char1)
+        espada.db.slot = "arma"
+        espada.db.bonuses = {"fuerza": 5}
+        self.char1.db.equipamiento = {"arma": espada, "armadura": None, "accesorio": None}
+        pocion = create_object("typeclasses.objects.Object", key="poción", location=self.char1)
+        handler = self._combate(self.char1)
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.char1, asesino=self.npc)
+        self.assertEqual(espada.location, self.char1)
+        self.assertEqual(pocion.location, self.char1)
+
+    def test_jugador_sin_sesion_no_se_borra(self):
+        # char2 tiene cuenta pero ninguna sesión conectada (has_account == 0)
+        self.assertFalse(self.char2.has_account)
+        handler = self._combate(self.char2)
+        pk = self.char2.pk
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.char2)  # p. ej. tick de veneno
+        from evennia.objects.models import ObjectDB
+        self.assertTrue(ObjectDB.objects.filter(pk=pk).exists())
+        self.assertEqual(self.char2.db.hp, 1)
+
+    def test_npc_muerto_sigue_soltando_su_inventario_y_borrandose(self):
+        garra = create_object("typeclasses.objects.Object", key="garra", location=self.npc)
+        handler = self._combate(self.char1)
+        pk = self.npc.pk
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.npc, asesino=self.char1)
+        from evennia.objects.models import ObjectDB
+        self.assertEqual(garra.location, self.sala)
+        self.assertFalse(ObjectDB.objects.filter(pk=pk).exists())
