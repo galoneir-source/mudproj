@@ -64,6 +64,26 @@ class TestRelojMundial(EvenniaTest):
         self.reloj.at_repeat()
         self.assertEqual(self.reloj.db.hora, 0)
 
+    def test_de_medianoche_pasa_a_la_una(self):
+        # Regresión: "int(hora or 8)" leía la medianoche (0, falsa) como 8,
+        # así que el reloj saltaba de 0 a 9: el amanecer (5-7) no llegaba
+        # nunca y la noche duraba la mitad.
+        self.reloj.db.hora = 0
+        self.reloj.at_repeat()
+        self.assertEqual(self.reloj.db.hora, 1)
+
+    def test_un_dia_completo_pasa_por_todas_las_horas(self):
+        self.reloj.db.hora = 8
+        vistas = set()
+        for _ in range(24):
+            self.reloj.at_repeat()
+            vistas.add(self.reloj.db.hora)
+        self.assertEqual(vistas, set(range(24)))
+
+    def test_hora_actual_a_medianoche_es_cero(self):
+        self.reloj.db.hora = 0
+        self.assertEqual(hora_actual(), 0)
+
     def test_hora_actual_devuelve_hora_del_reloj(self):
         self.reloj.db.hora = 15
         self.assertEqual(hora_actual(), 15)

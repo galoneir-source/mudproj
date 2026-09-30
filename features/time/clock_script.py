@@ -28,7 +28,10 @@ class RelojMundial(DefaultScript):
         self.db.hora = 8        # comienza a las 8:00
 
     def at_repeat(self):
-        hora_anterior = int(self.db.hora or 8)
+        # "is None" y no "or 8": la medianoche (0) es falsa en Python, y con
+        # "or 8" el reloj saltaba de 0 a 9 -- el amanecer (5-7) no llegaba
+        # nunca y la noche duraba la mitad.
+        hora_anterior = int(self.db.hora if self.db.hora is not None else 8)
         hora_nueva = (hora_anterior + 1) % 24
         self.db.hora = hora_nueva
 
@@ -65,7 +68,8 @@ def hora_actual() -> int:
         from evennia.scripts.models import ScriptDB
         script = ScriptDB.objects.filter(db_key="reloj_mundial").first()
         if script:
-            return int(script.db.hora or 8)
+            hora = script.db.hora
+            return int(hora if hora is not None else 8)  # 0 es medianoche
     except Exception:
         pass
     return 8
