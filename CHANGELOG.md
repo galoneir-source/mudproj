@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.67] — 2026-09-30
+
 ### Corregido
 - **El reloj del mundo saltaba de medianoche a las 9:00: el amanecer no llegaba nunca y la noche duraba la mitad** (`RelojMundial.at_repeat()` y `hora_actual()`, `features/time/clock_script.py`). La hora se leía con `int(self.db.hora or 8)`, y la medianoche (`0`) es falsa en Python: a las 0:00 el siguiente tick la leía como 8 y pasaba a las 9:00. Las horas 1:00–8:00 no ocurrían nunca, así que el periodo de amanecer (5–7) y su anuncio no llegaban, la noche quedaba en 4 ticks en vez de 8 (con su penalización de percepción frente a NPCs con sigilo y sus textos de ambiente) y `hora_actual()` devolvía 8 a medianoche. El test existente comprobaba el paso de 23 a 0, pero no el tick siguiente. Encontrado durante una revisión completa, al auditar `features/time/`. Fix: solo `None` cuenta como hora sin inicializar. 3 tests nuevos en `tests/test_time.py`; los 3 fallan sin el fix.
 
