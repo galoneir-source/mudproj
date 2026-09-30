@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- **Jefe de mundo: quien se desconectaba antes del golpe final perdía toda su parte de la recompensa** (`distribuir_recompensas_jefe_mundo()`, `features/world_bosses/world_boss_script.py`). Los participantes se filtraban con `has_account`, que solo es True con una sesión conectada: quien había dañado al jefe (incluso el que más) y se desconectaba antes de que muriera no recibía XP, monedas ni el loot único del primero en daño. Su parte tampoco se redistribuía, porque el daño total sí incluía el suyo. Cuarto caso del patrón `has_account` tras `_procesar_muerte()` (v0.71.63) y el torneo de la arena (v0.71.65). Encontrado en un barrido de todos los usos de `has_account` del proyecto durante una revisión completa. Fix: se filtra por typeclass de personaje de jugador (el tracker de daño solo registra golpes de jugadores). 1 test nuevo en `tests/test_jefes_mundo.py`; falla sin el fix.
+
 ## [0.71.65] — 2026-09-30
 
 ### Corregido

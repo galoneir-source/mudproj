@@ -102,6 +102,27 @@ class TestDistribuirRecompensas(EvenniaTest):
         )
         self.assertLessEqual(self.char1.db.monedas + self.char2.db.monedas, datos["monedas_total"])
 
+    def test_participante_desconectado_cobra_su_parte(self):
+        """
+        Regresión: solo cobraban quienes seguían conectados (has_account)
+        cuando moría el jefe. Quien más daño había hecho y se desconectaba
+        antes del golpe final perdía toda su parte, que tampoco se
+        redistribuía (el total de daño sí incluía el suyo).
+        """
+        desconectado = create.create_object(Character, key="Ausente")
+        desconectado.msg = lambda text=None, **kw: None
+        desconectado.db.experiencia = 0
+        desconectado.db.monedas = 0
+        desconectado.db.nivel = 10
+        self.assertFalse(desconectado.has_account)
+        tracker = {desconectado.dbref: 500, self.char2.dbref: 500}
+
+        distribuir_recompensas_jefe_mundo(None, tracker, self.sala, "TITAN_PANTANO")
+
+        self.assertGreater(desconectado.db.experiencia, 0)
+        self.assertGreater(desconectado.db.monedas, 0)
+        self.assertEqual(desconectado.db.experiencia, self.char2.db.experiencia)
+
     def test_muchos_participantes_no_inflan_el_pool_total(self):
         """
         Regresión: calcular_recompensas_participante() garantiza un mínimo

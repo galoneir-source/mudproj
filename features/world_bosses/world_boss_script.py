@@ -188,11 +188,15 @@ def distribuir_recompensas_jefe_mundo(npc, tracker: dict, sala, boss_id: str | N
     datos = JEFES_MUNDO[boss_id]
     dano_total = sum(tracker.values()) or 1
 
-    # Identificar participantes (por dbref)
+    # Identificar participantes (por dbref). Por typeclass de personaje de
+    # jugador, no por has_account: este solo es True con una sesión
+    # conectada, y quien había hecho daño y se desconectaba antes del golpe
+    # final perdía toda su parte (que tampoco se redistribuía: dano_total
+    # sí incluye su daño). El tracker solo registra golpes de jugadores.
     participantes = []
     for dbref, dano in tracker.items():
         chars = search_object(dbref)
-        if chars and getattr(chars[0], "has_account", False):
+        if chars and chars[0].is_typeclass("typeclasses.characters.Character", exact=False):
             participantes.append((chars[0], dano))
 
     if not participantes:
