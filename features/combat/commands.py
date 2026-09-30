@@ -49,7 +49,11 @@ def _añadir_partido_a_lista(personaje, sala, participantes: list):
 def _iniciar_combate(atacante, defensor):
     """Crea un CombatHandler en la sala e inicia el combate."""
     from features.combat.handler import CombatHandler
+    from typeclasses.npc import NPC
     sala = atacante.location
+    # Jugador contra jugador: el combate no debe cerrarse solo al quedarse
+    # sin NPCs (ver CombatHandler.eliminar_participante()).
+    es_pvp = not isinstance(atacante, NPC) and not isinstance(defensor, NPC)
     handler = _get_combat_handler(sala)
     if handler:
         if not handler.agregar_participante(atacante):
@@ -58,6 +62,8 @@ def _iniciar_combate(atacante, defensor):
             atacante.msg("Hay un duelo privado en curso; no puedes unirte a ese combate ahora mismo.")
             return handler
         handler.agregar_participante(defensor)
+        if es_pvp:
+            handler.db.pvp = True
         _añadir_partido_a_lista(atacante, sala, handler.db.participantes)
         sala.msg_contents(f"{atacante.key} se une al combate contra {defensor.key}!")
         return handler
@@ -67,6 +73,8 @@ def _iniciar_combate(atacante, defensor):
     _añadir_partido_a_lista(defensor, sala, participantes)
 
     handler = sala.scripts.add(CombatHandler)
+    if es_pvp:
+        handler.db.pvp = True
     handler.iniciar(participantes)
     return handler
 

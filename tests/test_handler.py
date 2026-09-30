@@ -428,9 +428,17 @@ class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
         handler.iniciar(orden)
         return handler
 
+    def _segundo_npc(self):
+        # Con un solo NPC, matarlo ahora cierra el combate (ya no quedan
+        # enemigos); un segundo NPC mantiene el combate para medir el turno.
+        npc2 = create_object("typeclasses.npc.NPC", key="Goblin2")
+        npc2.move_to(self.sala, quiet=True)
+        _set_stats(npc2, hp=30, hp_max=30, nivel=1)
+        return npc2
+
     def test_matar_a_alguien_anterior_en_la_lista_no_salta_el_siguiente_turno(self):
-        # Orden: [npc, jugador, jugador2] -> es el turno de jugador (índice 1)
-        handler = self._crear_handler([self.npc, self.jugador, self.jugador2])
+        # Orden: [npc, jugador, jugador2, npc2] -> es el turno de jugador (índice 1)
+        handler = self._crear_handler([self.npc, self.jugador, self.jugador2, self._segundo_npc()])
         handler.db.turno_actual = 1
         with patch("evennia.utils.delay"):
             handler._procesar_muerte(self.npc, asesino=self.jugador)
@@ -439,7 +447,7 @@ class TestOrdenDeTurnoTrasEliminarParticipante(EvenniaTest):
 
     def test_capturar_a_alguien_anterior_en_la_lista_no_salta_el_siguiente_turno(self):
         self.npc.db.hp = 5  # <=20% de 30 -> capturable
-        handler = self._crear_handler([self.npc, self.jugador, self.jugador2])
+        handler = self._crear_handler([self.npc, self.jugador, self.jugador2, self._segundo_npc()])
         handler.db.turno_actual = 1
         with patch("evennia.utils.delay"):
             handler._intentar_captura(self.jugador)
@@ -1199,3 +1207,49 @@ class TestMuerteDeJugadorNoEsComoNPC(EvenniaTest):
         from evennia.objects.models import ObjectDB
         self.assertEqual(garra.location, self.sala)
         self.assertFalse(ObjectDB.objects.filter(pk=pk).exists())
+
+
+class TestFinDeCombateSinEnemigos(EvenniaTest):
+    """
+    Regresión: el combate solo terminaba con un participante o ninguno
+    conectado. Un grupo que mataba al último NPC seguía "en combate" entre
+    sí (turnos pasando solos cada 15 s, en_combate=True) hasta huir, algo
+    imposible en las salas sin salidas de una mazmorra.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.sala = create_object("typeclasses.rooms.Room", key="Claro")
+        for c in (self.char1, self.char2):
+            c.move_to(self.sala, quiet=True)
+            _set_stats(c, hp=50, hp_max=50, nivel=1)
+        self.npc = create_object("typeclasses.npc.NPC", key="Lobo", location=self.sala)
+        _set_stats(self.npc, hp=10, hp_max=10, nivel=1)
+
+    def test_grupo_que_mata_al_ultimo_npc_sale_del_combate(self):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.iniciar([self.char1, self.char2, self.npc])
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.npc, asesino=self.char1)
+        self.assertFalse(handler.db.activo)
+        self.assertFalse(self.char1.db.en_combate)
+        self.assertFalse(self.char2.db.en_combate)
+
+    def test_combate_pvp_sigue_aunque_no_queden_npcs(self):
+        handler = self.sala.scripts.add(CombatHandler)
+        handler.db.pvp = True
+        handler.iniciar([self.char1, self.char2, self.npc])
+        with patch("evennia.utils.delay"):
+            handler._procesar_muerte(self.npc, asesino=self.char1)
+        self.assertTrue(handler.db.activo)
+        self.assertTrue(self.char1.db.en_combate)
+
+    def test_atacar_a_un_jugador_marca_el_combate_como_pvp(self):
+        from features.combat.commands import _iniciar_combate
+        handler = _iniciar_combate(self.char1, self.char2)
+        self.assertTrue(handler.db.pvp)
+
+    def test_atacar_a_un_npc_no_marca_pvp(self):
+        from features.combat.commands import _iniciar_combate
+        handler = _iniciar_combate(self.char1, self.npc)
+        self.assertFalse(getattr(handler.db, "pvp", False))

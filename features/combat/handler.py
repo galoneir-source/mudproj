@@ -371,7 +371,19 @@ class CombatHandler(DefaultScript):
             obj.db.apuesta_duelo = 0
 
         jugadores = [p for p in parts if getattr(p, "has_account", False)]
-        if len(parts) <= 1 or not jugadores:
+        # Sin NPCs, fuera de un duelo y sin que ningún jugador haya atacado a
+        # otro (db.pvp), los que quedan son aliados: el combate ha terminado.
+        # Antes solo se cerraba con un participante o ninguno conectado, así
+        # que un grupo que mataba al último enemigo seguía "en combate" entre
+        # sí (turnos pasando solos, en_combate=True) hasta huir, algo
+        # imposible en las salas sin salidas de una mazmorra.
+        from typeclasses.npc import NPC
+        sin_enemigos = (
+            not getattr(self.db, "modo_duelo", False)
+            and not getattr(self.db, "pvp", False)
+            and not any(isinstance(p, NPC) for p in parts)
+        )
+        if len(parts) <= 1 or not jugadores or sin_enemigos:
             self._terminar_combate()
 
     # ------------------------------------------------------------------ #
@@ -483,6 +495,11 @@ class CombatHandler(DefaultScript):
             if not objetivo or objetivo.dbref not in partes_dbrefs:
                 actor.msg("Objetivo inválido. Pasas el turno.")
             else:
+                # Un jugador atacando a otro convierte el combate en PvP: ya
+                # no termina solo por quedarse sin NPCs (eliminar_participante).
+                from typeclasses.npc import NPC
+                if not isinstance(actor, NPC) and not isinstance(objetivo, NPC):
+                    self.db.pvp = True
                 evento_activo = None
                 if getattr(actor, "has_account", False) or getattr(objetivo, "has_account", False):
                     from features.events.event_script import obtener_evento_activo
