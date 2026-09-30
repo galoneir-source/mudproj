@@ -117,6 +117,15 @@ class MazmorraScript(DefaultScript):
 
         sala_actual = salas[sala_idx]
 
+        # Sin NPCs vivos puede seguir habiendo un combate entre jugadores
+        # (PvP libre con 'atacar'): moverlos con move_to() dejaría el handler
+        # huérfano y a ambos con en_combate=True hasta el siguiente reinicio.
+        # Mismo criterio que el resto de teletransportes del proyecto.
+        for script in sala_actual.scripts.all():
+            if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                jugador.msg("|rHay un combate en curso en esta sala. Termínalo antes de avanzar.|n")
+                return
+
         # Verificar sala despejada
         if not self._sala_despejada(sala_actual):
             jugador.msg(

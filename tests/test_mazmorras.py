@@ -181,8 +181,16 @@ class TestMazmorraCompletar(MazmorrasTestBase):
         return _instancia_del_jugador(self.char1)
 
     def _limpiar_sala_actual(self, instancia):
-        """Elimina cualquier NPC vivo de la sala actual para poder avanzar."""
+        """
+        Elimina cualquier NPC vivo de la sala actual para poder avanzar.
+        Borrarlos con delete() no pasa por la muerte en combate, así que
+        también se termina el combate que hubieran iniciado al agredir (en
+        el juego lo cierra CombatHandler al morir el último NPC).
+        """
         sala = instancia.db.salas[instancia.db.sala_actual]
+        for script in sala.scripts.all():
+            if script.key == "combat_handler" and getattr(script.db, "activo", False):
+                script._terminar_combate()
         for obj in list(sala.contents):
             if type(obj).__name__ == "NPC":
                 obj.delete()
@@ -290,6 +298,34 @@ class TestMazmorraCompletar(MazmorrasTestBase):
 # --------------------------------------------------------------------------- #
 #  Limpieza de instancia (timeout/completar) con combate activo dentro
 # --------------------------------------------------------------------------- #
+
+class TestMazmorraAvanzarConCombateActivo(MazmorrasTestBase):
+    """
+    Regresión: avanzar() solo exigía que no quedaran NPCs vivos, pero dos
+    jugadores pueden seguir peleando entre sí (PvP libre con 'atacar'). Los
+    movía con move_to() a la sala siguiente, dejando el CombatHandler
+    huérfano y a ambos con en_combate=True hasta el siguiente reinicio.
+    """
+
+    def test_no_avanza_con_un_combate_activo_en_la_sala(self):
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+        instancia = _instancia_del_jugador(self.char1)
+        sala = instancia.db.salas[instancia.db.sala_actual]
+        for obj in list(sala.contents):
+            if type(obj).__name__ == "NPC":
+                obj.delete()
+        handler = sala.scripts.add(CombatHandler)
+        handler.db.pvp = True  # char1 y char2 peleando entre sí
+        handler.iniciar([self.char1, self.char2])
+
+        instancia.avanzar(self.char1)
+
+        self.assertEqual(instancia.db.sala_actual, 0)
+        self.assertEqual(self.char1.location, sala)
+        self.assertEqual(self.char2.location, sala)
+
 
 class TestMazmorraLimpiezaConCombateActivo(MazmorrasTestBase):
     """
