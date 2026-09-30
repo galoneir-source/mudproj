@@ -200,3 +200,40 @@ class TestCazaRecompensaEnCombate(EvenniaTest):
         self.assertEqual(self._handlers_en(self.sala), [])
         self.assertTrue(self.objetivo.db.en_combate)
         self.assertIn(otro_handler, self.otra_sala.scripts.all())
+
+
+class TestPonerRecompensa(EvenniaTest):
+    """
+    Regresión: 'recompensa poner' rechazaba a un jugador desconectado con
+    "Solo puedes poner recompensas sobre otros jugadores", porque lo
+    comprobaba con has_account (solo True con sesión conectada).
+    """
+    character_typeclass = Character
+
+    def setUp(self):
+        super().setUp()
+        self.msgs = []
+        self.char1.msg = lambda text=None, **kw: self.msgs.append(str(text))
+        self.char1.db.monedas = 1000
+        self.char2.key = "Ausente"
+
+    def tearDown(self):
+        script = obtener_recompensas_script()
+        if script:
+            script.delete()
+        super().tearDown()
+
+    def _poner(self, args):
+        _make_cmd(CmdRecompensa, self.char1, f"poner {args}").func()
+
+    def test_se_puede_poner_sobre_un_jugador_desconectado(self):
+        self.assertFalse(self.char2.has_account)
+        self._poner(f"Ausente {MIN_RECOMPENSA}")
+        self.assertEqual(self.char1.db.monedas, 1000 - MIN_RECOMPENSA)
+        self.assertNotIn("Solo puedes poner", "\n".join(self.msgs))
+
+    def test_no_se_puede_poner_sobre_un_npc(self):
+        create_object("typeclasses.npc.NPC", key="Lobo", location=self.char1.location)
+        self._poner(f"Lobo {MIN_RECOMPENSA}")
+        self.assertEqual(self.char1.db.monedas, 1000)
+        self.assertIn("Solo puedes poner", "\n".join(self.msgs))

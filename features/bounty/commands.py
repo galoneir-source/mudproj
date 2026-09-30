@@ -111,7 +111,11 @@ class CmdRecompensa(Command):
             caller.msg(f"No se encontró ningún jugador llamado '|w{nombre_obj}|n'.")
             return
         objetivo = objetivos[0] if isinstance(objetivos, list) else objetivos
-        if not getattr(objetivo, "has_account", False):
+        # Por typeclass, no por has_account (solo True con sesión conectada):
+        # antes un jugador desconectado se rechazaba con este mismo mensaje,
+        # como si no fuera un jugador. Cobrarla sí exige que esté conectado
+        # (cazar lo comprueba al retar).
+        if not objetivo.is_typeclass("typeclasses.characters.Character", exact=False):
             caller.msg("|rSolo puedes poner recompensas sobre otros jugadores.|n")
             return
 
