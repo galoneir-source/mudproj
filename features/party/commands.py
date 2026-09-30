@@ -194,6 +194,14 @@ class CmdUnirse(Command):
 
         caller.db.invitacion_partido = None
 
+        # La invitación solo comprobó el grupo del invitado al invitar: si
+        # entretanto ha entrado en otro, añadirlo aquí lo dejaría como
+        # miembro fantasma en la lista del grupo anterior (ocupando hueco y
+        # arrastrado a sus mazmorras/expediciones), sin forma de salir.
+        if esta_en_partido(caller):
+            caller.msg("Ya estás en un grupo. Usa |wabandonar|n antes de unirte a otro.")
+            return
+
         if not getattr(invitante, "has_account", False):
             caller.msg("El jugador que te invitó ya no está disponible.")
             return

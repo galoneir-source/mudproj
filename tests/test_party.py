@@ -173,6 +173,26 @@ class TestPartyCmds(EvenniaTest):
         _cmd(CmdUnirse, self.char2)
         self.assertIsNone(getattr(self.char2.db, "invitacion_partido", None))
 
+    def test_unirse_estando_ya_en_otro_grupo_se_rechaza(self):
+        # Regresión: la invitación solo comprobaba el grupo del invitado al
+        # invitar. Con una invitación pendiente, el invitado podía invitar a
+        # un tercero (lo que le crea su propio grupo, como líder) y después
+        # 'unirse': quedaba en dos grupos a la vez y como miembro fantasma
+        # de la lista del suyo (ocupando hueco y arrastrado a mazmorras y
+        # expediciones), sin forma de arreglarlo con 'abandonar'.
+        tercero = create_object(Character, key="Tercero", location=self.char1.location)
+        tercero.msg = lambda text=None, **kw: None
+        tercero.db_account = self.account2  # invitar exige un personaje con cuenta
+        tercero.save()
+        _cmd(CmdInvitar, self.char1, self.char2.key, target=self.char2)
+        _cmd(CmdInvitar, self.char2, tercero.key, target=tercero)
+        self.assertTrue(es_lider(self.char2))
+
+        _cmd(CmdUnirse, self.char2)
+
+        self.assertEqual(get_lider(self.char2), self.char2)
+        self.assertNotIn(self.char2, get_miembros(self.char1))
+
     def test_declinar_limpia_invitacion(self):
         _cmd(CmdInvitar, self.char1, self.char2.key, target=self.char2)
         _cmd(CmdDeclinar, self.char2)
