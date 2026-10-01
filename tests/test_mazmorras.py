@@ -26,6 +26,18 @@ from typeclasses.characters import Character
 from typeclasses.rooms import Room
 
 
+class JugadorDePruebaMazmorras(Character):
+    """
+    has_account cuenta sesiones conectadas reales, y en EvenniaTest solo
+    self.char1 trae una. 'mazmorra entrar' exige que todo el grupo esté
+    conectado, así que los personajes de estos tests se dan por conectados
+    -- mismo truco que test_expeditions.py y test_guild_wars.py.
+    """
+    @property
+    def has_account(self):
+        return True
+
+
 def _make_cmd(CmdClass, caller, args=""):
     cmd = CmdClass()
     cmd.caller = caller
@@ -48,7 +60,7 @@ def _init_char(char, nivel=5):
 
 
 class MazmorrasTestBase(EvenniaTest):
-    character_typeclass = Character
+    character_typeclass = JugadorDePruebaMazmorras
 
     def setUp(self):
         super().setUp()
@@ -141,8 +153,6 @@ class TestMazmorraEntradaGrupo(MazmorrasTestBase):
         _añadir_miembro(self.char1, self.char2)
 
     def test_lider_entra_arrastra_al_grupo(self):
-        # El miembro está en otra sala; debe ser teleportado igualmente.
-        self.char2.move_to(self.room1, quiet=True)
         _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
 
         inst_lider = _instancia_del_jugador(self.char1)
@@ -156,6 +166,34 @@ class TestMazmorraEntradaGrupo(MazmorrasTestBase):
         _make_cmd(CmdMazmorra, self.char2, "entrar cripta_ceniza").func()
         self.assertIsNone(_instancia_del_jugador(self.char1))
         self.assertIsNone(_instancia_del_jugador(self.char2))
+
+    def test_miembro_en_otra_sala_bloquea_la_entrada(self):
+        """
+        Regresión: 'mazmorra entrar' arrastraba a todo el grupo estuviera
+        donde estuviera. Ahora todos deben estar en el vestíbulo.
+        """
+        self.char2.move_to(self.room1, quiet=True)
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+        self.assertEqual(self.char1.location, self.vestibulo)
+        self.assertEqual(self.char2.location, self.room1)
+
+    def test_miembro_desconectado_bloquea_la_entrada(self):
+        """
+        Regresión: un miembro desconectado (sin sesión y con location None,
+        como lo deja Evennia al salir) contaba para el tamaño del grupo y
+        era movido a la sala temporal de la mazmorra.
+        """
+        ausente = create_object(Character, key="Ausente", location=None)
+        _init_char(ausente)
+        _añadir_miembro(self.char1, ausente)
+
+        _make_cmd(CmdMazmorra, self.char1, "entrar cripta_ceniza").func()
+
+        self.assertIsNone(_instancia_del_jugador(self.char1))
+        self.assertEqual(self.char1.location, self.vestibulo)
+        self.assertIsNone(ausente.location)
 
     def test_miembro_bajo_nivel_bloquea_a_todo_el_grupo(self):
         self.char2.db.nivel = 1
@@ -382,9 +420,10 @@ class TestMazmorraBloqueaEntradaEnCombate(MazmorrasTestBase):
         _añadir_miembro(self.char1, self.char2)
 
     def test_miembro_en_combate_bloquea_la_entrada_de_todo_el_grupo(self):
-        self.char2.move_to(self.room1, quiet=True)
-        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.room1)
-        handler = self.room1.scripts.add(CombatHandler)
+        # En el propio vestíbulo: con el grupo ya reunido, lo único que
+        # bloquea la entrada es el combate.
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.vestibulo)
+        handler = self.vestibulo.scripts.add(CombatHandler)
         handler.iniciar([self.char2, npc])
         self.assertTrue(self.char2.db.en_combate)
 
@@ -392,7 +431,7 @@ class TestMazmorraBloqueaEntradaEnCombate(MazmorrasTestBase):
 
         self.assertIsNone(_instancia_del_jugador(self.char1))
         self.assertIsNone(_instancia_del_jugador(self.char2))
-        self.assertEqual(self.char2.location, self.room1)
+        self.assertEqual(self.char2.location, self.vestibulo)
         self.assertTrue(self.char2.db.en_combate)
 
     def test_el_propio_lider_en_combate_no_puede_entrar_solo(self):

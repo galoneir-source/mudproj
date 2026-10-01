@@ -48,7 +48,7 @@ def _init_char(char, nivel=5):
 
 
 class TestExpedicionInicioGrupo(EvenniaTest):
-    character_typeclass = Character
+    character_typeclass = PersonajeConectado
 
     def setUp(self):
         super().setUp()
@@ -94,15 +94,55 @@ class TestExpedicionInicioGrupo(EvenniaTest):
         _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
         self.assertFalse(getattr(self.char1.location.db, "es_expedicion", False))
 
-    def test_miembro_ausente_es_teletransportado_igualmente(self):
+    def test_miembro_en_otra_sala_bloquea_el_inicio(self):
+        """
+        Regresión: 'expedicion iniciar' arrastraba a todo el grupo estuviera
+        donde estuviera. Ahora todos deben estar en la sala del líder.
+        """
         _crear_partido(self.char1)
         _añadir_miembro(self.char1, self.char2)
-        self.char2.move_to(self.room1, quiet=True)
+        origen = self.char1.location
+        self.char2.move_to(self.room2, quiet=True)
 
         _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
 
-        self.assertEqual(self.char1.location, self.char2.location)
-        self.assertTrue(getattr(self.char2.location.db, "es_expedicion", False))
+        self.assertEqual(self.char1.location, origen)
+        self.assertEqual(self.char2.location, self.room2)
+        self.assertFalse(getattr(origen.db, "es_expedicion", False))
+
+    def test_miembro_desconectado_no_cuenta_para_el_minimo(self):
+        """
+        Regresión: un miembro desconectado (sin sesión y con location None,
+        como lo deja Evennia al salir) contaba para el mínimo de jugadores
+        -una expedición de 2 se iniciaba con uno solo conectado- y era
+        movido a la sala temporal.
+        """
+        ausente = create_object(Character, key="Ausente", location=None)
+        _init_char(ausente)
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, ausente)
+        origen = self.char1.location
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+
+        self.assertEqual(self.char1.location, origen)
+        self.assertFalse(getattr(origen.db, "es_expedicion", False))
+        self.assertIsNone(ausente.location)
+
+    def test_no_se_inicia_desde_dentro_de_una_mazmorra(self):
+        """
+        Con todo el grupo reunido dentro de una sala de mazmorra, iniciar
+        una expedición los sacaría de la instancia a espaldas de su script.
+        """
+        _crear_partido(self.char1)
+        _añadir_miembro(self.char1, self.char2)
+        sala = self.char1.location
+        sala.db.mazmorra_script_id = 999999
+
+        _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
+
+        self.assertEqual(self.char1.location, sala)
+        self.assertEqual(self.char2.location, sala)
 
     def test_estado_no_crashea_dentro_de_expedicion(self):
         """
@@ -143,7 +183,7 @@ class TestExpedicionBloqueaInicioEnCombate(EvenniaTest):
     iniciar' nunca hacía esta comprobación, ni para el líder ni para el
     resto del grupo que arrastra consigo.
     """
-    character_typeclass = Character
+    character_typeclass = PersonajeConectado
 
     def setUp(self):
         super().setUp()
@@ -162,16 +202,17 @@ class TestExpedicionBloqueaInicioEnCombate(EvenniaTest):
         super().tearDown()
 
     def test_miembro_en_combate_bloquea_el_inicio_de_todo_el_grupo(self):
-        self.char2.move_to(self.room2, quiet=True)
-        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.room2)
-        handler = self.room2.scripts.add(CombatHandler)
+        # En la sala del líder: con el grupo ya reunido, lo único que
+        # bloquea el inicio es el combate.
+        npc = create_object("typeclasses.npc.NPC", key="Lobo Test", location=self.room1)
+        handler = self.room1.scripts.add(CombatHandler)
         handler.iniciar([self.char2, npc])
         self.assertTrue(self.char2.db.en_combate)
 
         _make_cmd(CmdExpedicion, self.char1, "iniciar bosque_profundo").func()
 
         self.assertFalse(getattr(self.char1.location.db, "es_expedicion", False))
-        self.assertEqual(self.char2.location, self.room2)
+        self.assertEqual(self.char2.location, self.room1)
         self.assertTrue(self.char2.db.en_combate)
 
     def test_el_propio_lider_en_combate_no_puede_iniciar(self):
@@ -201,7 +242,7 @@ class TestExpedicionAbandonarEnCombate(EvenniaTest):
     último miembro ya lo cubría _limpiar(); el hueco real es cuando queda
     algún compañero dentro y _limpiar() no se dispara.
     """
-    character_typeclass = Character
+    character_typeclass = PersonajeConectado
 
     def setUp(self):
         super().setUp()

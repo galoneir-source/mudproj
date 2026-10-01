@@ -38,6 +38,29 @@ def get_miembros(personaje) -> list:
     return list(getattr(lider.db, "miembros_partido", []) or [])
 
 
+def motivo_grupo_no_reunido(lider, miembros):
+    """
+    Devuelve un mensaje de error si algún miembro no puede acompañar al
+    líder a una instancia (mazmorra, expedición), o None si el grupo está
+    reunido: todos conectados y en la misma sala que el líder.
+
+    Sin esta comprobación, quien iniciaba la instancia arrastraba a todo el
+    grupo estuviera donde estuviera. Un miembro desconectado (en Evennia su
+    location es None) contaba para el mínimo de jugadores, acababa dentro de
+    la sala temporal sin cobrar nada y, al borrarse esta, en su home; y un
+    miembro que estaba dentro de otra instancia era sacado de ella sin que
+    su script se enterase.
+    """
+    for m in miembros:
+        if m == lider:
+            continue
+        if not getattr(m, "has_account", False):
+            return f"{m.key} no está conectado."
+        if m.location != lider.location:
+            return f"{m.key} no está aquí. Todo el grupo debe estar reunido en esta sala."
+    return None
+
+
 # --------------------------------------------------------------------------- #
 #  Operaciones internas
 # --------------------------------------------------------------------------- #

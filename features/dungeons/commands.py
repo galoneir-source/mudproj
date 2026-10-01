@@ -70,6 +70,9 @@ class CmdMazmorra(Command):
       mazmorra salir              - Abandona la mazmorra sin recompensa
 
     Dificultades: normal (por defecto), dificil, legendario
+
+    En grupo solo puede entrar el líder, y todos los miembros deben estar
+    conectados y reunidos en el vestíbulo.
     """
 
     key = "mazmorra"
@@ -171,6 +174,13 @@ class CmdMazmorra(Command):
             miembros = list(getattr(caller.db, "miembros_partido", []) or [])
             if not miembros:
                 miembros = [caller]
+
+            # Todo el grupo debe estar conectado y aquí, en el vestíbulo.
+            from features.party.commands import motivo_grupo_no_reunido
+            motivo = motivo_grupo_no_reunido(caller, miembros)
+            if motivo:
+                caller.msg(f"|r{motivo}|n")
+                return
 
             # Verificar que ningún miembro esté en combate: al igual que
             # duelos/vivienda/torneos ya hacen, teletransportar a alguien

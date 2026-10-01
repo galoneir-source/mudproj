@@ -47,8 +47,9 @@ class CmdExpedicion(Command):
       expedicion estado          — ver progreso de la expedición en curso
       expedicion abandonar       — salir de la expedición
 
-    Solo el líder del grupo puede iniciar una expedición. Todos los miembros
-    del grupo son teletransportados automáticamente a la zona de combate.
+    Solo el líder del grupo puede iniciar una expedición. Todo el grupo debe
+    estar conectado y reunido en la sala del líder; al iniciarla, todos son
+    teletransportados a la zona de combate.
 
     Ejemplo:
       expedicion lista
@@ -140,6 +141,19 @@ class CmdExpedicion(Command):
         miembros = list(getattr(caller.db, "miembros_partido", []) or [])
         if not miembros:
             miembros = [caller]
+
+        # No se inicia desde dentro de una mazmorra: sacaría al grupo de la
+        # instancia sin que su MazmorraScript se enterase.
+        if caller.location and getattr(caller.location.db, "mazmorra_script_id", None):
+            caller.msg("|rNo puedes iniciar una expedición dentro de una mazmorra.|n")
+            return
+
+        # Todo el grupo debe estar conectado y en la sala del líder.
+        from features.party.commands import motivo_grupo_no_reunido
+        motivo = motivo_grupo_no_reunido(caller, miembros)
+        if motivo:
+            caller.msg(f"|r{motivo}|n")
+            return
 
         niveles = [getattr(m.db, "nivel", 1) or 1 for m in miembros]
         ok, msg = puede_iniciar(tipo_id, len(miembros), niveles)

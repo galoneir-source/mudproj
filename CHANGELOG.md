@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Corregido
+- **`expedicion iniciar` y `mazmorra entrar` arrastraban a todo el grupo estuviera donde estuviera, también a los miembros desconectados** (`features/expeditions/commands.py`, `features/dungeons/commands.py`). Ambos comandos teletransportaban a todos los miembros del grupo sin mirar dónde estaban ni si tenían sesión. Un miembro desconectado contaba para el mínimo de jugadores (una expedición de 2–4 se iniciaba con uno solo conectado), era movido a la sala temporal, no cobraba nada y al borrarse la sala acababa en su `home`. Además ninguno de los dos comprobaba la instancia del otro: un miembro dentro de una mazmorra podía ser sacado de ella por una expedición, y al revés, sin que el script de su instancia se enterase. Sin ganancia de recompensa (el factor se calcula con los presentes conectados). Encontrado durante una revisión completa, al leer `features/expeditions/`. Fix: helper `motivo_grupo_no_reunido()` (`features/party/commands.py`), que exige que todos los miembros estén conectados y en la sala del líder; lo usan los dos comandos, y `expedicion iniciar` se niega además dentro de una sala de mazmorra. La ayuda de ambos lo menciona. Es un cambio de comportamiento: los tests `test_miembro_ausente_es_teletransportado_igualmente` (expediciones) y la parte equivalente de `test_lider_entra_arrastra_al_grupo` (mazmorras) fijaban el comportamiento anterior y se sustituyen; los tests de grupo usan ahora personajes con sesión simulada. 5 tests nuevos (3 en `tests/test_expeditions.py`, 2 en `tests/test_mazmorras.py`); los 5 fallan sin el fix.
+
 ## [0.71.67] — 2026-09-30
 
 ### Corregido

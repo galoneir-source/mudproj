@@ -191,7 +191,10 @@ class TestLimpiezaExpedicionHuerfana(EvenniaTest):
         cmd.switches = []
         cmd.lhs = cmd.args
         cmd.rhs = ""
-        cmd.func()
+        # 'expedicion iniciar' exige que todo el grupo esté conectado, y en
+        # EvenniaTest solo self.char1 trae sesión.
+        with patch.object(type(self.char2), "has_account", True):
+            cmd.func()
 
         sala_expedicion = self.char1.location
         origen = self.room1
