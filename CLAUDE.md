@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 El directorio de trabajo es `/opt/evennia/mudproj/mygame/`. Todos los comandos de Evennia se ejecutan desde `/opt/evennia/mudproj/`.
 
+Evennia 6.1 exige Python ≥ 3.12. El venv del proyecto es `/opt/evennia/mudproj/venv312` (Evennia 6.1, Python 3.12), y es también el que usa producción. `/opt/evennia/mudproj/venv` (Evennia 5.0.1, Python 3.11) solo se conserva para volver atrás: no usarlo para ejecutar tests.
+
 ```bash
 # Servidor
 evennia start          # arrancar (pide superuser la primera vez)

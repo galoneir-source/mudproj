@@ -1,2 +1,2 @@
-evennia
+evennia~=6.1
 pytest

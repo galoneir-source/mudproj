@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+### Cambiado
+- **Evennia 5.0.1 → 6.1.0 (Django 5.2 → 6.0, Python 3.11 → 3.12)**. `requirements.txt` pedía `evennia` sin versión: en Python 3.11 pip instalaba la 5.0.1, porque Evennia 6.x exige Python ≥ 3.12, y en 3.12 la 6.1.0. Producción corría así la 5.0.1 mientras el job de 3.12 de CI probaba la 6.1.0. Ahora se fija `evennia~=6.1` y la matriz de CI pasa de 3.11/3.12 a 3.12/3.13. Producción migró el 2026-10-16 a un venv nuevo con Python 3.12 (`/opt/evennia/mudproj/venv312`). Entre 5.0.1 y 6.1.0 no hay migraciones de base de datos nuevas y ningún cambio de Evennia obligaba a tocar el código del juego: con una copia de la base de datos de producción, las dos versiones cargaban los mismos objetos, scripts, typeclasses y comandos. La suite completa pasa en local con 6.1.0 y Python 3.12: 2357 tests puros y 1598 de integración en 62 módulos.
+
 ## [0.71.68] — 2026-10-01
 
 ### Corregido
