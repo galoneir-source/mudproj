@@ -5,6 +5,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Sin publicar]
 
+## [0.71.69] — 2026-10-16
+
 ### Cambiado
 - **Evennia 5.0.1 → 6.1.0 (Django 5.2 → 6.0, Python 3.11 → 3.12)**. `requirements.txt` pedía `evennia` sin versión: en Python 3.11 pip instalaba la 5.0.1, porque Evennia 6.x exige Python ≥ 3.12, y en 3.12 la 6.1.0. Producción corría así la 5.0.1 mientras el job de 3.12 de CI probaba la 6.1.0. Ahora se fija `evennia~=6.1` y la matriz de CI pasa de 3.11/3.12 a 3.12/3.13. Producción migró el 2026-10-16 a un venv nuevo con Python 3.12 (`/opt/evennia/mudproj/venv312`). Entre 5.0.1 y 6.1.0 no hay migraciones de base de datos nuevas y ningún cambio de Evennia obligaba a tocar el código del juego: con una copia de la base de datos de producción, las dos versiones cargaban los mismos objetos, scripts, typeclasses y comandos. La suite completa pasa en local con 6.1.0 y Python 3.12: 2357 tests puros y 1598 de integración en 62 módulos.
 - **CI: `actions/checkout` v4 → v7 y `actions/setup-python` v5 → v7**. Las versiones anteriores funcionaban sobre Node 20, que GitHub ya está retirando, y CI avisaba de que las forzaba a ejecutarse en Node 24. Las v7 usan Node 24. Sus cambios incompatibles no afectan a este workflow: checkout v7 bloquea el checkout de PRs de forks en `pull_request_target` y `workflow_run`, que aquí no se usan, y setup-python v7 elimina la opción `pip-install`, que tampoco se usaba.
